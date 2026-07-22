@@ -16,7 +16,7 @@ export function PortfolioPage({
   images: Img[];
   showStrip?: boolean;
   showLogos?: boolean;
-  galleryLayout?: "grid" | "masonry";
+  galleryLayout?: "grid" | "masonry" | "stacked";
 }) {
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
 
@@ -76,10 +76,16 @@ export function PortfolioPage({
 
       {showLogos && <ClientLogos />}
 
-      {/* Full grid gallery */}
-      <div className="mx-auto max-w-7xl px-6 pt-10 md:pt-14 pb-24">
-        <Gallery images={images} columns={3} layout={galleryLayout} />
-      </div>
+      {/* Full gallery */}
+      {galleryLayout === "stacked" ? (
+        <div className="w-full pt-6 md:pt-10 pb-24">
+          <Gallery images={images} layout="stacked" />
+        </div>
+      ) : (
+        <div className="mx-auto max-w-7xl px-6 pt-10 md:pt-14 pb-24">
+          <Gallery images={images} columns={3} layout={galleryLayout} />
+        </div>
+      )}
     </SiteLayout>
   );
 }

@@ -10,7 +10,7 @@ export function Gallery({
 }: {
   images: Img[];
   columns?: number;
-  layout?: "grid" | "masonry";
+  layout?: "grid" | "masonry" | "stacked";
 }) {
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
   const [active, setActive] = useState<number | null>(null);
@@ -26,6 +26,30 @@ export function Gallery({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [active, images.length]);
+
+  if (layout === "stacked") {
+    return (
+      <>
+        <div className="flex flex-col">
+          {images.map((img, i) => (
+            <button
+              key={img.src}
+              onClick={() => setActive(i)}
+              className="block w-full overflow-hidden bg-muted"
+            >
+              <img
+                src={cdn(img.src, 2000)}
+                alt={img.alt || "Point Studio photograph"}
+                loading="lazy"
+                className="block w-full h-auto"
+              />
+            </button>
+          ))}
+        </div>
+        {renderLightbox()}
+      </>
+    );
+  }
 
   if (layout === "masonry") {
     const numColsDesktop = columns === 2 ? 2 : 4;
