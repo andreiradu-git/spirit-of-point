@@ -35,7 +35,7 @@ type Props = {
   fallbackImages: Array<{ src: string; alt?: string; title?: string }>;
   columns?: number;
   aspect?: "square" | "landscape" | "portrait" | "auto";
-  layout?: "grid" | "stacked";
+  layout?: "grid" | "stacked" | "masonry";
   className?: string;
   renderItem?: (img: GalleryImage, props: { onClick: () => void; editable: boolean }) => ReactNode;
   lightbox?: boolean;
