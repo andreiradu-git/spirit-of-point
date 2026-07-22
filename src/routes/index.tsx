@@ -241,21 +241,20 @@ function Index() {
         <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
           <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
             <div className="md:col-span-5">
-              <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">02 — Services</div>
-              <h2 className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground">
+              <Editable as="div" id="services.eyebrow" className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 block">
+                02 — Services
+              </Editable>
+              <Editable as="h2" id="services.title" className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground block">
                 What We Do
-              </h2>
+              </Editable>
             </div>
             <div className="md:col-span-7 text-[15px] md:text-base leading-relaxed text-foreground/80">
-              <p>
-                We at Point Studio know how to capture the essence of every moment — starting with
-                mouthwatering food photography that brings flavors to life, and extending to all
-                kinds of photography to meet your unique needs. From plates to portraits,
-                architecture, corporate events, industrial sites documentation or landscape, our
-                lens tells your story beautifully.
-              </p>
+              <Editable as="p" id="services.intro" multiline>
+                We at Point Studio know how to capture the essence of every moment — starting with mouthwatering food photography that brings flavors to life, and extending to all kinds of photography to meet your unique needs. From plates to portraits, architecture, corporate events, industrial sites documentation or landscape, our lens tells your story beautifully.
+              </Editable>
             </div>
           </div>
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {whatWeDo.map((c) => (
               <Link
