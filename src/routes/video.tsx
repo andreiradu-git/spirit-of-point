@@ -26,14 +26,8 @@ function VideoPage() {
 
   return (
     <SiteLayout>
-      <section className="mx-auto max-w-7xl px-6 pt-16 pb-12 text-center">
-        <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-4">
-          Motion & video productions
-        </p>
-        <h1 className="font-serif text-5xl md:text-6xl">Video</h1>
-      </section>
+      <div className="mx-auto max-w-7xl px-6 pt-16 pb-24">
 
-      <div className="mx-auto max-w-7xl px-6 pb-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {videos.map((v, i) => (
             <button
