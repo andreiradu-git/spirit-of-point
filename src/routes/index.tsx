@@ -155,7 +155,7 @@ function Index() {
           <h2 className="font-sans font-bold uppercase tracking-tight text-4xl md:text-5xl leading-[1.05]">
             What We Do
           </h2>
-          <div className="bg-background border border-border p-6 md:p-8 text-[15px] leading-relaxed text-foreground/90">
+          <div className="p-6 md:p-8 text-[15px] leading-relaxed text-foreground/90">
             <p>
               We at Point Studio know how to capture the essence of every moment — starting with
               mouthwatering food photography that brings flavors to life, and extending to all
