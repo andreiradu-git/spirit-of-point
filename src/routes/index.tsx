@@ -172,7 +172,7 @@ function Index() {
 
 
       {/* The Studio */}
-      <section className="py-20 md:py-28">
+      <section className="pt-10 md:pt-14 pb-16 md:pb-20">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
             <div className="md:col-span-5">
@@ -229,7 +229,7 @@ function Index() {
 
       {/* What We Do */}
       <section className="bg-[#e5e5e5]">
-        <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
           <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
             <div className="md:col-span-5">
               <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">02 — Services</div>
@@ -277,7 +277,7 @@ function Index() {
 
       {/* Testimonials */}
       <section className="bg-[#e5e5e5]">
-        <div className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+        <div className="mx-auto max-w-7xl px-6 pb-16 md:pb-20">
           <div className="grid md:grid-cols-12 gap-10 items-end mb-10">
             <div className="md:col-span-5">
               <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">03 — Kind words</div>
