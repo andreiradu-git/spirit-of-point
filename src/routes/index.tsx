@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import { Gallery } from "@/components/Gallery";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { Play, Star, X } from "lucide-react";
 import home from "@/data/home.json";
 
 
@@ -28,6 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const fish = home[1]; // aqw.png — fish + knives hero
   const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
 
@@ -43,7 +46,13 @@ function Index() {
     { label: "Industrial", img: home[31]?.src, slug: "industrial" },
   ];
 
-  const testimonials = [
+  const testimonials: Array<{
+    quote?: string;
+    name: string;
+    role: string;
+    video?: string;
+    poster?: string;
+  }> = [
     {
       quote:
         "Working with Point Studio was a game-changer. Andrei's eye for detail and technical precision brought our product line to life beyond what we imagined.",
@@ -51,8 +60,8 @@ function Index() {
       role: "Brand Manager, Lidl România",
     },
     {
-      quote:
-        "The professionalism and creativity at Point Studio are unmatched. Every shoot delivers exactly the mood and quality our campaigns need.",
+      video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      poster: home[5]?.src,
       name: "Mihai Ionescu",
       role: "Marketing Director, Kaufland",
     },
@@ -104,6 +113,32 @@ function Index() {
                     International<br />clients
                   </div>
                 </div>
+                <a
+                  href="https://www.google.com/search?q=point+studio+bucuresti"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col justify-end group"
+                  aria-label="See our Google reviews"
+                >
+                  <div className="flex items-center gap-[0.4cqw]">
+                    <svg viewBox="0 0 48 48" className="w-[clamp(14px,2.2cqw,32px)] h-[clamp(14px,2.2cqw,32px)]" aria-hidden="true">
+                      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.5 29.3 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/>
+                      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.5 29.3 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/>
+                      <path fill="#4CAF50" d="M24 43.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.5 2.2-7.2 2.2-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39 16.2 43.5 24 43.5z"/>
+                      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.6l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.2-.1-2.4-.4-3.5z"/>
+                    </svg>
+                    <div>
+                      <div className="flex gap-[0.15cqw]">
+                        {[0,1,2,3,4].map((i) => (
+                          <Star key={i} className="w-[clamp(6px,0.9cqw,13px)] h-[clamp(6px,0.9cqw,13px)] fill-yellow-400 stroke-yellow-400" />
+                        ))}
+                      </div>
+                      <div className="uppercase tracking-widest text-white/70 mt-[0.4cqw] text-[clamp(6px,0.65cqw,10px)] group-hover:text-white transition-colors">
+                        Google<br />Reviews
+                      </div>
+                    </div>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
@@ -247,12 +282,37 @@ function Index() {
           </div>
           <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {testimonials.map((t) => (
-              <figure key={t.name} className="bg-background p-8 flex flex-col gap-6">
-                <span className="font-serif italic text-5xl leading-none text-foreground/30">"</span>
-                <blockquote className="font-serif italic text-lg md:text-xl leading-snug text-foreground/85">
-                  {t.quote}
-                </blockquote>
-                <figcaption className="mt-auto">
+              <figure key={t.name} className="bg-background flex flex-col overflow-hidden">
+                {t.video ? (
+                  <button
+                    type="button"
+                    onClick={() => setActiveVideo(t.video!)}
+                    className="relative aspect-[4/3] w-full group overflow-hidden"
+                    aria-label={`Play video testimonial from ${t.name}`}
+                  >
+                    {t.poster && (
+                      <img
+                        src={cdn(t.poster, 1200)}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg">
+                        <Play className="w-7 h-7 text-black fill-black translate-x-0.5" />
+                      </div>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="p-8 flex flex-col gap-6 flex-1">
+                    <span className="font-serif italic text-5xl leading-none text-foreground/30">"</span>
+                    <blockquote className="font-serif italic text-lg md:text-xl leading-snug text-foreground/85">
+                      {t.quote}
+                    </blockquote>
+                  </div>
+                )}
+                <figcaption className="p-8 pt-6 mt-auto">
                   <div className="text-sm font-medium text-foreground">{t.name}</div>
                   <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mt-1">
                     {t.role}
@@ -263,6 +323,34 @@ function Index() {
           </div>
         </div>
       </section>
+
+      {activeVideo && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setActiveVideo(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setActiveVideo(null)}
+            className="absolute top-6 right-6 text-white/80 hover:text-white"
+            aria-label="Close video"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <div
+            className="relative w-full max-w-5xl aspect-video"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <iframe
+              src={activeVideo + "?autoplay=1"}
+              title="Video testimonial"
+              allow="autoplay; encrypted-media; fullscreen"
+              allowFullScreen
+              className="absolute inset-0 w-full h-full"
+            />
+          </div>
+        </div>
+      )}
 
 
     </SiteLayout>
