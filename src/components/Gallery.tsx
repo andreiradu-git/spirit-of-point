@@ -28,32 +28,50 @@ export function Gallery({
   }, [active, images.length]);
 
   if (layout === "masonry") {
-    const colClass =
-      columns === 2
-        ? "columns-2"
-        : "columns-2 md:columns-3 lg:columns-4";
+    const numColsDesktop = columns === 2 ? 2 : 4;
+    const numColsTablet = columns === 2 ? 2 : 3;
+    const numColsMobile = 2;
+
+    const distribute = (n: number) => {
+      const cols: { img: Img; i: number }[][] = Array.from({ length: n }, () => []);
+      images.forEach((img, i) => cols[i % n].push({ img, i }));
+      return cols;
+    };
+
+    const renderCols = (n: number, cls: string) => (
+      <div className={`${cls} grid gap-3`} style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+        {distribute(n).map((col, ci) => (
+          <div key={ci} className="flex flex-col gap-3">
+            {col.map(({ img, i }) => (
+              <button
+                key={img.src}
+                onClick={() => setActive(i)}
+                className="block w-full overflow-hidden bg-muted group"
+              >
+                <img
+                  src={cdn(img.src, 1000)}
+                  alt={img.alt || "Point Studio photograph"}
+                  loading="lazy"
+                  className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+
     return (
       <>
-        <div className={`${colClass} gap-3 [column-fill:_balance]`}>
-          {images.map((img, i) => (
-            <button
-              key={img.src}
-              onClick={() => setActive(i)}
-              className="mb-3 block w-full break-inside-avoid overflow-hidden bg-muted group"
-            >
-              <img
-                src={cdn(img.src, 1000)}
-                alt={img.alt || "Point Studio photograph"}
-                loading="lazy"
-                className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
-              />
-            </button>
-          ))}
-        </div>
+        {renderCols(numColsMobile, "md:hidden")}
+        {renderCols(numColsTablet, "hidden md:grid lg:hidden")}
+        {renderCols(numColsDesktop, "hidden lg:grid")}
         {renderLightbox()}
       </>
     );
   }
+
+
 
   const colClass =
     columns === 2
