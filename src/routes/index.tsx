@@ -125,9 +125,7 @@ function Index() {
             </p>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto">
-          <Gallery images={studioShots} columns={4} />
-        </div>
+        <Gallery images={studioShots} columns={4} />
 
         <div className="mt-8 grid md:grid-cols-2 gap-6 text-[15px] leading-relaxed text-foreground/90">
           <div className="bg-background border border-border p-6 md:p-8">
