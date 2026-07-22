@@ -10,11 +10,13 @@ export function PortfolioPage({
   images: allImages,
   showStrip = false,
   showLogos = false,
+  galleryLayout = "grid",
 }: {
   tagline: string;
   images: Img[];
   showStrip?: boolean;
   showLogos?: boolean;
+  galleryLayout?: "grid" | "masonry";
 }) {
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
 
@@ -76,7 +78,7 @@ export function PortfolioPage({
 
       {/* Full grid gallery */}
       <div className="mx-auto max-w-7xl px-6 pt-10 md:pt-14 pb-24">
-        <Gallery images={images} columns={3} />
+        <Gallery images={images} columns={3} layout={galleryLayout} />
       </div>
     </SiteLayout>
   );
