@@ -45,39 +45,39 @@ function Index() {
 
   return (
     <SiteLayout transparentHeader headerTone="light">
-      {/* Hero — fish image as background, text always overlaid across all viewports */}
+      {/* Hero — fish image at natural aspect ratio, text overlaid */}
       <section className="relative w-full bg-background">
-        <div className="relative w-full min-h-[760px] sm:min-h-[720px] md:min-h-[640px] lg:min-h-[720px]">
+        <div className="relative w-full">
           <img
             src={cdn(fish.src, 2400)}
             alt="Point Studio food photography"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="block w-full h-auto"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
-          <div className="relative z-10 mx-auto max-w-7xl px-6 pt-32 md:pt-40 pb-10 md:pb-16 flex flex-col justify-between min-h-[760px] sm:min-h-[720px] md:min-h-[640px] lg:min-h-[720px]">
+          <div className="absolute inset-0 z-10 mx-auto max-w-7xl px-6 pt-28 md:pt-36 pb-6 md:pb-12 flex flex-col justify-between">
             <div className="max-w-2xl text-white">
-              <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-6xl leading-[1.05]">
+              <h1 className="font-sans font-bold uppercase tracking-tight text-2xl sm:text-4xl md:text-6xl leading-[1.05]">
                 Photo-Video Studio and<br />Creative Workspace.
               </h1>
-              <p className="mt-6 md:mt-8 text-sm md:text-lg text-white/85 max-w-md leading-relaxed">
+              <p className="mt-3 md:mt-8 text-xs sm:text-sm md:text-lg text-white/85 max-w-md leading-relaxed">
                 We blend creativity with technical expertise and a deep commitment to
                 quality and thats how we transform your ideas into stunning visuals
                 that captivate and sell.
               </p>
-              <p className="mt-6 md:mt-8 font-sans font-bold uppercase tracking-tight text-lg md:text-2xl leading-tight">
+              <p className="mt-3 md:mt-8 font-sans font-bold uppercase tracking-tight text-sm sm:text-lg md:text-2xl leading-tight">
                 Let's create toghether<br />unforgetable images!
               </p>
             </div>
-            <div className="mt-6 md:mt-10 flex gap-10 text-white">
+            <div className="mt-4 md:mt-10 flex gap-6 md:gap-10 text-white">
               <div>
-                <div className="font-sans font-bold text-2xl md:text-4xl">10+</div>
-                <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                <div className="font-sans font-bold text-xl sm:text-2xl md:text-4xl">10+</div>
+                <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-white/70 mt-1">
                   Years of<br />expertise
                 </div>
               </div>
               <div>
-                <div className="font-sans font-bold text-2xl md:text-4xl">50+</div>
-                <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                <div className="font-sans font-bold text-xl sm:text-2xl md:text-4xl">50+</div>
+                <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-white/70 mt-1">
                   International<br />clients
                 </div>
               </div>
@@ -87,11 +87,11 @@ function Index() {
       </section>
 
 
-      {/* Client logos band — single line on desktop */}
+      {/* Client logos band — evenly distributed on desktop */}
       {logos.length > 0 && (
         <section className="border-t border-b border-border bg-background">
-          <div className="mx-auto max-w-7xl px-4 md:px-6 py-6 md:py-8">
-            <div className="flex md:flex-nowrap flex-wrap justify-center items-center gap-x-6 md:gap-x-4 gap-y-4">
+          <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
+            <div className="flex flex-wrap md:flex-nowrap justify-center md:justify-between items-center gap-x-6 gap-y-4">
               {logos.map((l) => (
                 <img
                   key={l.src}
@@ -163,7 +163,7 @@ function Index() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-6xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
           {whatWeDo.map((c) => (
             <Link
               key={c.label}
@@ -172,15 +172,15 @@ function Index() {
             >
               {c.img && (
                 <img
-                  src={cdn(c.img, 900)}
+                  src={cdn(c.img, 700)}
                   alt={c.label}
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               )}
               <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
-              <div className="absolute inset-0 flex items-end p-5">
-                <div className="text-white font-sans font-bold uppercase tracking-tight text-xl md:text-2xl">
+              <div className="absolute inset-0 flex items-end p-4">
+                <div className="text-white font-sans font-bold uppercase tracking-tight text-base md:text-lg">
                   {c.label}
                 </div>
               </div>
