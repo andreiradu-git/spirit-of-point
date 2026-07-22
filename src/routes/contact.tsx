@@ -21,7 +21,7 @@ export const Route = createFileRoute("/contact")({
 function ContactPage() {
   const bg = data.find((d) => /jpg|jpeg/i.test(d.src)) || data[0];
   return (
-    <SiteLayout>
+    <SiteLayout flushFooter>
       <section className="relative min-h-[70vh] w-full flex items-center">
         {bg && (
           <>
@@ -52,6 +52,19 @@ function ContactPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="w-full">
+        <iframe
+          title="Point Studio location"
+          src="https://www.google.com/maps?q=Casa+Presei+Libere,+Piata+Presei+Libere+1,+Bucharest&output=embed"
+          width="100%"
+          height="450"
+          style={{ border: 0, display: "block" }}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          allowFullScreen
+        />
       </section>
     </SiteLayout>
   );

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SiteLayout, cdn } from "@/components/SiteLayout";
-import { Gallery } from "@/components/Gallery";
+import { cdn } from "@/components/SiteLayout";
+import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/food.json";
 
 export const Route = createFileRoute("/food")({
@@ -22,12 +22,5 @@ export const Route = createFileRoute("/food")({
 });
 
 function FoodPage() {
-  return (
-    <SiteLayout>
-      <div className="mx-auto max-w-7xl px-6 pt-16 pb-24">
-        <Gallery images={data} columns={3} />
-      </div>
-    </SiteLayout>
-  );
+  return <PortfolioPage tagline="Food, Product & Tabletop Photography" images={data} />;
 }
-
