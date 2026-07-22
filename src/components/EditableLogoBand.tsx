@@ -59,7 +59,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
-        <div className="flex flex-wrap justify-center items-center gap-x-6 md:gap-x-10 gap-y-4">
+        <div className="flex flex-nowrap items-center gap-x-6 md:gap-x-10 overflow-x-auto whitespace-nowrap [scrollbar-width:thin] [-webkit-overflow-scrolling:touch] justify-start md:justify-center">
           {items.map((l) => (
             <div key={l.id} className="relative group shrink-0">
               <img
@@ -84,7 +84,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
               type="button"
               onClick={() => inputRef.current?.click()}
               disabled={uploading}
-              className="h-8 px-3 border-2 border-dashed border-border rounded flex items-center gap-1 text-xs text-muted-foreground hover:bg-accent"
+              className="shrink-0 h-8 px-3 border-2 border-dashed border-border rounded flex items-center gap-1 text-xs text-muted-foreground hover:bg-accent"
             >
               {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
               Add logo
@@ -92,6 +92,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
           )}
         </div>
       </div>
+
       <input
         ref={inputRef}
         type="file"
