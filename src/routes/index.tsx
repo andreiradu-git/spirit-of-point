@@ -43,6 +43,27 @@ function Index() {
     { label: "Industrial", img: home[31]?.src, slug: "industrial" },
   ];
 
+  const testimonials = [
+    {
+      quote:
+        "Working with Point Studio was a game-changer. Andrei's eye for detail and technical precision brought our product line to life beyond what we imagined.",
+      name: "Ana Popescu",
+      role: "Brand Manager, Lidl România",
+    },
+    {
+      quote:
+        "The professionalism and creativity at Point Studio are unmatched. Every shoot delivers exactly the mood and quality our campaigns need.",
+      name: "Mihai Ionescu",
+      role: "Marketing Director, Kaufland",
+    },
+    {
+      quote:
+        "A rare mix of craft, patience and vision. Andrei understood our brief instantly and translated it into images that sell.",
+      name: "Elena Georgescu",
+      role: "Creative Lead, Carrefour",
+    },
+  ];
+
 
   return (
     <SiteLayout transparentHeader headerTone="light">
@@ -131,8 +152,19 @@ function Index() {
           </div>
         </div>
 
-        <div className="px-4 md:px-6">
-          <Gallery images={studioShots} columns={4} />
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-3">
+            {studioShots.map((img) => (
+              <div key={img.src} className="aspect-square overflow-hidden bg-muted">
+                <img
+                  src={cdn(img.src, 500)}
+                  alt={img.alt || "Point Studio"}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mx-auto max-w-7xl px-6">
@@ -201,6 +233,37 @@ function Index() {
           </div>
         </div>
       </section>
+
+      {/* Testimonials */}
+      <section className="bg-[#e5e5e5]">
+        <div className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+          <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
+            <div className="md:col-span-5">
+              <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">03 — Kind words</div>
+              <h2 className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground">
+                Testimonials
+              </h2>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+            {testimonials.map((t) => (
+              <figure key={t.name} className="bg-background p-8 flex flex-col gap-6">
+                <span className="font-serif italic text-5xl leading-none text-foreground/30">"</span>
+                <blockquote className="font-serif italic text-lg md:text-xl leading-snug text-foreground/85">
+                  {t.quote}
+                </blockquote>
+                <figcaption className="mt-auto">
+                  <div className="text-sm font-medium text-foreground">{t.name}</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mt-1">
+                    {t.role}
+                  </div>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
 
     </SiteLayout>
   );
