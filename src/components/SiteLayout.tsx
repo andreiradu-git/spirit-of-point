@@ -135,7 +135,7 @@ export function SiteLayout({
   );
 }
 
-function SocialIcons() {
+function SocialIcons({ className = "", iconClass = "h-4 w-4" }: { className?: string; iconClass?: string }) {
   const socials = [
     { href: "https://facebook.com/pointstudio", label: "Facebook", d: "M13 22v-8h3l1-4h-4V7.5c0-1.1.3-1.9 1.9-1.9H17V2.1C16.7 2.1 15.6 2 14.3 2 11.7 2 10 3.6 10 6.7V10H7v4h3v8h3z" },
     { href: "https://instagram.com/pointstudio", label: "Instagram", d: "M12 2.2c3.2 0 3.6 0 4.8.1 1.2 0 1.9.2 2.3.4.6.2 1 .5 1.5 1s.8.9 1 1.5c.2.5.4 1.1.4 2.3.1 1.3.1 1.7.1 4.8s0 3.6-.1 4.8c0 1.2-.2 1.9-.4 2.3-.2.6-.5 1-1 1.5s-.9.8-1.5 1c-.5.2-1.1.4-2.3.4-1.3.1-1.7.1-4.8.1s-3.6 0-4.8-.1c-1.2 0-1.9-.2-2.3-.4-.6-.2-1-.5-1.5-1s-.8-.9-1-1.5c-.2-.5-.4-1.1-.4-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c0-1.2.2-1.9.4-2.3.2-.6.5-1 1-1.5s.9-.8 1.5-1c.5-.2 1.1-.4 2.3-.4C8.4 2.2 8.8 2.2 12 2.2M12 0C8.7 0 8.3 0 7.1.1 5.8.1 5 .3 4.2.6c-.8.3-1.5.7-2.2 1.4C1.3 2.7.9 3.4.6 4.2.3 5 .1 5.8.1 7.1 0 8.3 0 8.7 0 12s0 3.7.1 4.9c.1 1.3.3 2.1.6 2.9.3.8.7 1.5 1.4 2.2.7.7 1.4 1.1 2.2 1.4.8.3 1.6.5 2.9.6 1.2.1 1.6.1 4.9.1s3.7 0 4.9-.1c1.3-.1 2.1-.3 2.9-.6.8-.3 1.5-.7 2.2-1.4.7-.7 1.1-1.4 1.4-2.2.3-.8.5-1.6.6-2.9.1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.1-1.3-.3-2.1-.6-2.9-.3-.8-.7-1.5-1.4-2.2-.7-.7-1.4-1.1-2.2-1.4-.8-.3-1.6-.5-2.9-.6C15.7 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 100 12.4 6.2 6.2 0 000-12.4zm0 10.2a4 4 0 110-8 4 4 0 010 8zm6.4-11.9a1.4 1.4 0 100 2.9 1.4 1.4 0 000-2.9z" },
@@ -144,14 +144,18 @@ function SocialIcons() {
     { href: "https://twitter.com/pointstudio", label: "Twitter", d: "M22.46 6c-.77.35-1.6.58-2.46.69a4.3 4.3 0 001.88-2.37 8.6 8.6 0 01-2.72 1.04A4.28 4.28 0 0016.11 4c-2.37 0-4.28 1.92-4.28 4.29 0 .34.04.67.11.99A12.14 12.14 0 013 5.15a4.29 4.29 0 001.33 5.72c-.7-.02-1.36-.21-1.94-.53v.05c0 2.08 1.48 3.81 3.44 4.2a4.3 4.3 0 01-1.93.07 4.28 4.28 0 004 2.98A8.6 8.6 0 012 19.54 12.13 12.13 0 008.56 21.5c7.88 0 12.19-6.53 12.19-12.19 0-.19 0-.37-.01-.56A8.7 8.7 0 0022.46 6z" },
   ];
   return (
-    <div className="flex gap-4">
+    <div className={`flex gap-4 ${className}`}>
       {socials.map((s) => (
-        <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="text-muted-foreground hover:text-foreground transition-colors">
-          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current"><path d={s.d} /></svg>
+        <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="transition-opacity hover:opacity-70">
+          <svg viewBox="0 0 24 24" className={`${iconClass} fill-current`}><path d={s.d} /></svg>
         </a>
       ))}
     </div>
   );
+}
+
+function HeaderSocials({ light }: { light: boolean }) {
+  return <SocialIcons className={light ? "text-white/80" : "text-foreground/70"} iconClass="h-4 w-4" />;
 }
 
 function SettingsPanel({
