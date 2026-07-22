@@ -21,5 +21,5 @@ export const Route = createFileRoute("/people")({
 });
 
 function PeoplePage() {
-  return <PortfolioPage tagline="Portrait, Fashion & Business Photography" images={data} />;
+  return <PortfolioPage slug="people" tagline="Portrait, Fashion & Business Photography" fallbackImages={data} />;
 }

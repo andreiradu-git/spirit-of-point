@@ -23,8 +23,9 @@ export const Route = createFileRoute("/editorial")({
 function EditorialPage() {
   return (
     <PortfolioPage
+      slug="editorial"
       tagline="Editorial & Printed Work"
-      images={data}
+      fallbackImages={data}
       showStrip
       showLogos
     />

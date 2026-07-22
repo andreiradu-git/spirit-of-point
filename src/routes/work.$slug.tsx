@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
-import { Gallery } from "@/components/Gallery";
+import { PortfolioPage } from "@/components/PortfolioPage";
 import foodData from "@/data/food.json";
 import peopleData from "@/data/people.json";
 import editorialData from "@/data/editorial.json";
@@ -72,17 +72,11 @@ export const Route = createFileRoute("/work/$slug")({
 
 function WorkPage() {
   const { title, data } = Route.useLoaderData();
-  const images = data.filter((i: Img) => !/LOGO_PSP/i.test(i.src));
   return (
-    <SiteLayout>
-      <div className="pt-10 md:pt-14 pb-8 md:pb-12">
-        <p className="text-center text-[11px] md:text-xs uppercase tracking-[0.35em] md:tracking-[0.5em] text-foreground/70 px-4">
-          {title}
-        </p>
-      </div>
-      <div className="mx-auto max-w-7xl px-6 pb-24">
-        <Gallery images={images} columns={3} />
-      </div>
-    </SiteLayout>
+    <PortfolioPage
+      slug={Route.useParams().slug}
+      tagline={title}
+      fallbackImages={data}
+    />
   );
 }

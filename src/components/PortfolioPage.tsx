@@ -1,24 +1,33 @@
 import { useRef } from "react";
 import { SiteLayout, cdn } from "./SiteLayout";
-import { Gallery } from "./Gallery";
+import { EditableGallery } from "./EditableGallery";
 import { ClientLogos } from "./ClientLogos";
+import { useGallery } from "@/hooks/use-gallery";
+import { Editable } from "./Editable";
 
-type Img = { src: string; alt: string };
+type Img = { src: string; alt?: string };
 
 export function PortfolioPage({
+  slug,
   tagline,
-  images: allImages,
+  taglineId,
+  fallbackImages,
   showStrip = false,
   showLogos = false,
   galleryLayout = "masonry",
 }: {
+  slug: string;
   tagline: string;
-  images: Img[];
+  taglineId?: string;
+  fallbackImages: Img[];
   showStrip?: boolean;
   showLogos?: boolean;
   galleryLayout?: "grid" | "masonry" | "stacked";
 }) {
-  const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
+  const { data: gallery } = useGallery(slug);
+  const images: Img[] =
+    gallery?.images.map((img) => ({ src: img.src, alt: img.alt ?? undefined })) ??
+    fallbackImages.filter((i) => !/LOGO_PSP/i.test(i.src));
 
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +41,13 @@ export function PortfolioPage({
     <SiteLayout>
       <div className="pt-10 md:pt-14 pb-10 md:pb-16">
         <p className="text-center text-[11px] md:text-xs uppercase tracking-[0.35em] md:tracking-[0.5em] text-foreground/70 px-4">
-          {tagline}
+          {taglineId ? (
+            <Editable id={taglineId} className="inline">
+              {tagline}
+            </Editable>
+          ) : (
+            tagline
+          )}
         </p>
       </div>
 
@@ -79,14 +94,25 @@ export function PortfolioPage({
       {/* Full gallery */}
       {galleryLayout === "stacked" ? (
         <div className="w-full pt-6 md:pt-10 pb-24">
-          <Gallery images={images} layout="stacked" />
+          <EditableGallery
+            slug={slug}
+            fallbackImages={fallbackImages}
+            layout="stacked"
+            lightbox
+          />
         </div>
       ) : (
         <div className="mx-auto max-w-7xl px-6 pt-10 md:pt-14 pb-24">
-          <Gallery images={images} columns={3} layout={galleryLayout} />
+          <EditableGallery
+            slug={slug}
+            fallbackImages={fallbackImages}
+            columns={3}
+            aspect="auto"
+            layout="grid"
+            lightbox
+          />
         </div>
       )}
     </SiteLayout>
   );
 }
-

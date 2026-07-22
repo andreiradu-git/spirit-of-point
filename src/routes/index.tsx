@@ -6,6 +6,12 @@ import { useState } from "react";
 import { Play, Star, X } from "lucide-react";
 import home from "@/data/home.json";
 import { Editable } from "@/components/Editable";
+import { EditableImage } from "@/components/EditableImage";
+import { EditableGallery } from "@/components/EditableGallery";
+import { useImage, useSaveImage } from "@/hooks/use-site-images";
+
+
+
 
 
 
@@ -33,20 +39,27 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
-  const fish = home[1]; // aqw.png — fish + knives hero
+  const heroSrc = useImage("hero", home[1]?.src);
+  const saveHeroImage = useSaveImage();
+  const fish = { src: heroSrc, alt: "Point Studio food photography" };
   const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
-
 
   const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28], home[19], home[21], home[23]].filter(Boolean);
 
-  const whatWeDo = [
-    { label: "Food", img: home[22]?.src, slug: "food" },
-    { label: "People", img: home[24]?.src, slug: "people" },
-    { label: "Editorial", img: home[28]?.src, slug: "editorial" },
-    { label: "Corporate", img: home[27]?.src, slug: "corporate" },
-    { label: "Landscape", img: home[29]?.src, slug: "landscape" },
-    { label: "Industrial", img: home[31]?.src, slug: "industrial" },
-  ];
+  const serviceFallbacks = [
+    { src: home[22]?.src, title: "Food" },
+    { src: home[24]?.src, title: "People" },
+    { src: home[28]?.src, title: "Editorial" },
+    { src: home[27]?.src, title: "Corporate" },
+    { src: home[29]?.src, title: "Landscape" },
+    { src: home[31]?.src, title: "Industrial" },
+  ].filter((s) => s.src) as Array<{ src: string; title: string }>;
+
+  const serviceSlug = (title: string) =>
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
 
   const testimonials: Array<{
     quote?: string;
@@ -87,10 +100,13 @@ function Index() {
       {/* Hero — fish image at natural aspect ratio, text overlaid and scaled to image width */}
       <section className="relative w-full bg-white">
         <div className="relative w-full @container">
-          <img
+          <EditableImage
             src={cdn(fish.src, 2400)}
             alt="Point Studio food photography"
-            className="block w-full h-auto"
+            imgClassName="block w-full h-auto"
+            onChange={async (url) => {
+              await saveHeroImage("hero", url);
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
           <div className="absolute inset-0 z-10">
@@ -209,18 +225,13 @@ function Index() {
         </div>
 
         <div className="mx-auto max-w-7xl px-6">
-          <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-3">
-            {studioShots.map((img) => (
-              <div key={img.src} className="aspect-square overflow-hidden bg-muted">
-                <img
-                  src={cdn(img.src, 500)}
-                  alt={img.alt || "Point Studio"}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
-                />
-              </div>
-            ))}
-          </div>
+          <EditableGallery
+            slug="studio"
+            fallbackImages={studioShots}
+            columns={6}
+            aspect="square"
+            lightbox
+          />
         </div>
 
         <div className="mx-auto max-w-7xl px-6">
@@ -255,31 +266,32 @@ function Index() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {whatWeDo.map((c) => (
+          <EditableGallery
+            slug="services"
+            fallbackImages={serviceFallbacks}
+            columns={6}
+            aspect="portrait"
+            renderItem={(img, { editable }) => (
               <Link
-                key={c.label}
                 to="/work/$slug"
-                params={{ slug: c.slug }}
+                params={{ slug: serviceSlug(img.title || "") }}
                 className="relative aspect-[3/4] overflow-hidden group block bg-muted"
               >
-                {c.img && (
-                  <img
-                    src={cdn(c.img, 700)}
-                    alt={c.label}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                )}
+                <img
+                  src={cdn(img.src, 700)}
+                  alt={img.alt ?? img.title ?? ""}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
                 <div className="absolute inset-0 flex items-end p-4">
                   <div className="text-white font-sans font-medium uppercase tracking-[0.15em] text-xs md:text-sm">
-                    {c.label}
+                    {img.title}
                   </div>
                 </div>
               </Link>
-            ))}
-          </div>
+            )}
+          />
         </div>
       </section>
 
