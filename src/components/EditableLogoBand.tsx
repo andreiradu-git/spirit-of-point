@@ -3,7 +3,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, ChevronRight, Loader2, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 
 type Logo = { id: string; src: string; alt?: string };
 
@@ -54,28 +54,56 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
     await save(items.filter((l) => l.id !== id));
   };
 
+  const move = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= items.length) return;
+    const next = [...items];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    save(next);
+  };
+
   if (items.length === 0 && !editable) return null;
 
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
         <div className="flex flex-nowrap items-center gap-x-6 md:gap-x-10 overflow-x-auto whitespace-nowrap [scrollbar-width:thin] [-webkit-overflow-scrolling:touch] justify-start md:justify-center">
-          {items.map((l) => (
+          {items.map((l, index) => (
             <div key={l.id} className="relative group shrink-0">
               <img
                 src={l.src}
                 alt={l.alt ?? "Client logo"}
-                className="h-6 md:h-8 w-auto object-contain opacity-80 hover:opacity-100 transition"
+                className="h-6 md:h-9 w-auto object-contain opacity-90 hover:opacity-100 transition"
               />
               {editable && (
-                <button
-                  type="button"
-                  onClick={() => remove(l.id)}
-                  className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label="Remove logo"
-                >
-                  <X className="w-3 h-3" />
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => remove(l.id)}
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label="Remove logo"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(index, -1)}
+                    disabled={index === 0}
+                    className="absolute -top-2 -left-4 p-1 bg-foreground text-background rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+                    aria-label="Move left"
+                  >
+                    <MoveLeft className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(index, 1)}
+                    disabled={index === items.length - 1}
+                    className="absolute -top-2 -right-4 p-1 bg-foreground text-background rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+                    aria-label="Move right"
+                  >
+                    <MoveRight className="w-3 h-3" />
+                  </button>
+                </>
               )}
             </div>
           ))}
