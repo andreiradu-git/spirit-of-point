@@ -30,6 +30,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const fish = home[1]; // aqw.png — fish + knives hero
   const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
 
