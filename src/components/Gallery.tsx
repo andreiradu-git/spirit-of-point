@@ -28,32 +28,38 @@ export function Gallery({
   }, [active, images.length]);
 
   if (layout === "masonry") {
-    const colClass =
-      columns === 2
-        ? "columns-2"
-        : "columns-2 md:columns-3 lg:columns-4";
+    const numCols = columns === 2 ? 2 : 4;
+    const cols: { img: Img; i: number }[][] = Array.from({ length: numCols }, () => []);
+    images.forEach((img, i) => {
+      cols[i % numCols].push({ img, i });
+    });
     return (
       <>
-        <div className={`${colClass} gap-3 [column-fill:_balance]`}>
-          {images.map((img, i) => (
-            <button
-              key={img.src}
-              onClick={() => setActive(i)}
-              className="mb-3 block w-full break-inside-avoid overflow-hidden bg-muted group"
-            >
-              <img
-                src={cdn(img.src, 1000)}
-                alt={img.alt || "Point Studio photograph"}
-                loading="lazy"
-                className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
-              />
-            </button>
+        <div className={`grid gap-3 ${numCols === 2 ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
+          {cols.map((col, ci) => (
+            <div key={ci} className={`flex flex-col gap-3 ${numCols === 4 && ci >= 2 ? "hidden md:flex" : ""} ${numCols === 4 && ci === 3 ? "lg:flex hidden" : ""}`}>
+              {col.map(({ img, i }) => (
+                <button
+                  key={img.src}
+                  onClick={() => setActive(i)}
+                  className="block w-full overflow-hidden bg-muted group"
+                >
+                  <img
+                    src={cdn(img.src, 1000)}
+                    alt={img.alt || "Point Studio photograph"}
+                    loading="lazy"
+                    className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+                  />
+                </button>
+              ))}
+            </div>
           ))}
         </div>
         {renderLightbox()}
       </>
     );
   }
+
 
   const colClass =
     columns === 2
