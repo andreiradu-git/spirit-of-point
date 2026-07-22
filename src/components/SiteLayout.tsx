@@ -98,15 +98,15 @@ export function SiteLayout({
       <footer className="bg-[#e5e5e5]">
         <div className="mx-auto max-w-7xl px-6 pt-4 pb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6 text-sm text-muted-foreground">
           <div>
-            <div className="font-serif text-xl text-foreground">Point Studio</div>
-            <p className="mt-2 max-w-sm italic">
+            <Editable as="div" id="footer.brand" className="font-serif text-xl text-foreground block">Point Studio</Editable>
+            <Editable as="p" id="footer.tagline" multiline className="mt-2 max-w-sm italic block">
               First and foremost, we love what we do.
-            </p>
+            </Editable>
           </div>
           <div className="space-y-1">
-            <div>andrei@pointstudio.ro</div>
-            <div>+40 744 341 286</div>
-            <div>Piața Presei Libere 1, Bucharest</div>
+            <Editable as="div" id="footer.email" className="block">andrei@pointstudio.ro</Editable>
+            <Editable as="div" id="footer.phone" className="block">+40 744 341 286</Editable>
+            <Editable as="div" id="footer.address" className="block">Piața Presei Libere 1, Bucharest</Editable>
           </div>
           <div className="flex flex-col gap-3 md:items-end">
             <SocialIcons />
