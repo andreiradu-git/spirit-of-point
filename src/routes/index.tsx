@@ -188,23 +188,9 @@ function Index() {
       </section>
 
 
-      {/* Client logos band — evenly distributed on desktop */}
-      {logos.length > 0 && (
-        <section className="border-b border-border bg-background">
-          <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
-            <div className="flex flex-wrap md:flex-nowrap justify-center md:justify-between items-center gap-x-6 gap-y-4">
-              {logos.map((l) => (
-                <img
-                  key={l.src}
-                  src={cdn(l.src, 200)}
-                  alt="Client logo"
-                  className="h-6 md:h-7 w-auto object-contain opacity-80 hover:opacity-100 transition shrink-0"
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Client logos band — editable, responsive to count */}
+      <EditableLogoBand fallback={fallbackLogos} />
+
 
 
       {/* The Studio */}
@@ -312,77 +298,11 @@ function Index() {
 
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
-            {testimonials.map((t) => (
-              <figure key={t.name} className="bg-background flex flex-col overflow-hidden">
-                {t.video ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideo(t.video!)}
-                    className="relative aspect-[4/3] w-full group overflow-hidden"
-                    aria-label={`Play video testimonial from ${t.name}`}
-                  >
-                    {t.poster && (
-                      <img
-                        src={cdn(t.poster, 1200)}
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg">
-                        <Play className="w-5 h-5 md:w-6 md:h-6 text-black fill-black translate-x-0.5" />
-                      </div>
-                    </div>
-                  </button>
-                ) : (
-                  <div className="p-5 md:p-6 flex flex-col gap-4 flex-1">
-                    <span className="font-serif italic text-3xl md:text-4xl leading-none text-foreground/30">"</span>
-                    <blockquote className="font-serif italic text-base md:text-lg leading-snug text-foreground/85">
-                      {t.quote}
-                    </blockquote>
-                  </div>
-                )}
-                <figcaption className="p-5 md:p-6 pt-4 mt-auto">
-                  <div className="text-sm font-medium text-foreground">{t.name}</div>
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground mt-1">
-                    {t.role}
-                  </div>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+          <EditableTestimonials fallback={testimonialFallback} />
         </div>
       </section>
 
-      {activeVideo && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setActiveVideo(null)}
-        >
-          <button
-            type="button"
-            onClick={() => setActiveVideo(null)}
-            className="absolute top-6 right-6 text-white/80 hover:text-white"
-            aria-label="Close video"
-          >
-            <X className="w-8 h-8" />
-          </button>
-          <div
-            className="relative w-full max-w-5xl aspect-video"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <iframe
-              src={activeVideo + "?autoplay=1"}
-              title="Video testimonial"
-              allow="autoplay; encrypted-media; fullscreen"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full"
-            />
-          </div>
-        </div>
-      )}
+
 
 
     </SiteLayout>
