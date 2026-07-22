@@ -38,11 +38,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const heroSrc = useImage("hero", home[1]?.src);
   const saveHeroImage = useSaveImage();
   const fish = { src: heroSrc, alt: "Point Studio food photography" };
-  const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
+  const fallbackLogos = home
+    .filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src))
+    .map((l, i) => ({ id: `fallback-${i}`, src: cdn(l.src, 200), alt: "Client logo" }));
 
   const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28], home[19], home[21], home[23]].filter(Boolean);
 
@@ -61,32 +62,34 @@ function Index() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-  const testimonials: Array<{
-    quote?: string;
-    name: string;
-    role: string;
-    video?: string;
-    poster?: string;
-  }> = [
+  const testimonialFallback: Testimonial[] = [
     {
+      id: "t1",
+      kind: "text",
       quote:
         "Working with Point Studio was a game-changer. Andrei's eye for detail and technical precision brought our product line to life beyond what we imagined.",
       name: "Ana Popescu",
       role: "Brand Manager, Lidl România",
     },
     {
+      id: "t2",
+      kind: "video",
       video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poster: home[5]?.src,
       name: "Mihai Ionescu",
       role: "Marketing Director, Kaufland",
     },
     {
+      id: "t3",
+      kind: "text",
       quote:
         "A rare mix of craft, patience and vision. Andrei understood our brief instantly and translated it into images that sell.",
       name: "Elena Georgescu",
       role: "Creative Lead, Carrefour",
     },
     {
+      id: "t4",
+      kind: "text",
       quote:
         "Fast, professional and incredibly creative. The team delivered visuals that elevated our entire campaign.",
       name: "Radu Dumitrescu",
