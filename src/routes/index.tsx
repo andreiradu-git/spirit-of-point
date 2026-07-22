@@ -35,18 +35,19 @@ function Index() {
   const studioShots = [home[20], home[24], home[26], home[30]].filter(Boolean);
 
   const whatWeDo = [
-    { label: "Food", img: home[22]?.src, to: "/food" },
-    { label: "People", img: home[24]?.src, to: "/people" },
-    { label: "Editorial", img: home[28]?.src, to: "/editorial" },
-    { label: "Corporate", img: home[27]?.src, to: "/editorial" },
-    { label: "Landscape", img: home[29]?.src, to: "/editorial" },
-    { label: "Industrial", img: home[31]?.src, to: "/editorial" },
+    { label: "Food", img: home[22]?.src, slug: "food" },
+    { label: "People", img: home[24]?.src, slug: "people" },
+    { label: "Editorial", img: home[28]?.src, slug: "editorial" },
+    { label: "Corporate", img: home[27]?.src, slug: "corporate" },
+    { label: "Landscape", img: home[29]?.src, slug: "landscape" },
+    { label: "Industrial", img: home[31]?.src, slug: "industrial" },
   ];
+
 
   return (
     <SiteLayout transparentHeader headerTone="light">
       {/* Hero — fish image at natural aspect ratio, text overlaid */}
-      <section className="relative w-full bg-background">
+      <section className="relative w-full bg-white">
         <div className="relative w-full">
           <img
             src={cdn(fish.src, 2400)}
@@ -163,12 +164,13 @@ function Index() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {whatWeDo.map((c) => (
             <Link
               key={c.label}
-              to={c.to}
-              className="relative aspect-[4/5] overflow-hidden group block bg-muted"
+              to="/work/$slug"
+              params={{ slug: c.slug }}
+              className="relative aspect-[3/4] overflow-hidden group block bg-muted"
             >
               {c.img && (
                 <img
@@ -187,6 +189,7 @@ function Index() {
             </Link>
           ))}
         </div>
+
 
       </section>
 

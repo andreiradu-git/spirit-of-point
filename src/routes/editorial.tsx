@@ -21,5 +21,13 @@ export const Route = createFileRoute("/editorial")({
 });
 
 function EditorialPage() {
-  return <PortfolioPage tagline="Editorial & Printed Work" images={data} />;
+  return (
+    <PortfolioPage
+      tagline="Editorial & Printed Work"
+      images={data}
+      showStrip
+      showLogos
+    />
+  );
 }
+
