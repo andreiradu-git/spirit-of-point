@@ -10,11 +10,13 @@ export function PortfolioPage({
   images: allImages,
   showStrip = false,
   showLogos = false,
+  galleryLayout = "grid",
 }: {
   tagline: string;
   images: Img[];
   showStrip?: boolean;
   showLogos?: boolean;
+  galleryLayout?: "grid" | "masonry";
 }) {
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
 
