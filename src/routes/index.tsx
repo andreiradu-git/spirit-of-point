@@ -100,34 +100,6 @@ function Index() {
         </section>
       )}
 
-      {/* Categories */}
-      <section className="mx-auto max-w-7xl px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {[
-            { to: "/food", label: "Food", img: home[20]?.src || fish.src },
-            { to: "/people", label: "People", img: home[24]?.src || fish.src },
-            { to: "/editorial", label: "Editorial", img: home[28]?.src || fish.src },
-          ].map((c) => (
-            <Link
-              key={c.to}
-              to={c.to}
-              className="relative aspect-[3/4] overflow-hidden group block"
-            >
-              <img
-                src={cdn(c.img, 1200)}
-                alt={c.label}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition-colors" />
-              <div className="absolute inset-0 flex items-end p-6">
-                <div className="text-white font-sans font-bold uppercase tracking-tight text-2xl md:text-3xl">
-                  {c.label}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       {/* The Studio */}
       <section className="mx-auto max-w-7xl px-6 py-16">
