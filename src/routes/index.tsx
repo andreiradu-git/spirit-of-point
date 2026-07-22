@@ -163,7 +163,7 @@ function Index() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-6xl mx-auto">
           {whatWeDo.map((c) => (
             <Link
               key={c.label}
@@ -187,6 +187,7 @@ function Index() {
             </Link>
           ))}
         </div>
+
       </section>
 
     </SiteLayout>
