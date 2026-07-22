@@ -163,7 +163,7 @@ function Index() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-6xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-4xl mx-auto">
           {whatWeDo.map((c) => (
             <Link
               key={c.label}
@@ -172,15 +172,15 @@ function Index() {
             >
               {c.img && (
                 <img
-                  src={cdn(c.img, 900)}
+                  src={cdn(c.img, 700)}
                   alt={c.label}
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               )}
               <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
-              <div className="absolute inset-0 flex items-end p-5">
-                <div className="text-white font-sans font-bold uppercase tracking-tight text-xl md:text-2xl">
+              <div className="absolute inset-0 flex items-end p-4">
+                <div className="text-white font-sans font-bold uppercase tracking-tight text-base md:text-lg">
                   {c.label}
                 </div>
               </div>
