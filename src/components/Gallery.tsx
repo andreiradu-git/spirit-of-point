@@ -3,7 +3,15 @@ import { cdn } from "./SiteLayout";
 
 type Img = { src: string; alt: string };
 
-export function Gallery({ images: allImages, columns = 3 }: { images: Img[]; columns?: number }) {
+export function Gallery({
+  images: allImages,
+  columns = 3,
+  layout = "grid",
+}: {
+  images: Img[];
+  columns?: number;
+  layout?: "grid" | "masonry";
+}) {
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
   const [active, setActive] = useState<number | null>(null);
 
@@ -19,6 +27,34 @@ export function Gallery({ images: allImages, columns = 3 }: { images: Img[]; col
     return () => window.removeEventListener("keydown", onKey);
   }, [active, images.length]);
 
+  if (layout === "masonry") {
+    const colClass =
+      columns === 2
+        ? "columns-2"
+        : "columns-2 md:columns-3 lg:columns-4";
+    return (
+      <>
+        <div className={`${colClass} gap-3 [column-fill:_balance]`}>
+          {images.map((img, i) => (
+            <button
+              key={img.src}
+              onClick={() => setActive(i)}
+              className="mb-3 block w-full break-inside-avoid overflow-hidden bg-muted group"
+            >
+              <img
+                src={cdn(img.src, 1000)}
+                alt={img.alt || "Point Studio photograph"}
+                loading="lazy"
+                className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+              />
+            </button>
+          ))}
+        </div>
+        {renderLightbox()}
+      </>
+    );
+  }
+
   const colClass =
     columns === 2
       ? "grid-cols-2"
@@ -26,22 +62,31 @@ export function Gallery({ images: allImages, columns = 3 }: { images: Img[]; col
 
   return (
     <>
-      <div className={`grid ${colClass} gap-3`}>
+      <div className={`grid ${colClass} gap-3 items-start`}>
         {images.map((img, i) => (
           <button
             key={img.src}
             onClick={() => setActive(i)}
-            className="block w-full overflow-hidden bg-muted group aspect-[4/5]"
+            className="block w-full self-start overflow-hidden bg-muted group"
           >
             <img
               src={cdn(img.src, 1000)}
               alt={img.alt || "Point Studio photograph"}
               loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+              className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
             />
           </button>
         ))}
       </div>
+      {renderLightbox()}
+    </>
+  );
+
+  function renderLightbox() {
+    return null;
+  }
+}
+
 
       {active !== null && (
         <div
