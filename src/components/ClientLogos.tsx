@@ -8,9 +8,9 @@ const logos = home.filter(
 export function ClientLogos() {
   if (logos.length === 0) return null;
   return (
-    <section className="border-t border-b border-border bg-background">
-      <div className="mx-auto max-w-7xl px-4 md:px-6 py-6 md:py-8">
-        <div className="flex md:flex-nowrap flex-wrap justify-center items-center gap-x-6 md:gap-x-4 gap-y-4">
+    <section className="border-b border-border bg-background">
+      <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
+        <div className="flex flex-wrap md:flex-nowrap justify-center md:justify-between items-center gap-x-6 gap-y-4">
           {logos.map((l) => (
             <img
               key={l.src}
