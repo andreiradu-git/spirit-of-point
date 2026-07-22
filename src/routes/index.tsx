@@ -26,76 +26,77 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const hero = home[0];
-  const grid = home.slice(1, 13);
-  const logos = home.filter((i) => /logo|Kaufland/i.test(i.src)).slice(0, 8);
+  const fish = home[1]; // aqw.png — fish + knives hero
+  const grid = home.slice(20, 32);
+  const logos = home.filter((i) => /logo|Kaufland/i.test(i.src)).slice(0, 15);
 
   return (
     <SiteLayout>
-      {/* Hero */}
-      <section className="relative h-[85vh] min-h-[560px] w-full overflow-hidden">
-        <img
-          src={cdn(hero.src, 2000)}
-          alt="Point Studio photography"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/35" />
-        <div className="relative z-10 h-full flex flex-col justify-end px-6 md:px-16 pb-16 text-white">
-          <div className="text-xs uppercase tracking-[0.4em] mb-4 opacity-80">
-            Photo · Video · Creative Workspace
+      {/* Hero: split text left + fish image right */}
+      <section className="mx-auto max-w-7xl px-6 pt-10 md:pt-16 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <div>
+            <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-5xl leading-[1.05]">
+              Photo-Video Studio and<br />Creative Workspace.
+            </h1>
+            <p className="mt-8 text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
+              We blend creativity with technical expertise and a deep commitment to
+              quality and thats how we transform your ideas into stunning visuals
+              that captivate and sell.
+            </p>
+            <p className="mt-8 font-sans font-bold uppercase tracking-tight text-xl md:text-2xl leading-tight">
+              Let's create toghether<br />unforgetable images!
+            </p>
+            <div className="mt-10 flex gap-10">
+              <div>
+                <div className="font-sans font-bold text-3xl md:text-4xl">10+</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+                  Years of<br />expertise
+                </div>
+              </div>
+              <div>
+                <div className="font-sans font-bold text-3xl md:text-4xl">50+</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+                  International<br />clients
+                </div>
+              </div>
+            </div>
           </div>
-          <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl max-w-4xl leading-[1.05]">
-            We transform your ideas into stunning visuals that captivate and sell.
-          </h1>
-          <div className="mt-8 flex flex-wrap gap-4 text-sm">
-            <Link
-              to="/food"
-              className="px-6 py-3 bg-white text-black uppercase tracking-widest text-xs hover:bg-white/90 transition"
-            >
-              See our work
-            </Link>
-            <Link
-              to="/contact"
-              className="px-6 py-3 border border-white uppercase tracking-widest text-xs hover:bg-white hover:text-black transition"
-            >
-              Let's create together
-            </Link>
+          <div className="relative">
+            <img
+              src={cdn(fish.src, 1500)}
+              alt="Point Studio food photography"
+              className="w-full h-auto object-contain"
+            />
           </div>
         </div>
       </section>
 
-      {/* Intro */}
-      <section className="mx-auto max-w-4xl px-6 py-24 text-center">
-        <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-6">
-          Bucharest, Romania
-        </p>
-        <p className="font-serif text-2xl md:text-3xl leading-relaxed">
-          We blend creativity with technical expertise and a deep commitment to quality — that's how
-          we turn briefs into images that sell.
-        </p>
-        <div className="mt-12 grid grid-cols-2 gap-8 max-w-lg mx-auto">
-          <div>
-            <div className="font-serif text-4xl">10+</div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mt-2">
-              Years of expertise
+      {/* Client logos — small row directly below hero */}
+      {logos.length > 0 && (
+        <section className="border-t border-border">
+          <div className="mx-auto max-w-7xl px-6 py-8">
+            <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+              {logos.map((l) => (
+                <img
+                  key={l.src}
+                  src={cdn(l.src, 200)}
+                  alt="Client logo"
+                  className="h-8 md:h-9 w-auto object-contain opacity-80 hover:opacity-100 transition"
+                />
+              ))}
             </div>
           </div>
-          <div>
-            <div className="font-serif text-4xl">50+</div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground mt-2">
-              International clients
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Categories */}
-      <section className="mx-auto max-w-7xl px-6 pb-24">
+      <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
-            { to: "/food", label: "Food", img: home[4]?.src || hero.src },
-            { to: "/people", label: "People", img: home[7]?.src || hero.src },
-            { to: "/editorial", label: "Editorial", img: home[10]?.src || hero.src },
+            { to: "/food", label: "Food", img: home[20]?.src || fish.src },
+            { to: "/people", label: "People", img: home[24]?.src || fish.src },
+            { to: "/editorial", label: "Editorial", img: home[28]?.src || fish.src },
           ].map((c) => (
             <Link
               key={c.to}
@@ -137,27 +138,6 @@ function Index() {
           ))}
         </div>
       </section>
-
-      {/* Clients */}
-      {logos.length > 0 && (
-        <section className="border-t border-border">
-          <div className="mx-auto max-w-7xl px-6 py-16">
-            <p className="text-center text-xs uppercase tracking-[0.4em] text-muted-foreground mb-10">
-              Trusted by
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8 items-center">
-              {logos.map((l) => (
-                <img
-                  key={l.src}
-                  src={cdn(l.src, 300)}
-                  alt="Client logo"
-                  className="max-h-14 mx-auto object-contain opacity-70 hover:opacity-100 transition"
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
     </SiteLayout>
   );
 }

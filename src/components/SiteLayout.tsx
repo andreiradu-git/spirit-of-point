@@ -18,8 +18,12 @@ export function SiteLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="sticky top-0 z-40 backdrop-blur bg-background/80 border-b border-border">
         <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="font-serif text-lg tracking-[0.25em] uppercase">
-            Point Studio
+          <Link to="/" className="flex items-center" aria-label="Point Studio">
+            <img
+              src="https://images.squarespace-cdn.com/content/v1/61698c11d84cc850768a6bf8/3236b78e-0c1c-48e9-83fd-bbfa1f67650f/LOGO_PSP.png?format=300w"
+              alt="Point Studio"
+              className="h-8 w-auto object-contain"
+            />
           </Link>
           <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.2em]">
             {NAV.map((n) => (
