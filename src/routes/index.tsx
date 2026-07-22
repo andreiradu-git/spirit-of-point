@@ -94,18 +94,31 @@ function Index() {
           <div className="absolute inset-0 z-10">
             <div className="mx-auto max-w-7xl h-full px-6 pt-[9cqw] pb-[3cqw] flex flex-col justify-between">
               <div className="max-w-[60%] text-white">
-                <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[3.2cqw]">
+                <Editable
+                  as="h1"
+                  id="hero.title"
+                  multiline
+                  className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[3.2cqw] block"
+                >
                   Photo-Video Studio and Creative Workspace.
-                </h1>
-                <p className="mt-[1.2cqw] text-white/85 leading-snug text-[1.35cqw]">
-                  We blend creativity with technical expertise
-                  <br className="hidden md:inline" /> and a deep commitment to quality and thats how
-                  <br className="hidden md:inline" /> we transform your ideas into stunning visuals that captivate and sell.
-                </p>
-                <p className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[1.7cqw]">
+                </Editable>
+                <Editable
+                  as="p"
+                  id="hero.subtitle"
+                  multiline
+                  className="mt-[1.2cqw] text-white/85 leading-snug text-[1.35cqw] block"
+                >
+                  We blend creativity with technical expertise and a deep commitment to quality and thats how we transform your ideas into stunning visuals that captivate and sell.
+                </Editable>
+                <Editable
+                  as="p"
+                  id="hero.cta"
+                  className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[1.7cqw] block"
+                >
                   Let's create toghether unforgetable images!
-                </p>
+                </Editable>
               </div>
+
               <div className="flex gap-[3cqw] text-white">
                 <div>
                   <div className="font-sans font-bold leading-none text-[2.6cqw]">10+</div>
