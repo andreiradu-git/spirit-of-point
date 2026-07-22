@@ -71,6 +71,12 @@ function Index() {
       name: "Elena Georgescu",
       role: "Creative Lead, Carrefour",
     },
+    {
+      quote:
+        "Fast, professional and incredibly creative. The team delivered visuals that elevated our entire campaign.",
+      name: "Radu Dumitrescu",
+      role: "CEO, Fresh Market",
+    },
   ];
 
 
@@ -272,7 +278,7 @@ function Index() {
       {/* Testimonials */}
       <section className="bg-[#e5e5e5]">
         <div className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
-          <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
+          <div className="grid md:grid-cols-12 gap-10 items-end mb-10">
             <div className="md:col-span-5">
               <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">03 — Kind words</div>
               <h2 className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground">
@@ -280,7 +286,7 @@ function Index() {
               </h2>
             </div>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
             {testimonials.map((t) => (
               <figure key={t.name} className="bg-background flex flex-col overflow-hidden">
                 {t.video ? (
@@ -299,22 +305,22 @@ function Index() {
                     )}
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg">
-                        <Play className="w-7 h-7 text-black fill-black translate-x-0.5" />
+                      <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg">
+                        <Play className="w-5 h-5 md:w-6 md:h-6 text-black fill-black translate-x-0.5" />
                       </div>
                     </div>
                   </button>
                 ) : (
-                  <div className="p-8 flex flex-col gap-6 flex-1">
-                    <span className="font-serif italic text-5xl leading-none text-foreground/30">"</span>
-                    <blockquote className="font-serif italic text-lg md:text-xl leading-snug text-foreground/85">
+                  <div className="p-5 md:p-6 flex flex-col gap-4 flex-1">
+                    <span className="font-serif italic text-3xl md:text-4xl leading-none text-foreground/30">"</span>
+                    <blockquote className="font-serif italic text-base md:text-lg leading-snug text-foreground/85">
                       {t.quote}
                     </blockquote>
                   </div>
                 )}
-                <figcaption className="p-8 pt-6 mt-auto">
+                <figcaption className="p-5 md:p-6 pt-4 mt-auto">
                   <div className="text-sm font-medium text-foreground">{t.name}</div>
-                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mt-1">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground mt-1">
                     {t.role}
                   </div>
                 </figcaption>
