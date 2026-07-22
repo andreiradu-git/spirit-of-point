@@ -6,7 +6,6 @@ import { Editable } from "@/components/Editable";
 const BASE_NAV = [
   { to: "/", label: "Home" },
   { to: "/food", label: "Food" },
-  { to: "/patterns", label: "Patterns" },
   { to: "/people", label: "People" },
   { to: "/editorial", label: "Editorial" },
   { to: "/contact", label: "Contact" },
@@ -30,6 +29,9 @@ export function SiteLayout({
   const { settings, update, ready } = useSiteSettings();
 
   const nav: NavItem[] = [...BASE_NAV];
+  if (settings.showPatterns) {
+    nav.splice(2, 0, { to: "/patterns", label: "Patterns" });
+  }
   if (settings.showVideo) {
     // insert Video before Contact
     nav.splice(nav.length - 1, 0, { to: "/video", label: "Video" });
