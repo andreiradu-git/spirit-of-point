@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
+import { Gallery } from "@/components/Gallery";
 import { Link } from "@tanstack/react-router";
 import home from "@/data/home.json";
+
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -43,44 +45,47 @@ function Index() {
 
   return (
     <SiteLayout transparentHeader headerTone="light">
-      {/* Hero — fish image full-bleed, natural aspect, header/text overlay */}
-      <section className="relative w-full bg-neutral-200">
-        <img
-          src={cdn(fish.src, 2400)}
-          alt="Point Studio food photography"
-          className="block w-full h-auto"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent pointer-events-none" />
-        <div className="absolute inset-0 z-10 mx-auto max-w-7xl px-6 pt-40 md:pt-48 pb-10 md:pb-16 flex flex-col justify-between">
-          <div className="max-w-2xl text-white">
-            <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-6xl leading-[1.05]">
-              Photo-Video Studio and<br />Creative Workspace.
-            </h1>
-            <p className="mt-6 md:mt-8 text-sm md:text-lg text-white/85 max-w-md leading-relaxed">
-              We blend creativity with technical expertise and a deep commitment to
-              quality and thats how we transform your ideas into stunning visuals
-              that captivate and sell.
-            </p>
-            <p className="mt-6 md:mt-8 font-sans font-bold uppercase tracking-tight text-lg md:text-2xl leading-tight">
-              Let's create toghether<br />unforgetable images!
-            </p>
-          </div>
-          <div className="mt-6 md:mt-10 flex gap-10 text-white">
-            <div>
-              <div className="font-sans font-bold text-2xl md:text-4xl">10+</div>
-              <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
-                Years of<br />expertise
-              </div>
+      {/* Hero — fish image as background, text always overlaid across all viewports */}
+      <section className="relative w-full bg-background">
+        <div className="relative w-full min-h-[760px] sm:min-h-[720px] md:min-h-[640px] lg:min-h-[720px]">
+          <img
+            src={cdn(fish.src, 2400)}
+            alt="Point Studio food photography"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
+          <div className="relative z-10 mx-auto max-w-7xl px-6 pt-32 md:pt-40 pb-10 md:pb-16 flex flex-col justify-between min-h-[760px] sm:min-h-[720px] md:min-h-[640px] lg:min-h-[720px]">
+            <div className="max-w-2xl text-white">
+              <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-6xl leading-[1.05]">
+                Photo-Video Studio and<br />Creative Workspace.
+              </h1>
+              <p className="mt-6 md:mt-8 text-sm md:text-lg text-white/85 max-w-md leading-relaxed">
+                We blend creativity with technical expertise and a deep commitment to
+                quality and thats how we transform your ideas into stunning visuals
+                that captivate and sell.
+              </p>
+              <p className="mt-6 md:mt-8 font-sans font-bold uppercase tracking-tight text-lg md:text-2xl leading-tight">
+                Let's create toghether<br />unforgetable images!
+              </p>
             </div>
-            <div>
-              <div className="font-sans font-bold text-2xl md:text-4xl">50+</div>
-              <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
-                International<br />clients
+            <div className="mt-6 md:mt-10 flex gap-10 text-white">
+              <div>
+                <div className="font-sans font-bold text-2xl md:text-4xl">10+</div>
+                <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                  Years of<br />expertise
+                </div>
+              </div>
+              <div>
+                <div className="font-sans font-bold text-2xl md:text-4xl">50+</div>
+                <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                  International<br />clients
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
 
       {/* Client logos band — single line on desktop */}
       {logos.length > 0 && (
@@ -117,18 +122,10 @@ function Index() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-4xl mx-auto">
-          {studioShots.map((img) => (
-            <div key={img.src} className="aspect-square overflow-hidden bg-muted">
-              <img
-                src={cdn(img.src, 600)}
-                alt="Point Studio workspace"
-                loading="lazy"
-                className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          ))}
+        <div className="max-w-6xl mx-auto">
+          <Gallery images={studioShots} columns={4} />
         </div>
+
         <div className="mt-8 grid md:grid-cols-2 gap-6 text-[15px] leading-relaxed text-foreground/90">
           <div className="bg-background border border-border p-6 md:p-8">
             <p>
@@ -166,7 +163,7 @@ function Index() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-w-6xl mx-auto">
           {whatWeDo.map((c) => (
             <Link
               key={c.label}
@@ -190,6 +187,7 @@ function Index() {
             </Link>
           ))}
         </div>
+
       </section>
 
     </SiteLayout>

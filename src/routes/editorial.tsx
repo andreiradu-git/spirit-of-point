@@ -23,15 +23,10 @@ export const Route = createFileRoute("/editorial")({
 function EditorialPage() {
   return (
     <SiteLayout>
-      <section className="mx-auto max-w-7xl px-6 pt-16 pb-12 text-center">
-        <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-4">
-          Press · Ads · Magazines · Books
-        </p>
-        <h1 className="font-serif text-5xl md:text-6xl">Editorial</h1>
-      </section>
-      <div className="mx-auto max-w-7xl px-6 pb-24">
+      <div className="mx-auto max-w-7xl px-6 pt-16 pb-24">
         <Gallery images={data} columns={3} />
       </div>
     </SiteLayout>
   );
 }
+
