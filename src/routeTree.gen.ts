@@ -15,14 +15,8 @@ import { Route as PatternsRouteImport } from './routes/patterns'
 import { Route as FoodRouteImport } from './routes/food'
 import { Route as EditorialRouteImport } from './routes/editorial'
 import { Route as ContactRouteImport } from './routes/contact'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkSlugRouteImport } from './routes/work.$slug'
-import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
-import { Route as AdminPagesRouteImport } from './routes/admin.pages'
-import { Route as AdminMenuRouteImport } from './routes/admin.menu'
-import { Route as AdminGalleriesRouteImport } from './routes/admin.galleries'
 
 const VideoRoute = VideoRouteImport.update({
   id: '/video',
@@ -54,16 +48,6 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -74,131 +58,73 @@ const WorkSlugRoute = WorkSlugRouteImport.update({
   path: '/work/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminSettingsRoute = AdminSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPagesRoute = AdminPagesRouteImport.update({
-  id: '/pages',
-  path: '/pages',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMenuRoute = AdminMenuRouteImport.update({
-  id: '/menu',
-  path: '/menu',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminGalleriesRoute = AdminGalleriesRouteImport.update({
-  id: '/galleries',
-  path: '/galleries',
-  getParentRoute: () => AdminRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
-  '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
-  '/admin/galleries': typeof AdminGalleriesRoute
-  '/admin/menu': typeof AdminMenuRoute
-  '/admin/pages': typeof AdminPagesRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
-  '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
-  '/admin/galleries': typeof AdminGalleriesRoute
-  '/admin/menu': typeof AdminMenuRoute
-  '/admin/pages': typeof AdminPagesRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteWithChildren
-  '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
-  '/admin/galleries': typeof AdminGalleriesRoute
-  '/admin/menu': typeof AdminMenuRoute
-  '/admin/pages': typeof AdminPagesRoute
-  '/admin/settings': typeof AdminSettingsRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
-    | '/auth'
     | '/contact'
     | '/editorial'
     | '/food'
     | '/patterns'
     | '/people'
     | '/video'
-    | '/admin/galleries'
-    | '/admin/menu'
-    | '/admin/pages'
-    | '/admin/settings'
     | '/work/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
-    | '/auth'
     | '/contact'
     | '/editorial'
     | '/food'
     | '/patterns'
     | '/people'
     | '/video'
-    | '/admin/galleries'
-    | '/admin/menu'
-    | '/admin/pages'
-    | '/admin/settings'
     | '/work/$slug'
   id:
     | '__root__'
     | '/'
-    | '/admin'
-    | '/auth'
     | '/contact'
     | '/editorial'
     | '/food'
     | '/patterns'
     | '/people'
     | '/video'
-    | '/admin/galleries'
-    | '/admin/menu'
-    | '/admin/pages'
-    | '/admin/settings'
     | '/work/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRouteWithChildren
-  AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
   EditorialRoute: typeof EditorialRoute
   FoodRoute: typeof FoodRoute
@@ -252,20 +178,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -280,57 +192,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/settings': {
-      id: '/admin/settings'
-      path: '/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AdminSettingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/pages': {
-      id: '/admin/pages'
-      path: '/pages'
-      fullPath: '/admin/pages'
-      preLoaderRoute: typeof AdminPagesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/menu': {
-      id: '/admin/menu'
-      path: '/menu'
-      fullPath: '/admin/menu'
-      preLoaderRoute: typeof AdminMenuRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/galleries': {
-      id: '/admin/galleries'
-      path: '/galleries'
-      fullPath: '/admin/galleries'
-      preLoaderRoute: typeof AdminGalleriesRouteImport
-      parentRoute: typeof AdminRoute
-    }
   }
 }
 
-interface AdminRouteChildren {
-  AdminGalleriesRoute: typeof AdminGalleriesRoute
-  AdminMenuRoute: typeof AdminMenuRoute
-  AdminPagesRoute: typeof AdminPagesRoute
-  AdminSettingsRoute: typeof AdminSettingsRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminGalleriesRoute: AdminGalleriesRoute,
-  AdminMenuRoute: AdminMenuRoute,
-  AdminPagesRoute: AdminPagesRoute,
-  AdminSettingsRoute: AdminSettingsRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRouteWithChildren,
-  AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
   EditorialRoute: EditorialRoute,
   FoodRoute: FoodRoute,
@@ -342,13 +208,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
