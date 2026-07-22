@@ -134,6 +134,8 @@ export function SiteLayout({
         <SettingsPanel
           showVideo={settings.showVideo}
           onToggleVideo={() => update({ showVideo: !settings.showVideo })}
+          showPatterns={settings.showPatterns}
+          onTogglePatterns={() => update({ showPatterns: !settings.showPatterns })}
         />
       )}
     </div>
