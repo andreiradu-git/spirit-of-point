@@ -21,5 +21,6 @@ export const Route = createFileRoute("/patterns")({
 });
 
 function PatternsPage() {
-  return <PortfolioPage tagline="Patterns, Textures & Closeups" images={data} />;
+  return <PortfolioPage tagline="Patterns, Textures & Closeups" images={data} galleryLayout="masonry" />;
 }
+
