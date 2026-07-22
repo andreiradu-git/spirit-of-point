@@ -78,7 +78,7 @@ export function PortfolioPage({
 
       {/* Full grid gallery */}
       <div className="mx-auto max-w-7xl px-6 pt-10 md:pt-14 pb-24">
-        <Gallery images={images} columns={3} />
+        <Gallery images={images} columns={3} layout={galleryLayout} />
       </div>
     </SiteLayout>
   );
