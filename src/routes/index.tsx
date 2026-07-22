@@ -32,7 +32,7 @@ function Index() {
   const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
 
 
-  const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28]].filter(Boolean);
+  const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28], home[19], home[21], home[23]].filter(Boolean);
 
   const whatWeDo = [
     { label: "Food", img: home[22]?.src, slug: "food" },
@@ -48,37 +48,37 @@ function Index() {
     <SiteLayout transparentHeader headerTone="light">
       {/* Hero — fish image at natural aspect ratio, text overlaid and scaled to image width */}
       <section className="relative w-full bg-white">
-        <div className="relative w-full">
+        <div className="relative w-full @container">
           <img
             src={cdn(fish.src, 2400)}
             alt="Point Studio food photography"
             className="block w-full h-auto"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 z-10 mx-auto max-w-7xl px-[3vw] pt-[8vw] pb-[4vw] flex flex-col justify-between">
-            <div className="max-w-[55%] text-white">
-              <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[3.2vw]">
+          <div className="absolute inset-0 z-10 flex flex-col justify-between px-[4cqw] pt-[max(64px,10cqw)] pb-[4cqw]">
+            <div className="max-w-[58%] text-white">
+              <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[clamp(14px,3cqw,44px)]">
                 Photo-Video Studio and<br />Creative Workspace.
               </h1>
-              <p className="mt-[1.2vw] text-white/85 leading-relaxed text-[1.08vw]">
+              <p className="mt-[1.2cqw] text-white/85 leading-snug text-[clamp(9px,1.05cqw,15px)]">
                 We blend creativity with technical expertise and a deep commitment to
                 quality and thats how we transform your ideas into stunning visuals
                 that captivate and sell.
               </p>
-              <p className="mt-[1.2vw] font-sans font-bold uppercase tracking-tight leading-tight text-[1.44vw]">
+              <p className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(10px,1.4cqw,20px)]">
                 Let's create toghether<br />unforgetable images!
               </p>
             </div>
-            <div className="flex gap-[3vw] text-white">
+            <div className="flex gap-[3cqw] text-white">
               <div>
-                <div className="font-sans font-bold text-[2.4vw] leading-none">10+</div>
-                <div className="uppercase tracking-widest text-white/70 mt-[0.5vw] text-[0.64vw]">
+                <div className="font-sans font-bold leading-none text-[clamp(14px,2.3cqw,34px)]">10+</div>
+                <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(6px,0.65cqw,10px)]">
                   Years of<br />expertise
                 </div>
               </div>
               <div>
-                <div className="font-sans font-bold text-[2.4vw] leading-none">50+</div>
-                <div className="uppercase tracking-widest text-white/70 mt-[0.5vw] text-[0.64vw]">
+                <div className="font-sans font-bold leading-none text-[clamp(14px,2.3cqw,34px)]">50+</div>
+                <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(6px,0.65cqw,10px)]">
                   International<br />clients
                 </div>
               </div>
@@ -155,7 +155,7 @@ function Index() {
           <h2 className="font-sans font-bold uppercase tracking-tight text-4xl md:text-5xl leading-[1.05]">
             What We Do
           </h2>
-          <div className="bg-background border border-border p-6 md:p-8 text-[15px] leading-relaxed text-foreground/90">
+          <div className="p-6 md:p-8 text-[15px] leading-relaxed text-foreground/90">
             <p>
               We at Point Studio know how to capture the essence of every moment — starting with
               mouthwatering food photography that brings flavors to life, and extending to all
