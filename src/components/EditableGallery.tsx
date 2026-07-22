@@ -35,7 +35,7 @@ type Props = {
   fallbackImages: Array<{ src: string; alt?: string; title?: string }>;
   columns?: number;
   aspect?: "square" | "landscape" | "portrait" | "auto";
-  layout?: "grid" | "stacked";
+  layout?: "grid" | "stacked" | "masonry";
   className?: string;
   renderItem?: (img: GalleryImage, props: { onClick: () => void; editable: boolean }) => ReactNode;
   lightbox?: boolean;
@@ -239,6 +239,8 @@ export function EditableGallery({
   const gridCols =
     layout === "stacked"
       ? "grid-cols-1"
+      : layout === "masonry"
+      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
       : columns === 2
       ? "grid-cols-2"
       : columns === 4
@@ -248,6 +250,95 @@ export function EditableGallery({
       : columns === 6
       ? "grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
       : "grid-cols-2 md:grid-cols-3";
+
+  // Masonry (non-editable): flex columns with tops aligned at the first row
+  if (layout === "masonry" && !editable) {
+    const openLightbox = (i: number) => lightbox && setActiveIndex(i);
+    const renderColumn = (col: { img: GalleryImage; i: number }[]) => (
+      <div className="flex flex-col gap-2 md:gap-3">
+        {col.map(({ img, i }) => (
+          <button
+            key={img.id}
+            type="button"
+            onClick={() => openLightbox(i)}
+            className="block w-full overflow-hidden bg-muted group"
+          >
+            <img
+              src={img.src}
+              alt={img.alt ?? ""}
+              loading="lazy"
+              className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+            />
+          </button>
+        ))}
+      </div>
+    );
+    const distribute = (n: number) => {
+      const cols: { img: GalleryImage; i: number }[][] = Array.from({ length: n }, () => []);
+      images.forEach((img, i) => cols[i % n].push({ img, i }));
+      return cols;
+    };
+    const colSets: { n: number; cls: string }[] = [
+      { n: 2, cls: "md:hidden" },
+      { n: 3, cls: "hidden md:grid lg:hidden" },
+      { n: 4, cls: "hidden lg:grid" },
+    ];
+    return (
+      <div className={className}>
+        {colSets.map(({ n, cls }) => (
+          <div
+            key={n}
+            className={`${cls} grid gap-2 md:gap-3`}
+            style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
+          >
+            {distribute(n).map((col, ci) => (
+              <div key={ci}>{renderColumn(col)}</div>
+            ))}
+          </div>
+        ))}
+        {lightbox && activeIndex !== null && (
+          <div
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+            onClick={() => setActiveIndex(null)}
+          >
+            <button
+              className="absolute top-4 right-6 text-white text-sm uppercase tracking-widest"
+              onClick={() => setActiveIndex(null)}
+            >
+              Close
+            </button>
+            <button
+              className="absolute left-4 md:left-8 text-white text-3xl px-3"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveIndex((a) => (a === null ? a : (a - 1 + images.length) % images.length));
+              }}
+              aria-label="Previous"
+            >
+              ‹
+            </button>
+            <img
+              src={images[activeIndex].src}
+              alt={images[activeIndex].alt ?? ""}
+              className="max-h-[90vh] max-w-[90vw] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              className="absolute right-4 md:right-8 text-white text-3xl px-3"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveIndex((a) => (a === null ? a : (a + 1) % images.length));
+              }}
+              aria-label="Next"
+            >
+              ›
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
 
   return (
     <div className={className}>

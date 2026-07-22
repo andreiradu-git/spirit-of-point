@@ -106,9 +106,8 @@ export function PortfolioPage({
           <EditableGallery
             slug={slug}
             fallbackImages={fallbackImages}
-            columns={3}
             aspect="auto"
-            layout="grid"
+            layout="masonry"
             lightbox
           />
         </div>
