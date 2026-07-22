@@ -5,6 +5,8 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Play, Star, X } from "lucide-react";
 import home from "@/data/home.json";
+import { Editable } from "@/components/Editable";
+
 
 
 export const Route = createFileRoute("/")({
