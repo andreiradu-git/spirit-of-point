@@ -168,7 +168,7 @@ function SettingsPanel({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 left-4 z-50">
       {open && (
         <div className="mb-2 w-64 rounded-lg border border-border bg-background shadow-xl p-4 space-y-3">
           <div className="text-xs uppercase tracking-widest text-muted-foreground">
