@@ -45,7 +45,13 @@ function Index() {
     { label: "Industrial", img: home[31]?.src, slug: "industrial" },
   ];
 
-  const testimonials = [
+  const testimonials: Array<{
+    quote?: string;
+    name: string;
+    role: string;
+    video?: string;
+    poster?: string;
+  }> = [
     {
       quote:
         "Working with Point Studio was a game-changer. Andrei's eye for detail and technical precision brought our product line to life beyond what we imagined.",
@@ -53,8 +59,8 @@ function Index() {
       role: "Brand Manager, Lidl România",
     },
     {
-      quote:
-        "The professionalism and creativity at Point Studio are unmatched. Every shoot delivers exactly the mood and quality our campaigns need.",
+      video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      poster: home[5]?.src,
       name: "Mihai Ionescu",
       role: "Marketing Director, Kaufland",
     },
