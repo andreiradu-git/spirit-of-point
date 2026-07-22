@@ -72,7 +72,7 @@ export function Editable({
       contentEditable
       suppressContentEditableWarning
       onBlur={commit}
-      onKeyDown={(e) => {
+      onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
         if (!multiline && e.key === "Enter") {
           e.preventDefault();
           (e.target as HTMLElement).blur();
