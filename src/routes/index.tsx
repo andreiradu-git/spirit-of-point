@@ -92,7 +92,7 @@ function Index() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
           <div className="absolute inset-0 z-10">
-            <div className="mx-auto max-w-7xl h-full px-[3cqw] pt-[9cqw] pb-[3cqw] flex flex-col justify-between">
+            <div className="mx-auto max-w-7xl h-full px-6 pt-[9cqw] pb-[3cqw] flex flex-col justify-between">
               <div className="max-w-[60%] text-white">
                 <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[3.2cqw]">
                   Photo-Video Studio and Creative Workspace.
