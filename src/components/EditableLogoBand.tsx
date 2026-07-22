@@ -67,7 +67,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
-        <div className="flex flex-nowrap items-center gap-x-6 md:gap-x-10 overflow-x-auto whitespace-nowrap [scrollbar-width:thin] [-webkit-overflow-scrolling:touch] justify-start md:justify-center">
+        <div className="flex flex-nowrap items-center gap-x-6 md:gap-x-10 overflow-x-auto whitespace-nowrap justify-start md:justify-center pb-2">
           {items.map((l, index) => (
             <div key={l.id} className="relative group shrink-0">
               <img
