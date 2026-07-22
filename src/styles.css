@@ -154,3 +154,9 @@
     letter-spacing: 0.01em;
   }
 }
+
+/* Thin visible scrollbar for the client logo band */
+.logo-scroll::-webkit-scrollbar { height: 6px; }
+.logo-scroll::-webkit-scrollbar-track { background: transparent; }
+.logo-scroll::-webkit-scrollbar-thumb { background: hsl(var(--border) / 0.8); border-radius: 9999px; }
+.logo-scroll::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.6); }
