@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 
 export type SiteSettings = {
   showVideo: boolean;
+  showPatterns: boolean;
 };
 
-const DEFAULTS: SiteSettings = { showVideo: true };
+const DEFAULTS: SiteSettings = { showVideo: true, showPatterns: true };
 const KEY = "point-studio-settings";
 const EVT = "point-studio-settings-change";
 
