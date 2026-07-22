@@ -91,6 +91,12 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
             </button>
           )}
         </div>
+
+        <div className="mt-3 md:mt-4 flex items-center gap-2">
+          <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground/60 shrink-0" />
+          <div className="flex-1 h-px bg-border/70" />
+          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground/60 shrink-0" />
+        </div>
       </div>
 
       <input
