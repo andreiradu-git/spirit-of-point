@@ -17,10 +17,12 @@ export function SiteLayout({
   children,
   transparentHeader = false,
   headerTone = "dark",
+  flushFooter = false,
 }: {
   children: ReactNode;
   transparentHeader?: boolean;
   headerTone?: "dark" | "light";
+  flushFooter?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -92,7 +94,7 @@ export function SiteLayout({
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-border mt-24">
+      <footer className={flushFooter ? "" : "border-t border-border mt-24"}>
         <div className="mx-auto max-w-7xl px-6 py-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6 text-sm text-muted-foreground">
           <div>
             <div className="font-serif text-xl text-foreground">Point Studio</div>
