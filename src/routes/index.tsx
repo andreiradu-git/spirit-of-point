@@ -70,22 +70,22 @@ function Index() {
           <div
             className="absolute inset-0 z-10 flex flex-col justify-between"
             style={{
-              paddingLeft: "4cqi",
-              paddingRight: "4cqi",
-              paddingTop: "clamp(6rem, 14cqb, 10rem)",
-              paddingBottom: "3cqb",
+              paddingLeft: "5cqi",
+              paddingRight: "5cqi",
+              paddingTop: "clamp(5rem, 13cqb, 9rem)",
+              paddingBottom: "clamp(1.5rem, 7cqb, 5rem)",
             }}
           >
-            <div className="max-w-[55%] text-white">
+            <div className="max-w-[58%] text-white">
               <h1
                 className="font-sans font-bold uppercase tracking-tight leading-[1.05]"
-                style={{ fontSize: "min(4.2cqi, 7cqb)" }}
+                style={{ fontSize: "min(3.8cqi, 6.5cqb)" }}
               >
                 Photo-Video Studio and<br />Creative Workspace.
               </h1>
               <p
                 className="text-white/85 leading-snug"
-                style={{ fontSize: "min(1.45cqi, 2.4cqb)", marginTop: "1.5cqb" }}
+                style={{ fontSize: "min(1.3cqi, 2.2cqb)", marginTop: "1.4cqb" }}
               >
                 We blend creativity with technical expertise and a deep commitment to
                 quality and thats how we transform your ideas into stunning visuals
@@ -93,21 +93,21 @@ function Index() {
               </p>
               <p
                 className="font-sans font-bold uppercase tracking-tight leading-tight"
-                style={{ fontSize: "min(1.9cqi, 3.2cqb)", marginTop: "1.5cqb" }}
+                style={{ fontSize: "min(1.7cqi, 2.9cqb)", marginTop: "1.4cqb" }}
               >
                 Let's create toghether<br />unforgetable images!
               </p>
             </div>
             <div className="flex text-white" style={{ gap: "3cqi" }}>
               <div>
-                <div className="font-sans font-bold leading-none" style={{ fontSize: "min(3cqi, 5cqb)" }}>10+</div>
-                <div className="uppercase tracking-widest text-white/70" style={{ fontSize: "min(0.85cqi, 1.4cqb)", marginTop: "0.5cqb" }}>
+                <div className="font-sans font-bold leading-none" style={{ fontSize: "min(2.6cqi, 4.4cqb)" }}>10+</div>
+                <div className="uppercase tracking-widest text-white/70" style={{ fontSize: "min(0.8cqi, 1.3cqb)", marginTop: "0.5cqb" }}>
                   Years of<br />expertise
                 </div>
               </div>
               <div>
-                <div className="font-sans font-bold leading-none" style={{ fontSize: "min(3cqi, 5cqb)" }}>50+</div>
-                <div className="uppercase tracking-widest text-white/70" style={{ fontSize: "min(0.85cqi, 1.4cqb)", marginTop: "0.5cqb" }}>
+                <div className="font-sans font-bold leading-none" style={{ fontSize: "min(2.6cqi, 4.4cqb)" }}>50+</div>
+                <div className="uppercase tracking-widest text-white/70" style={{ fontSize: "min(0.8cqi, 1.3cqb)", marginTop: "0.5cqb" }}>
                   International<br />clients
                 </div>
               </div>
