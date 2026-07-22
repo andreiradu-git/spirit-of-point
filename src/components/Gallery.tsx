@@ -21,25 +21,25 @@ export function Gallery({ images: allImages, columns = 3 }: { images: Img[]; col
 
   const colClass =
     columns === 4
-      ? "sm:columns-2 md:columns-3 lg:columns-4"
+      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
       : columns === 2
-        ? "sm:columns-2"
-        : "sm:columns-2 lg:columns-3";
+        ? "grid-cols-2"
+        : "grid-cols-2 md:grid-cols-3";
 
   return (
     <>
-      <div className={`columns-1 ${colClass} gap-3 [column-fill:_balance]`}>
+      <div className={`grid ${colClass} gap-3`}>
         {images.map((img, i) => (
           <button
             key={img.src}
             onClick={() => setActive(i)}
-            className="mb-3 block w-full break-inside-avoid overflow-hidden bg-muted group"
+            className="block w-full overflow-hidden bg-muted group aspect-[4/5]"
           >
             <img
               src={cdn(img.src, 1000)}
               alt={img.alt || "Point Studio photograph"}
               loading="lazy"
-              className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             />
           </button>
         ))}

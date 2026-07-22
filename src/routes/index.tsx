@@ -92,30 +92,30 @@ function Index() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
           <div className="absolute inset-0 z-10">
-            <div className="mx-auto max-w-7xl h-full px-6 pt-[max(64px,10cqw)] pb-[4cqw] flex flex-col justify-between">
-              <div className="max-w-[58%] text-white">
-                <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[clamp(14px,3cqw,44px)]">
+            <div className="mx-auto max-w-7xl h-full px-6 pt-[max(44px,8cqw)] pb-[2cqw] flex flex-col justify-between">
+              <div className="max-w-[62%] text-white">
+                <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[clamp(10px,3cqw,44px)]">
                   Photo-Video Studio and<br />Creative Workspace.
                 </h1>
-                <p className="mt-[1.2cqw] text-white/85 leading-snug text-[clamp(9px,1.05cqw,15px)]">
+                <p className="mt-[0.8cqw] text-white/85 leading-snug text-[clamp(7px,1.05cqw,15px)]">
                   We blend creativity with technical expertise and a deep commitment to
                   quality and thats how we transform your ideas into stunning visuals
                   that captivate and sell.
                 </p>
-                <p className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(10px,1.4cqw,20px)]">
+                <p className="mt-[0.8cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(8px,1.4cqw,20px)]">
                   Let's create toghether<br />unforgetable images!
                 </p>
               </div>
               <div className="flex gap-[3cqw] text-white">
                 <div>
-                  <div className="font-sans font-bold leading-none text-[clamp(14px,2.3cqw,34px)]">10+</div>
-                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(6px,0.65cqw,10px)]">
+                  <div className="font-sans font-bold leading-none text-[clamp(11px,2.3cqw,34px)]">10+</div>
+                  <div className="uppercase tracking-widest text-white/70 mt-[0.4cqw] text-[clamp(5px,0.65cqw,10px)]">
                     Years of<br />expertise
                   </div>
                 </div>
                 <div>
-                  <div className="font-sans font-bold leading-none text-[clamp(14px,2.3cqw,34px)]">50+</div>
-                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(6px,0.65cqw,10px)]">
+                  <div className="font-sans font-bold leading-none text-[clamp(11px,2.3cqw,34px)]">50+</div>
+                  <div className="uppercase tracking-widest text-white/70 mt-[0.4cqw] text-[clamp(5px,0.65cqw,10px)]">
                     International<br />clients
                   </div>
                 </div>
@@ -127,7 +127,7 @@ function Index() {
                   aria-label="See our Google reviews"
                 >
                   <div className="flex items-center gap-[0.4cqw]">
-                    <svg viewBox="0 0 48 48" className="w-[clamp(14px,2.2cqw,32px)] h-[clamp(14px,2.2cqw,32px)]" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" className="w-[clamp(11px,2.2cqw,32px)] h-[clamp(11px,2.2cqw,32px)]" aria-hidden="true">
                       <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.5 29.3 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/>
                       <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.5 29.3 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/>
                       <path fill="#4CAF50" d="M24 43.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.5 2.2-7.2 2.2-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39 16.2 43.5 24 43.5z"/>
@@ -136,10 +136,10 @@ function Index() {
                     <div>
                       <div className="flex gap-[0.15cqw]">
                         {[0,1,2,3,4].map((i) => (
-                          <Star key={i} className="w-[clamp(6px,0.9cqw,13px)] h-[clamp(6px,0.9cqw,13px)] fill-yellow-400 stroke-yellow-400" />
+                          <Star key={i} className="w-[clamp(5px,0.9cqw,13px)] h-[clamp(5px,0.9cqw,13px)] fill-yellow-400 stroke-yellow-400" />
                         ))}
                       </div>
-                      <div className="uppercase tracking-widest text-white/70 mt-[0.4cqw] text-[clamp(6px,0.65cqw,10px)] group-hover:text-white transition-colors">
+                      <div className="uppercase tracking-widest text-white/70 mt-[0.3cqw] text-[clamp(5px,0.65cqw,10px)] group-hover:text-white transition-colors">
                         Google<br />Reviews
                       </div>
                     </div>
@@ -148,6 +148,7 @@ function Index() {
               </div>
             </div>
           </div>
+
         </div>
       </section>
 
