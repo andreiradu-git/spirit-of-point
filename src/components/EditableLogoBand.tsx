@@ -3,7 +3,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X } from "lucide-react";
+import { Loader2, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 
 type Logo = { id: string; src: string; alt?: string };
 
@@ -67,7 +67,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
-        <div className="flex flex-nowrap items-center gap-x-6 md:gap-x-10 overflow-x-auto whitespace-nowrap [scrollbar-width:thin] [-webkit-overflow-scrolling:touch] justify-start md:justify-center">
+        <div className="flex flex-nowrap items-center gap-x-6 md:gap-x-10 overflow-x-auto whitespace-nowrap justify-start md:justify-center pb-2">
           {items.map((l, index) => (
             <div key={l.id} className="relative group shrink-0">
               <img
@@ -120,11 +120,6 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
           )}
         </div>
 
-        <div className="mt-3 md:mt-4 flex items-center gap-2">
-          <ChevronLeft className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground/60 shrink-0" />
-          <div className="flex-1 h-px bg-border/70" />
-          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground/60 shrink-0" />
-        </div>
       </div>
 
       <input
