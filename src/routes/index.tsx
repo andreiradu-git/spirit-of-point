@@ -43,6 +43,18 @@ function Index() {
     { label: "Industrial", img: home[31]?.src, slug: "industrial" },
   ];
 
+  const [studioActive, setStudioActive] = useState<number | null>(null);
+  useEffect(() => {
+    if (studioActive === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setStudioActive(null);
+      if (e.key === "ArrowRight") setStudioActive((a) => (a === null ? a : (a + 1) % studioShots.length));
+      if (e.key === "ArrowLeft") setStudioActive((a) => (a === null ? a : (a - 1 + studioShots.length) % studioShots.length));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [studioActive, studioShots.length]);
+
 
   return (
     <SiteLayout transparentHeader headerTone="light">
