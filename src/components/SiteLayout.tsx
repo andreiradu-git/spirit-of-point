@@ -50,7 +50,7 @@ export function SiteLayout({
             <img
               src="https://images.squarespace-cdn.com/content/v1/61698c11d84cc850768a6bf8/3236b78e-0c1c-48e9-83fd-bbfa1f67650f/LOGO_PSP.png?format=400w"
               alt="Point Studio"
-              className={`h-10 md:h-14 w-auto object-contain ${light ? "invert brightness-0" : ""}`}
+              className={`h-14 md:h-20 w-auto object-contain ${light ? "" : "invert brightness-0"}`}
             />
           </Link>
           <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.2em]">
