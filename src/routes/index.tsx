@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
-import { Gallery } from "@/components/Gallery";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { Play, Star, X } from "lucide-react";
+import { Star } from "lucide-react";
 import home from "@/data/home.json";
 import { Editable } from "@/components/Editable";
 import { EditableImage } from "@/components/EditableImage";
 import { EditableGallery } from "@/components/EditableGallery";
+import { EditableLogoBand } from "@/components/EditableLogoBand";
+import { EditableTestimonials, type Testimonial } from "@/components/EditableTestimonials";
 import { useImage, useSaveImage } from "@/hooks/use-site-images";
 
 
