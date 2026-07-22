@@ -1,5 +1,5 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { useState, type ReactNode } from "react";
 
 const NAV = [
   { to: "/", label: "Home" },
