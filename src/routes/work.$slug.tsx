@@ -72,7 +72,7 @@ export const Route = createFileRoute("/work/$slug")({
 
 function WorkPage() {
   const { title, data } = Route.useLoaderData();
-  const images = data.filter((i) => !/LOGO_PSP/i.test(i.src));
+  const images = data.filter((i: Img) => !/LOGO_PSP/i.test(i.src));
   return (
     <SiteLayout>
       <div className="pt-10 md:pt-14 pb-8 md:pb-12">

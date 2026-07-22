@@ -16,6 +16,7 @@ import { Route as FoodRouteImport } from './routes/food'
 import { Route as EditorialRouteImport } from './routes/editorial'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkSlugRouteImport } from './routes/work.$slug'
 
 const VideoRoute = VideoRouteImport.update({
   id: '/video',
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WorkSlugRoute = WorkSlugRouteImport.update({
+  id: '/work/$slug',
+  path: '/work/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/patterns'
     | '/people'
     | '/video'
+    | '/work/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/patterns'
     | '/people'
     | '/video'
+    | '/work/$slug'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/patterns'
     | '/people'
     | '/video'
+    | '/work/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   PatternsRoute: typeof PatternsRoute
   PeopleRoute: typeof PeopleRoute
   VideoRoute: typeof VideoRoute
+  WorkSlugRoute: typeof WorkSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/work/$slug': {
+      id: '/work/$slug'
+      path: '/work/$slug'
+      fullPath: '/work/$slug'
+      preLoaderRoute: typeof WorkSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   PatternsRoute: PatternsRoute,
   PeopleRoute: PeopleRoute,
   VideoRoute: VideoRoute,
+  WorkSlugRoute: WorkSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
