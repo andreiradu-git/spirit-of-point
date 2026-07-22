@@ -71,6 +71,12 @@ function Index() {
       name: "Elena Georgescu",
       role: "Creative Lead, Carrefour",
     },
+    {
+      quote:
+        "Fast, professional and incredibly creative. The team delivered visuals that elevated our entire campaign.",
+      name: "Radu Dumitrescu",
+      role: "CEO, Fresh Market",
+    },
   ];
 
 
