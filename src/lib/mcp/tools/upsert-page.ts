@@ -18,9 +18,10 @@ export default defineTool({
   handler: async (input, ctx) => {
     const err = requireAuth(ctx);
     if (err) return err;
+    const { title, ...rest } = input;
     const { data, error } = await supabaseForUser(ctx)
       .from("pages")
-      .upsert({ title: input.slug, ...input }, { onConflict: "slug" })
+      .upsert({ title: title ?? input.slug, ...rest }, { onConflict: "slug" })
       .select()
       .single();
     if (error) return toolError(error.message);
