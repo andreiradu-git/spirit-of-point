@@ -83,50 +83,46 @@ export function Gallery({
   );
 
   function renderLightbox() {
-    return null;
+    if (active === null) return null;
+    return (
+      <div
+        className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+        onClick={() => setActive(null)}
+      >
+        <button
+          className="absolute top-4 right-6 text-white text-sm uppercase tracking-widest"
+          onClick={() => setActive(null)}
+        >
+          Close
+        </button>
+        <button
+          className="absolute left-4 md:left-8 text-white text-3xl px-3"
+          onClick={(e) => {
+            e.stopPropagation();
+            setActive((a) => (a === null ? a : (a - 1 + images.length) % images.length));
+          }}
+          aria-label="Previous"
+        >
+          ‹
+        </button>
+        <img
+          src={cdn(images[active].src, 2000)}
+          alt={images[active].alt || ""}
+          className="max-h-[90vh] max-w-[90vw] object-contain"
+          onClick={(e) => e.stopPropagation()}
+        />
+        <button
+          className="absolute right-4 md:right-8 text-white text-3xl px-3"
+          onClick={(e) => {
+            e.stopPropagation();
+            setActive((a) => (a === null ? a : (a + 1) % images.length));
+          }}
+          aria-label="Next"
+        >
+          ›
+        </button>
+      </div>
+    );
   }
 }
 
-
-      {active !== null && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
-          onClick={() => setActive(null)}
-        >
-          <button
-            className="absolute top-4 right-6 text-white text-sm uppercase tracking-widest"
-            onClick={() => setActive(null)}
-          >
-            Close
-          </button>
-          <button
-            className="absolute left-4 md:left-8 text-white text-3xl px-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              setActive((a) => (a === null ? a : (a - 1 + images.length) % images.length));
-            }}
-            aria-label="Previous"
-          >
-            ‹
-          </button>
-          <img
-            src={cdn(images[active].src, 2000)}
-            alt={images[active].alt || ""}
-            className="max-h-[90vh] max-w-[90vw] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            className="absolute right-4 md:right-8 text-white text-3xl px-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              setActive((a) => (a === null ? a : (a + 1) % images.length));
-            }}
-            aria-label="Next"
-          >
-            ›
-          </button>
-        </div>
-      )}
-    </>
-  );
-}
