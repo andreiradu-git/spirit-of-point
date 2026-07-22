@@ -6,7 +6,6 @@ import { Editable } from "@/components/Editable";
 const BASE_NAV = [
   { to: "/", label: "Home" },
   { to: "/food", label: "Food" },
-  { to: "/patterns", label: "Patterns" },
   { to: "/people", label: "People" },
   { to: "/editorial", label: "Editorial" },
   { to: "/contact", label: "Contact" },
@@ -30,6 +29,9 @@ export function SiteLayout({
   const { settings, update, ready } = useSiteSettings();
 
   const nav: NavItem[] = [...BASE_NAV];
+  if (settings.showPatterns) {
+    nav.splice(2, 0, { to: "/patterns", label: "Patterns" });
+  }
   if (settings.showVideo) {
     // insert Video before Contact
     nav.splice(nav.length - 1, 0, { to: "/video", label: "Video" });
@@ -132,6 +134,8 @@ export function SiteLayout({
         <SettingsPanel
           showVideo={settings.showVideo}
           onToggleVideo={() => update({ showVideo: !settings.showVideo })}
+          showPatterns={settings.showPatterns}
+          onTogglePatterns={() => update({ showPatterns: !settings.showPatterns })}
         />
       )}
     </div>
@@ -164,9 +168,13 @@ function HeaderSocials({ light }: { light: boolean }) {
 function SettingsPanel({
   showVideo,
   onToggleVideo,
+  showPatterns,
+  onTogglePatterns,
 }: {
   showVideo: boolean;
   onToggleVideo: () => void;
+  showPatterns: boolean;
+  onTogglePatterns: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -183,6 +191,15 @@ function SettingsPanel({
               type="checkbox"
               checked={showVideo}
               onChange={onToggleVideo}
+              className="h-4 w-4 accent-foreground"
+            />
+          </label>
+          <label className="flex items-center justify-between text-sm cursor-pointer">
+            <span>Show Patterns in menu</span>
+            <input
+              type="checkbox"
+              checked={showPatterns}
+              onChange={onTogglePatterns}
               className="h-4 w-4 accent-foreground"
             />
           </label>
