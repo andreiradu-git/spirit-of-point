@@ -149,7 +149,8 @@ function Index() {
       </section>
 
       {/* What We Do */}
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="bg-[#e5e5e5]">
+        <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid md:grid-cols-2 gap-8 items-start mb-10">
           <h2 className="font-sans font-bold uppercase tracking-tight text-4xl md:text-5xl leading-[1.05]">
             What We Do
