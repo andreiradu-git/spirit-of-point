@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MoveLeft, MoveRight, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X } from "lucide-react";
+
 
 type Logo = { id: string; src: string; alt?: string };
 
@@ -16,7 +17,37 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
   const editable = isAdmin && editMode;
   const { items, save } = useSiteList<Logo>("client-logos", fallback);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const updateArrows = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateArrows();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    const ro = new ResizeObserver(updateArrows);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateArrows);
+      ro.disconnect();
+    };
+  }, []);
+
+  const scrollBy = (dir: -1 | 1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.7), behavior: "smooth" });
+  };
+
 
   const handleUpload = async (file: File) => {
     if (!ACCEPTED.includes(file.type)) {
@@ -67,60 +98,88 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
-        <div className="flex flex-nowrap items-center gap-x-6 md:gap-x-10 overflow-x-auto whitespace-nowrap justify-start md:justify-center pb-2">
-          {items.map((l, index) => (
-            <div key={l.id} className="relative group shrink-0">
-              <img
-                src={l.src}
-                alt={l.alt ?? "Client logo"}
-                className="h-6 md:h-9 w-auto object-contain opacity-90 hover:opacity-100 transition"
-              />
-              {editable && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => remove(l.id)}
-                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Remove logo"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0}
-                    className="absolute -top-2 -left-4 p-1 bg-foreground text-background rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                    aria-label="Move left"
-                  >
-                    <MoveLeft className="w-3 h-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => move(index, 1)}
-                    disabled={index === items.length - 1}
-                    className="absolute -top-2 -right-4 p-1 bg-foreground text-background rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-                    aria-label="Move right"
-                  >
-                    <MoveRight className="w-3 h-3" />
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
-          {editable && (
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={uploading}
-              className="shrink-0 h-8 px-3 border-2 border-dashed border-border rounded flex items-center gap-1 text-xs text-muted-foreground hover:bg-accent"
-            >
-              {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-              Add logo
-            </button>
-          )}
-        </div>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => scrollBy(-1)}
+            aria-label="Scroll left"
+            className={`hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-10 h-8 w-8 items-center justify-center rounded-full bg-background/90 border border-border shadow-sm hover:bg-background transition-opacity ${canLeft ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollBy(1)}
+            aria-label="Scroll right"
+            className={`hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-10 h-8 w-8 items-center justify-center rounded-full bg-background/90 border border-border shadow-sm hover:bg-background transition-opacity ${canRight ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
 
+          <div
+            ref={scrollRef}
+            onWheel={(e) => {
+              if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                scrollRef.current?.scrollBy({ left: e.deltaY, behavior: "auto" });
+              }
+            }}
+            className="logo-scroll flex flex-nowrap items-center gap-x-6 md:gap-x-10 overflow-x-auto whitespace-nowrap justify-start pb-2 scroll-smooth"
+            style={{ scrollbarWidth: "thin" }}
+          >
+            {items.map((l, index) => (
+              <div key={l.id} className="relative group shrink-0">
+                <img
+                  src={l.src}
+                  alt={l.alt ?? "Client logo"}
+                  className="h-6 md:h-9 w-auto object-contain opacity-90 hover:opacity-100 transition"
+                />
+                {editable && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => remove(l.id)}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Remove logo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(index, -1)}
+                      disabled={index === 0}
+                      className="absolute -top-2 -left-4 p-1 bg-foreground text-background rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+                      aria-label="Move left"
+                    >
+                      <MoveLeft className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => move(index, 1)}
+                      disabled={index === items.length - 1}
+                      className="absolute -top-2 -right-4 p-1 bg-foreground text-background rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
+                      aria-label="Move right"
+                    >
+                      <MoveRight className="w-3 h-3" />
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+            {editable && (
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                disabled={uploading}
+                className="shrink-0 h-8 px-3 border-2 border-dashed border-border rounded flex items-center gap-1 text-xs text-muted-foreground hover:bg-accent"
+              >
+                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                Add logo
+              </button>
+            )}
+          </div>
+        </div>
       </div>
+
 
       <input
         ref={inputRef}
