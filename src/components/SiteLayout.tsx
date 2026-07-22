@@ -53,17 +53,20 @@ export function SiteLayout({
               className={`h-14 md:h-20 w-auto object-contain ${light ? "" : "invert brightness-0"}`}
             />
           </Link>
-          <nav className="hidden md:flex gap-8 text-xs uppercase tracking-[0.2em]">
-            {nav.map((n) => (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={`transition-colors ${path === n.to ? textActive : textIdle}`}
-              >
-                {n.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="hidden md:flex items-center gap-8">
+            <nav className="flex gap-8 text-xs uppercase tracking-[0.2em]">
+              {nav.map((n) => (
+                <Link
+                  key={n.to}
+                  to={n.to}
+                  className={`transition-colors ${path === n.to ? textActive : textIdle}`}
+                >
+                  {n.label}
+                </Link>
+              ))}
+            </nav>
+            <HeaderSocials light={light} />
+          </div>
           <button
             onClick={() => setOpen(!open)}
             className={`md:hidden text-xs uppercase tracking-widest ${light ? "text-white" : ""}`}
