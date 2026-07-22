@@ -3,7 +3,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X } from "lucide-react";
+import { Loader2, MoveLeft, MoveRight, Plus, X } from "lucide-react";
 
 type Logo = { id: string; src: string; alt?: string };
 
