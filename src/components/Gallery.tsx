@@ -27,6 +27,30 @@ export function Gallery({
     return () => window.removeEventListener("keydown", onKey);
   }, [active, images.length]);
 
+  if (layout === "stacked") {
+    return (
+      <>
+        <div className="flex flex-col">
+          {images.map((img, i) => (
+            <button
+              key={img.src}
+              onClick={() => setActive(i)}
+              className="block w-full overflow-hidden bg-muted"
+            >
+              <img
+                src={cdn(img.src, 2000)}
+                alt={img.alt || "Point Studio photograph"}
+                loading="lazy"
+                className="block w-full h-auto"
+              />
+            </button>
+          ))}
+        </div>
+        {renderLightbox()}
+      </>
+    );
+  }
+
   if (layout === "masonry") {
     const numColsDesktop = columns === 2 ? 2 : 4;
     const numColsTablet = columns === 2 ? 2 : 3;
