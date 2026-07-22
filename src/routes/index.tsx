@@ -192,29 +192,6 @@ function Index() {
         </div>
       </section>
 
-      {/* Selected work grid */}
-      <section className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="mb-10 flex items-end justify-between">
-          <h2 className="font-sans font-bold uppercase tracking-tight text-3xl md:text-4xl">
-            Selected work
-          </h2>
-          <Link to="/food" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">
-            View all →
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {grid.map((img) => (
-            <div key={img.src} className="aspect-square overflow-hidden bg-muted">
-              <img
-                src={cdn(img.src, 800)}
-                alt={img.alt || "Point Studio"}
-                loading="lazy"
-                className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          ))}
-        </div>
-      </section>
     </SiteLayout>
   );
 }
