@@ -24,19 +24,10 @@ export const Route = createFileRoute("/food")({
 function FoodPage() {
   return (
     <SiteLayout>
-      <PageHeader title="Food" subtitle="Food, product & tabletop photography" />
-      <div className="mx-auto max-w-7xl px-6 pb-24">
+      <div className="mx-auto max-w-7xl px-6 pt-16 pb-24">
         <Gallery images={data} columns={3} />
       </div>
     </SiteLayout>
   );
 }
 
-function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <section className="mx-auto max-w-7xl px-6 pt-16 pb-12 text-center">
-      <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground mb-4">{subtitle}</p>
-      <h1 className="font-serif text-5xl md:text-6xl">{title}</h1>
-    </section>
-  );
-}
