@@ -282,12 +282,37 @@ function Index() {
           </div>
           <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {testimonials.map((t) => (
-              <figure key={t.name} className="bg-background p-8 flex flex-col gap-6">
-                <span className="font-serif italic text-5xl leading-none text-foreground/30">"</span>
-                <blockquote className="font-serif italic text-lg md:text-xl leading-snug text-foreground/85">
-                  {t.quote}
-                </blockquote>
-                <figcaption className="mt-auto">
+              <figure key={t.name} className="bg-background flex flex-col overflow-hidden">
+                {t.video ? (
+                  <button
+                    type="button"
+                    onClick={() => setActiveVideo(t.video!)}
+                    className="relative aspect-[4/3] w-full group overflow-hidden"
+                    aria-label={`Play video testimonial from ${t.name}`}
+                  >
+                    {t.poster && (
+                      <img
+                        src={cdn(t.poster, 1200)}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg">
+                        <Play className="w-7 h-7 text-black fill-black translate-x-0.5" />
+                      </div>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="p-8 flex flex-col gap-6 flex-1">
+                    <span className="font-serif italic text-5xl leading-none text-foreground/30">"</span>
+                    <blockquote className="font-serif italic text-lg md:text-xl leading-snug text-foreground/85">
+                      {t.quote}
+                    </blockquote>
+                  </div>
+                )}
+                <figcaption className="p-8 pt-6 mt-auto">
                   <div className="text-sm font-medium text-foreground">{t.name}</div>
                   <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mt-1">
                     {t.role}
@@ -298,6 +323,34 @@ function Index() {
           </div>
         </div>
       </section>
+
+      {activeVideo && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setActiveVideo(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setActiveVideo(null)}
+            className="absolute top-6 right-6 text-white/80 hover:text-white"
+            aria-label="Close video"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <div
+            className="relative w-full max-w-5xl aspect-video"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <iframe
+              src={activeVideo + "?autoplay=1"}
+              title="Video testimonial"
+              allow="autoplay; encrypted-media; fullscreen"
+              allowFullScreen
+              className="absolute inset-0 w-full h-full"
+            />
+          </div>
+        </div>
+      )}
 
 
     </SiteLayout>
