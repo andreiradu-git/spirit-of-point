@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
-import { Gallery } from "@/components/Gallery";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { Play, Star, X } from "lucide-react";
+import { Star } from "lucide-react";
 import home from "@/data/home.json";
 import { Editable } from "@/components/Editable";
 import { EditableImage } from "@/components/EditableImage";
 import { EditableGallery } from "@/components/EditableGallery";
+import { EditableLogoBand } from "@/components/EditableLogoBand";
+import { EditableTestimonials, type Testimonial } from "@/components/EditableTestimonials";
 import { useImage, useSaveImage } from "@/hooks/use-site-images";
 
 
@@ -38,11 +38,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const heroSrc = useImage("hero", home[1]?.src);
   const saveHeroImage = useSaveImage();
   const fish = { src: heroSrc, alt: "Point Studio food photography" };
-  const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
+  const fallbackLogos = home
+    .filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src))
+    .map((l, i) => ({ id: `fallback-${i}`, src: cdn(l.src, 200), alt: "Client logo" }));
 
   const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28], home[19], home[21], home[23]].filter(Boolean);
 
@@ -61,32 +62,34 @@ function Index() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-  const testimonials: Array<{
-    quote?: string;
-    name: string;
-    role: string;
-    video?: string;
-    poster?: string;
-  }> = [
+  const testimonialFallback: Testimonial[] = [
     {
+      id: "t1",
+      kind: "text",
       quote:
         "Working with Point Studio was a game-changer. Andrei's eye for detail and technical precision brought our product line to life beyond what we imagined.",
       name: "Ana Popescu",
       role: "Brand Manager, Lidl România",
     },
     {
+      id: "t2",
+      kind: "video",
       video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
       poster: home[5]?.src,
       name: "Mihai Ionescu",
       role: "Marketing Director, Kaufland",
     },
     {
+      id: "t3",
+      kind: "text",
       quote:
         "A rare mix of craft, patience and vision. Andrei understood our brief instantly and translated it into images that sell.",
       name: "Elena Georgescu",
       role: "Creative Lead, Carrefour",
     },
     {
+      id: "t4",
+      kind: "text",
       quote:
         "Fast, professional and incredibly creative. The team delivered visuals that elevated our entire campaign.",
       name: "Radu Dumitrescu",
@@ -185,23 +188,9 @@ function Index() {
       </section>
 
 
-      {/* Client logos band — evenly distributed on desktop */}
-      {logos.length > 0 && (
-        <section className="border-b border-border bg-background">
-          <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
-            <div className="flex flex-wrap md:flex-nowrap justify-center md:justify-between items-center gap-x-6 gap-y-4">
-              {logos.map((l) => (
-                <img
-                  key={l.src}
-                  src={cdn(l.src, 200)}
-                  alt="Client logo"
-                  className="h-6 md:h-7 w-auto object-contain opacity-80 hover:opacity-100 transition shrink-0"
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Client logos band — editable, responsive to count */}
+      <EditableLogoBand fallback={fallbackLogos} />
+
 
 
       {/* The Studio */}
@@ -309,77 +298,11 @@ function Index() {
 
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
-            {testimonials.map((t) => (
-              <figure key={t.name} className="bg-background flex flex-col overflow-hidden">
-                {t.video ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveVideo(t.video!)}
-                    className="relative aspect-[4/3] w-full group overflow-hidden"
-                    aria-label={`Play video testimonial from ${t.name}`}
-                  >
-                    {t.poster && (
-                      <img
-                        src={cdn(t.poster, 1200)}
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-11 h-11 md:w-12 md:h-12 rounded-full bg-white/90 group-hover:bg-white flex items-center justify-center shadow-lg">
-                        <Play className="w-5 h-5 md:w-6 md:h-6 text-black fill-black translate-x-0.5" />
-                      </div>
-                    </div>
-                  </button>
-                ) : (
-                  <div className="p-5 md:p-6 flex flex-col gap-4 flex-1">
-                    <span className="font-serif italic text-3xl md:text-4xl leading-none text-foreground/30">"</span>
-                    <blockquote className="font-serif italic text-base md:text-lg leading-snug text-foreground/85">
-                      {t.quote}
-                    </blockquote>
-                  </div>
-                )}
-                <figcaption className="p-5 md:p-6 pt-4 mt-auto">
-                  <div className="text-sm font-medium text-foreground">{t.name}</div>
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground mt-1">
-                    {t.role}
-                  </div>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+          <EditableTestimonials fallback={testimonialFallback} />
         </div>
       </section>
 
-      {activeVideo && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
-          onClick={() => setActiveVideo(null)}
-        >
-          <button
-            type="button"
-            onClick={() => setActiveVideo(null)}
-            className="absolute top-6 right-6 text-white/80 hover:text-white"
-            aria-label="Close video"
-          >
-            <X className="w-8 h-8" />
-          </button>
-          <div
-            className="relative w-full max-w-5xl aspect-video"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <iframe
-              src={activeVideo + "?autoplay=1"}
-              title="Video testimonial"
-              allow="autoplay; encrypted-media; fullscreen"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full"
-            />
-          </div>
-        </div>
-      )}
+
 
 
     </SiteLayout>
