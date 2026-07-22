@@ -159,16 +159,14 @@ function Index() {
 
         {/* Asymmetric mosaic */}
         <div className="grid grid-cols-6 auto-rows-[110px] md:auto-rows-[160px] gap-3">
-          {studioShots[0] && (
-            <StudioTile img={studioShots[0]} className="col-span-3 row-span-2" onOpen={() => {}} />
-          )}
-          {studioShots[1] && <StudioTile img={studioShots[1]} className="col-span-3 row-span-1" />}
-          {studioShots[2] && <StudioTile img={studioShots[2]} className="col-span-2 row-span-1" />}
-          {studioShots[3] && <StudioTile img={studioShots[3]} className="col-span-1 row-span-1" />}
-          {studioShots[4] && <StudioTile img={studioShots[4]} className="col-span-2 row-span-2" />}
-          {studioShots[5] && <StudioTile img={studioShots[5]} className="col-span-2 row-span-1" />}
-          {studioShots[6] && <StudioTile img={studioShots[6]} className="col-span-2 row-span-1" />}
-          {studioShots[7] && <StudioTile img={studioShots[7]} className="col-span-2 row-span-2" />}
+          {studioShots[0] && <StudioTile img={studioShots[0]} className="col-span-3 row-span-2" onOpen={() => setStudioActive(0)} />}
+          {studioShots[1] && <StudioTile img={studioShots[1]} className="col-span-3 row-span-1" onOpen={() => setStudioActive(1)} />}
+          {studioShots[2] && <StudioTile img={studioShots[2]} className="col-span-2 row-span-1" onOpen={() => setStudioActive(2)} />}
+          {studioShots[3] && <StudioTile img={studioShots[3]} className="col-span-1 row-span-1" onOpen={() => setStudioActive(3)} />}
+          {studioShots[4] && <StudioTile img={studioShots[4]} className="col-span-2 row-span-2" onOpen={() => setStudioActive(4)} />}
+          {studioShots[5] && <StudioTile img={studioShots[5]} className="col-span-2 row-span-1" onOpen={() => setStudioActive(5)} />}
+          {studioShots[6] && <StudioTile img={studioShots[6]} className="col-span-2 row-span-1" onOpen={() => setStudioActive(6)} />}
+          {studioShots[7] && <StudioTile img={studioShots[7]} className="col-span-2 row-span-2" onOpen={() => setStudioActive(7)} />}
         </div>
 
         <div className="mt-10 grid md:grid-cols-2 gap-10 text-[15px] leading-relaxed text-foreground/80">
