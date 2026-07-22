@@ -152,8 +152,19 @@ function Index() {
           </div>
         </div>
 
-        <div className="px-4 md:px-6">
-          <Gallery images={studioShots} columns={4} />
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-3">
+            {studioShots.map((img) => (
+              <div key={img.src} className="aspect-square overflow-hidden bg-muted">
+                <img
+                  src={cdn(img.src, 500)}
+                  alt={img.alt || "Point Studio"}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="mx-auto max-w-7xl px-6">
