@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VideoRouteImport } from './routes/video'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as PatternsRouteImport } from './routes/patterns'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as FoodRouteImport } from './routes/food'
 import { Route as EditorialRouteImport } from './routes/editorial'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -23,6 +24,9 @@ import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPagesRouteImport } from './routes/admin.pages'
 import { Route as AdminMenuRouteImport } from './routes/admin.menu'
 import { Route as AdminGalleriesRouteImport } from './routes/admin.galleries'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 
 const VideoRoute = VideoRouteImport.update({
   id: '/video',
@@ -37,6 +41,11 @@ const PeopleRoute = PeopleRouteImport.update({
 const PatternsRoute = PatternsRouteImport.update({
   id: '/patterns',
   path: '/patterns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FoodRoute = FoodRouteImport.update({
@@ -94,6 +103,24 @@ const AdminGalleriesRoute = AdminGalleriesRouteImport.update({
   path: '/galleries',
   getParentRoute: () => AdminRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,14 +129,18 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/mcp': typeof McpRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/galleries': typeof AdminGalleriesRoute
   '/admin/menu': typeof AdminMenuRoute
   '/admin/pages': typeof AdminPagesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,14 +149,18 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/mcp': typeof McpRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/galleries': typeof AdminGalleriesRoute
   '/admin/menu': typeof AdminMenuRoute
   '/admin/pages': typeof AdminPagesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -135,14 +170,18 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/mcp': typeof McpRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/galleries': typeof AdminGalleriesRoute
   '/admin/menu': typeof AdminMenuRoute
   '/admin/pages': typeof AdminPagesRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -153,14 +192,18 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/mcp'
     | '/patterns'
     | '/people'
     | '/video'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/galleries'
     | '/admin/menu'
     | '/admin/pages'
     | '/admin/settings'
     | '/work/$slug'
+    | '/.mcp/invoke-tool/$tool'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -169,14 +212,18 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/mcp'
     | '/patterns'
     | '/people'
     | '/video'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/galleries'
     | '/admin/menu'
     | '/admin/pages'
     | '/admin/settings'
     | '/work/$slug'
+    | '/.mcp/invoke-tool/$tool'
   id:
     | '__root__'
     | '/'
@@ -185,14 +232,18 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/mcp'
     | '/patterns'
     | '/people'
     | '/video'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/galleries'
     | '/admin/menu'
     | '/admin/pages'
     | '/admin/settings'
     | '/work/$slug'
+    | '/.mcp/invoke-tool/$tool'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -202,10 +253,14 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   EditorialRoute: typeof EditorialRoute
   FoodRoute: typeof FoodRoute
+  McpRoute: typeof McpRoute
   PatternsRoute: typeof PatternsRoute
   PeopleRoute: typeof PeopleRoute
   VideoRoute: typeof VideoRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   WorkSlugRoute: typeof WorkSlugRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -229,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/patterns'
       fullPath: '/patterns'
       preLoaderRoute: typeof PatternsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/food': {
@@ -308,6 +370,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminGalleriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -334,10 +417,15 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   EditorialRoute: EditorialRoute,
   FoodRoute: FoodRoute,
+  McpRoute: McpRoute,
   PatternsRoute: PatternsRoute,
   PeopleRoute: PeopleRoute,
   VideoRoute: VideoRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   WorkSlugRoute: WorkSlugRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
