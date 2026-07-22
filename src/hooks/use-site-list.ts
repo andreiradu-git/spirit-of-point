@@ -30,9 +30,10 @@ export function useSiteList<T>(id: string, fallback: T[]) {
   const items: T[] = query.data ?? fallback;
 
   const save = async (next: T[]) => {
+    const value = { items: next } as unknown as never;
     const { error } = await supabase
       .from("site_settings")
-      .upsert({ key, value: { items: next } }, { onConflict: "key" });
+      .upsert({ key, value }, { onConflict: "key" });
     if (error) throw error;
     qc.invalidateQueries({ queryKey: ["site-list", id] });
   };
