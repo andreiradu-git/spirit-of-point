@@ -16,7 +16,7 @@ export function PortfolioPage({
   images: Img[];
   showStrip?: boolean;
   showLogos?: boolean;
-  galleryLayout?: "grid" | "masonry";
+  galleryLayout?: "grid" | "masonry" | "stacked";
 }) {
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
 
