@@ -55,31 +55,33 @@ function Index() {
             className="block w-full h-auto"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 z-10 flex flex-col justify-between px-[4cqw] pt-[max(64px,10cqw)] pb-[4cqw]">
-            <div className="max-w-[58%] text-white">
-              <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[clamp(14px,3cqw,44px)]">
-                Photo-Video Studio and<br />Creative Workspace.
-              </h1>
-              <p className="mt-[1.2cqw] text-white/85 leading-snug text-[clamp(9px,1.05cqw,15px)]">
-                We blend creativity with technical expertise and a deep commitment to
-                quality and thats how we transform your ideas into stunning visuals
-                that captivate and sell.
-              </p>
-              <p className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(10px,1.4cqw,20px)]">
-                Let's create toghether<br />unforgetable images!
-              </p>
-            </div>
-            <div className="flex gap-[3cqw] text-white">
-              <div>
-                <div className="font-sans font-bold leading-none text-[clamp(14px,2.3cqw,34px)]">10+</div>
-                <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(6px,0.65cqw,10px)]">
-                  Years of<br />expertise
-                </div>
+          <div className="absolute inset-0 z-10">
+            <div className="mx-auto max-w-7xl h-full px-6 pt-[max(64px,10cqw)] pb-[4cqw] flex flex-col justify-between">
+              <div className="max-w-[58%] text-white">
+                <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[clamp(14px,3cqw,44px)]">
+                  Photo-Video Studio and<br />Creative Workspace.
+                </h1>
+                <p className="mt-[1.2cqw] text-white/85 leading-snug text-[clamp(9px,1.05cqw,15px)]">
+                  We blend creativity with technical expertise and a deep commitment to
+                  quality and thats how we transform your ideas into stunning visuals
+                  that captivate and sell.
+                </p>
+                <p className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(10px,1.4cqw,20px)]">
+                  Let's create toghether<br />unforgetable images!
+                </p>
               </div>
-              <div>
-                <div className="font-sans font-bold leading-none text-[clamp(14px,2.3cqw,34px)]">50+</div>
-                <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(6px,0.65cqw,10px)]">
-                  International<br />clients
+              <div className="flex gap-[3cqw] text-white">
+                <div>
+                  <div className="font-sans font-bold leading-none text-[clamp(14px,2.3cqw,34px)]">10+</div>
+                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(6px,0.65cqw,10px)]">
+                    Years of<br />expertise
+                  </div>
+                </div>
+                <div>
+                  <div className="font-sans font-bold leading-none text-[clamp(14px,2.3cqw,34px)]">50+</div>
+                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(6px,0.65cqw,10px)]">
+                    International<br />clients
+                  </div>
                 </div>
               </div>
             </div>
