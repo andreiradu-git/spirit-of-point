@@ -48,37 +48,54 @@ function Index() {
     <SiteLayout transparentHeader headerTone="light">
       {/* Hero — fish image at natural aspect ratio, text overlaid and scaled to image width */}
       <section className="relative w-full bg-white">
-        <div className="relative w-full">
+        <div className="relative w-full" style={{ containerType: "size" }}>
           <img
             src={cdn(fish.src, 2400)}
             alt="Point Studio food photography"
             className="block w-full h-auto"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 z-10 mx-auto max-w-7xl px-[3vw] pt-[6vw] pb-[2vw] flex flex-col justify-between">
+          <div
+            className="absolute inset-0 z-10 flex flex-col justify-between"
+            style={{
+              paddingLeft: "4cqi",
+              paddingRight: "4cqi",
+              paddingTop: "clamp(6rem, 14cqb, 10rem)",
+              paddingBottom: "3cqb",
+            }}
+          >
             <div className="max-w-[55%] text-white">
-              <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[4vw]">
+              <h1
+                className="font-sans font-bold uppercase tracking-tight leading-[1.05]"
+                style={{ fontSize: "min(4.2cqi, 7cqb)" }}
+              >
                 Photo-Video Studio and<br />Creative Workspace.
               </h1>
-              <p className="mt-[1.5vw] text-white/85 leading-relaxed text-[1.35vw]">
+              <p
+                className="text-white/85 leading-snug"
+                style={{ fontSize: "min(1.45cqi, 2.4cqb)", marginTop: "1.5cqb" }}
+              >
                 We blend creativity with technical expertise and a deep commitment to
                 quality and thats how we transform your ideas into stunning visuals
                 that captivate and sell.
               </p>
-              <p className="mt-[1.5vw] font-sans font-bold uppercase tracking-tight leading-tight text-[1.8vw]">
+              <p
+                className="font-sans font-bold uppercase tracking-tight leading-tight"
+                style={{ fontSize: "min(1.9cqi, 3.2cqb)", marginTop: "1.5cqb" }}
+              >
                 Let's create toghether<br />unforgetable images!
               </p>
             </div>
-            <div className="flex gap-[3vw] text-white">
+            <div className="flex text-white" style={{ gap: "3cqi" }}>
               <div>
-                <div className="font-sans font-bold text-[3vw] leading-none">10+</div>
-                <div className="uppercase tracking-widest text-white/70 mt-[0.5vw] text-[0.8vw]">
+                <div className="font-sans font-bold leading-none" style={{ fontSize: "min(3cqi, 5cqb)" }}>10+</div>
+                <div className="uppercase tracking-widest text-white/70" style={{ fontSize: "min(0.85cqi, 1.4cqb)", marginTop: "0.5cqb" }}>
                   Years of<br />expertise
                 </div>
               </div>
               <div>
-                <div className="font-sans font-bold text-[3vw] leading-none">50+</div>
-                <div className="uppercase tracking-widest text-white/70 mt-[0.5vw] text-[0.8vw]">
+                <div className="font-sans font-bold leading-none" style={{ fontSize: "min(3cqi, 5cqb)" }}>50+</div>
+                <div className="uppercase tracking-widest text-white/70" style={{ fontSize: "min(0.85cqi, 1.4cqb)", marginTop: "0.5cqb" }}>
                   International<br />clients
                 </div>
               </div>
