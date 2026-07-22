@@ -55,7 +55,7 @@ export function SiteLayout({
             <img
               src="https://images.squarespace-cdn.com/content/v1/61698c11d84cc850768a6bf8/3236b78e-0c1c-48e9-83fd-bbfa1f67650f/LOGO_PSP.png?format=400w"
               alt="Point Studio"
-              className={`h-12 md:h-[69px] w-auto object-contain ${light ? "" : "[filter:brightness(0)]"}`}
+              className="h-12 md:h-[69px] w-auto object-contain"
             />
           </Link>
           <div className="hidden md:flex items-center gap-8">
