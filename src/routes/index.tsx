@@ -32,7 +32,7 @@ function Index() {
   const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
 
 
-  const studioShots = [home[20], home[24], home[26], home[30]].filter(Boolean);
+  const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28]].filter(Boolean);
 
   const whatWeDo = [
     { label: "Food", img: home[22]?.src, slug: "food" },
