@@ -10,7 +10,7 @@ export function PortfolioPage({
   images: allImages,
   showStrip = false,
   showLogos = false,
-  galleryLayout = "grid",
+  galleryLayout = "masonry",
 }: {
   tagline: string;
   images: Img[];
