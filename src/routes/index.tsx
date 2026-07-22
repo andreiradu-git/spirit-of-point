@@ -190,8 +190,7 @@ function Index() {
             </Link>
           ))}
         </div>
-
-
+        </div>
       </section>
 
     </SiteLayout>
