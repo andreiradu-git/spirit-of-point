@@ -82,17 +82,17 @@ function Index() {
         </div>
       </section>
 
-      {/* Client logos band */}
+      {/* Client logos band — single line on desktop */}
       {logos.length > 0 && (
         <section className="border-t border-b border-border bg-background">
-          <div className="mx-auto max-w-7xl px-6 py-10">
-            <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-5">
+          <div className="mx-auto max-w-7xl px-4 md:px-6 py-6 md:py-8">
+            <div className="flex md:flex-nowrap flex-wrap justify-center items-center gap-x-6 md:gap-x-4 gap-y-4">
               {logos.map((l) => (
                 <img
                   key={l.src}
                   src={cdn(l.src, 200)}
                   alt="Client logo"
-                  className="h-8 md:h-9 w-auto object-contain opacity-80 hover:opacity-100 transition"
+                  className="h-6 md:h-7 w-auto object-contain opacity-80 hover:opacity-100 transition shrink-0"
                 />
               ))}
             </div>
