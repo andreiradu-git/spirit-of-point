@@ -121,7 +121,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AdminBar />
       <Outlet />
     </QueryClientProvider>
   );
 }
+
