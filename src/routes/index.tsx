@@ -27,8 +27,8 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const fish = home[1]; // aqw.png — fish + knives hero
-  const grid = home.slice(20, 32);
   const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
+
 
   const studioShots = [home[20], home[24], home[26], home[30]].filter(Boolean);
 
