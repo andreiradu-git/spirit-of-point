@@ -234,6 +234,37 @@ function Index() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section className="bg-[#e5e5e5]">
+        <div className="mx-auto max-w-7xl px-6 pb-20 md:pb-28">
+          <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
+            <div className="md:col-span-5">
+              <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">03 — Kind words</div>
+              <h2 className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground">
+                Testimonials
+              </h2>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+            {testimonials.map((t) => (
+              <figure key={t.name} className="bg-background p-8 flex flex-col gap-6">
+                <span className="font-serif italic text-5xl leading-none text-foreground/30">"</span>
+                <blockquote className="font-serif italic text-lg md:text-xl leading-snug text-foreground/85">
+                  {t.quote}
+                </blockquote>
+                <figcaption className="mt-auto">
+                  <div className="text-sm font-medium text-foreground">{t.name}</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mt-1">
+                    {t.role}
+                  </div>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
     </SiteLayout>
   );
 }
