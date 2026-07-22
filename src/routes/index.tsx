@@ -117,11 +117,11 @@ function Index() {
             </p>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-4xl mx-auto">
           {studioShots.map((img) => (
-            <div key={img.src} className="aspect-[4/3] overflow-hidden bg-muted">
+            <div key={img.src} className="aspect-square overflow-hidden bg-muted">
               <img
-                src={cdn(img.src, 900)}
+                src={cdn(img.src, 600)}
                 alt="Point Studio workspace"
                 loading="lazy"
                 className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
