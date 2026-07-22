@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
+import { Gallery } from "@/components/Gallery";
 import { Link } from "@tanstack/react-router";
 import home from "@/data/home.json";
+
 
 export const Route = createFileRoute("/")({
   component: Index,
