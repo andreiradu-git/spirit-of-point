@@ -168,9 +168,13 @@ function HeaderSocials({ light }: { light: boolean }) {
 function SettingsPanel({
   showVideo,
   onToggleVideo,
+  showPatterns,
+  onTogglePatterns,
 }: {
   showVideo: boolean;
   onToggleVideo: () => void;
+  showPatterns: boolean;
+  onTogglePatterns: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -187,6 +191,15 @@ function SettingsPanel({
               type="checkbox"
               checked={showVideo}
               onChange={onToggleVideo}
+              className="h-4 w-4 accent-foreground"
+            />
+          </label>
+          <label className="flex items-center justify-between text-sm cursor-pointer">
+            <span>Show Patterns in menu</span>
+            <input
+              type="checkbox"
+              checked={showPatterns}
+              onChange={onTogglePatterns}
               className="h-4 w-4 accent-foreground"
             />
           </label>
