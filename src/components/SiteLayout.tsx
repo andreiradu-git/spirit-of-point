@@ -204,5 +204,7 @@ function SettingsPanel({
 }
 
 export function cdn(url: string, w = 1500) {
+  // Supabase Storage public URLs do not support Squarespace-style ?format= params
+  if (/supabase\.co\/storage\/v1\/object\/public\//.test(url)) return url;
   return `${url}?format=${w}w`;
 }

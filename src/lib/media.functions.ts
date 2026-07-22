@@ -22,7 +22,7 @@ function sanitizePath(fileName: string) {
 
 export const uploadImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         file: z.instanceof(File).refine((f) => f.size <= MAX_FILE_SIZE, "Max 20 MB"),
@@ -52,7 +52,7 @@ export const uploadImage = createServerFn({ method: "POST" })
 
 export const deleteImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ path: z.string() }).parse(data))
+  .validator((data) => z.object({ path: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.storage.from("media").remove([data.path]);
@@ -74,7 +74,7 @@ export const getGalleries = createServerFn({ method: "GET" }).handler(async () =
 });
 
 export const getGalleryBySlug = createServerFn({ method: "GET" })
-  .inputValidator((data) => z.object({ slug: z.string() }).parse(data))
+  .validator((data) => z.object({ slug: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
@@ -92,7 +92,7 @@ export const getGalleryBySlug = createServerFn({ method: "GET" })
 
 export const upsertGallery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         slug: z.string(),
@@ -111,7 +111,7 @@ export const upsertGallery = createServerFn({ method: "POST" })
 
 export const addGalleryImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         gallerySlug: z.string(),
@@ -143,7 +143,7 @@ export const addGalleryImage = createServerFn({ method: "POST" })
 
 export const removeGalleryImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ imageId: z.string() }).parse(data))
+  .validator((data) => z.object({ imageId: z.string() }).parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("gallery_images").delete().eq("id", data.imageId);
     if (error) throw error;
@@ -152,7 +152,7 @@ export const removeGalleryImage = createServerFn({ method: "POST" })
 
 export const reorderGalleryImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ imageIds: z.array(z.string()) }).parse(data))
+  .validator((data) => z.object({ imageIds: z.array(z.string()) }).parse(data))
   .handler(async ({ data, context }) => {
     for (let i = 0; i < data.imageIds.length; i++) {
       const { error } = await context.supabase.from("gallery_images").update({ position: i + 1 }).eq("id", data.imageIds[i]);
@@ -163,7 +163,7 @@ export const reorderGalleryImages = createServerFn({ method: "POST" })
 
 export const updateImageMeta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         imageId: z.string(),

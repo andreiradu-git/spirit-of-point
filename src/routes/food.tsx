@@ -22,5 +22,5 @@ export const Route = createFileRoute("/food")({
 });
 
 function FoodPage() {
-  return <PortfolioPage tagline="Food, Product & Tabletop Photography" images={data} />;
+  return <PortfolioPage slug="food" tagline="Food, Product & Tabletop Photography" fallbackImages={data} />;
 }

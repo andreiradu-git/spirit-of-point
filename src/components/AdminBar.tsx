@@ -18,6 +18,7 @@ export function AdminBar() {
 
   return (
     <div
+      data-testid="admin-bar"
       className="fixed top-0 left-0 right-0 z-[100] bg-black text-white text-sm flex items-center justify-between px-4 py-2 shadow-lg"
       style={{ fontFamily: "Inter, sans-serif" }}
     >
@@ -29,6 +30,7 @@ export function AdminBar() {
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <span className="text-xs">Edit mode</span>
           <input
+            data-testid="edit-mode-toggle"
             type="checkbox"
             checked={editMode}
             onChange={(e) => setEditMode(e.target.checked)}
