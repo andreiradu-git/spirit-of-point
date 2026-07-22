@@ -3,7 +3,8 @@ import { cdn } from "./SiteLayout";
 
 type Img = { src: string; alt: string };
 
-export function Gallery({ images, columns = 3 }: { images: Img[]; columns?: number }) {
+export function Gallery({ images: allImages, columns = 3 }: { images: Img[]; columns?: number }) {
+  const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
   const [active, setActive] = useState<number | null>(null);
 
   useEffect(() => {
