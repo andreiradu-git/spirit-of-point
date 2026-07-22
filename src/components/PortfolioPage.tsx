@@ -23,7 +23,7 @@ export function PortfolioPage({
 
   return (
     <SiteLayout>
-      <div className="pt-10 md:pt-14 pb-4">
+      <div className="pt-10 md:pt-14 pb-10 md:pb-16">
         <p className="text-center text-[11px] md:text-xs uppercase tracking-[0.35em] md:tracking-[0.5em] text-foreground/70 px-4">
           {tagline}
         </p>
@@ -39,10 +39,10 @@ export function PortfolioPage({
           {images.map((img) => (
             <div
               key={"strip-" + img.src}
-              className="shrink-0 snap-start h-[55vh] md:h-[70vh] bg-muted"
+              className="shrink-0 snap-start h-[41vh] md:h-[52vh] bg-muted"
             >
               <img
-                src={cdn(img.src, 1400)}
+                src={cdn(img.src, 1200)}
                 alt={img.alt || "Point Studio photograph"}
                 loading="lazy"
                 className="h-full w-auto object-cover"
