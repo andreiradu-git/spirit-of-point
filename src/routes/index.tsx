@@ -19,8 +19,8 @@ export const Route = createFileRoute("/")({
         content:
           "Professional food, product, portrait and editorial photography studio based in Bucharest.",
       },
-      { property: "og:image", content: cdn(home[0].src, 1600) },
-      { name: "twitter:image", content: cdn(home[0].src, 1600) },
+      { property: "og:image", content: cdn(home[1].src, 1600) },
+      { name: "twitter:image", content: cdn(home[1].src, 1600) },
     ],
   }),
 });
@@ -31,45 +31,41 @@ function Index() {
   const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
 
   return (
-    <SiteLayout>
-      {/* Fish hero — full width directly under header */}
-      <section className="w-full">
+    <SiteLayout transparentHeader headerTone="light">
+      {/* Hero — fish image as full-bleed background with header + text overlay */}
+      <section className="relative w-full min-h-[100vh] bg-neutral-200 overflow-hidden">
         <img
-          src={cdn(fish.src, 2000)}
+          src={cdn(fish.src, 2400)}
           alt="Point Studio food photography"
-          className="w-full h-auto object-contain"
+          className="absolute inset-0 h-full w-full object-cover object-right"
         />
-      </section>
-
-      {/* Text block */}
-      <section className="mx-auto max-w-7xl px-6 pt-10 pb-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
-          <div>
-            <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-5xl leading-[1.05]">
+        {/* subtle gradient for legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
+        <div className="relative z-10 mx-auto max-w-7xl px-6 pt-40 md:pt-48 pb-16 min-h-[100vh] flex flex-col justify-between">
+          <div className="max-w-2xl text-white">
+            <h1 className="font-sans font-bold uppercase tracking-tight text-4xl sm:text-5xl md:text-6xl leading-[1.05]">
               Photo-Video Studio and<br />Creative Workspace.
             </h1>
-            <p className="mt-6 font-sans font-bold uppercase tracking-tight text-xl md:text-2xl leading-tight">
-              Let's create toghether<br />unforgetable images!
-            </p>
-          </div>
-          <div className="flex flex-col justify-between">
-            <p className="text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
+            <p className="mt-8 text-base md:text-lg text-white/85 max-w-md leading-relaxed">
               We blend creativity with technical expertise and a deep commitment to
               quality and thats how we transform your ideas into stunning visuals
               that captivate and sell.
             </p>
-            <div className="mt-8 flex gap-10">
-              <div>
-                <div className="font-sans font-bold text-3xl md:text-4xl">10+</div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
-                  Years of<br />expertise
-                </div>
+            <p className="mt-8 font-sans font-bold uppercase tracking-tight text-xl md:text-2xl leading-tight">
+              Let's create toghether<br />unforgetable images!
+            </p>
+          </div>
+          <div className="mt-10 flex gap-10 text-white">
+            <div>
+              <div className="font-sans font-bold text-3xl md:text-4xl">10+</div>
+              <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                Years of<br />expertise
               </div>
-              <div>
-                <div className="font-sans font-bold text-3xl md:text-4xl">50+</div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
-                  International<br />clients
-                </div>
+            </div>
+            <div>
+              <div className="font-sans font-bold text-3xl md:text-4xl">50+</div>
+              <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                International<br />clients
               </div>
             </div>
           </div>
@@ -78,9 +74,9 @@ function Index() {
 
       {/* Client logos band */}
       {logos.length > 0 && (
-        <section className="border-t border-border">
-          <div className="mx-auto max-w-7xl px-6 py-8">
-            <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+        <section className="border-t border-b border-border bg-background">
+          <div className="mx-auto max-w-7xl px-6 py-10">
+            <div className="flex flex-wrap justify-center items-center gap-x-10 gap-y-5">
               {logos.map((l) => (
                 <img
                   key={l.src}
