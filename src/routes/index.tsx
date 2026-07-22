@@ -30,18 +30,28 @@ function Index() {
   const grid = home.slice(20, 32);
   const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
 
+  const studioShots = [home[20], home[24], home[26], home[30]].filter(Boolean);
+
+  const whatWeDo = [
+    { label: "Food", img: home[22]?.src, to: "/food" },
+    { label: "People", img: home[24]?.src, to: "/people" },
+    { label: "Editorial", img: home[28]?.src, to: "/editorial" },
+    { label: "Corporate", img: home[27]?.src, to: "/editorial" },
+    { label: "Landscape", img: home[29]?.src, to: "/editorial" },
+    { label: "Industrial", img: home[31]?.src, to: "/editorial" },
+  ];
+
   return (
     <SiteLayout transparentHeader headerTone="light">
-      {/* Hero — fish image as full-bleed background with header + text overlay */}
-      <section className="relative w-full min-h-[100vh] bg-neutral-200 overflow-hidden">
+      {/* Hero — fish image full-bleed, natural aspect, header/text overlay */}
+      <section className="relative w-full h-[85vh] md:h-[92vh] bg-neutral-200 overflow-hidden">
         <img
           src={cdn(fish.src, 2400)}
           alt="Point Studio food photography"
-          className="absolute inset-0 h-full w-full object-cover object-right"
+          className="absolute inset-0 h-full w-full object-cover object-center"
         />
-        {/* subtle gradient for legibility */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
-        <div className="relative z-10 mx-auto max-w-7xl px-6 pt-40 md:pt-48 pb-16 min-h-[100vh] flex flex-col justify-between">
+        <div className="relative z-10 mx-auto max-w-7xl px-6 pt-40 md:pt-48 pb-16 h-full flex flex-col justify-between">
           <div className="max-w-2xl text-white">
             <h1 className="font-sans font-bold uppercase tracking-tight text-4xl sm:text-5xl md:text-6xl leading-[1.05]">
               Photo-Video Studio and<br />Creative Workspace.
@@ -110,7 +120,100 @@ function Index() {
               />
               <div className="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition-colors" />
               <div className="absolute inset-0 flex items-end p-6">
-                <div className="text-white font-serif text-3xl">{c.label}</div>
+                <div className="text-white font-sans font-bold uppercase tracking-tight text-2xl md:text-3xl">
+                  {c.label}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* The Studio */}
+      <section className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid md:grid-cols-2 gap-8 items-center mb-10">
+          <h2 className="font-sans font-bold uppercase tracking-tight text-4xl md:text-5xl leading-[1.05]">
+            The Studio
+          </h2>
+          <div className="bg-background border border-border p-6 md:p-8 text-[15px] leading-relaxed text-foreground/90">
+            <p>
+              Managed by <strong>Andrei C. Radu</strong>, a graduate in Photo-Video class of the
+              National Arts University, <strong>Point Studio</strong> is a professional
+              photography studio &amp; creative work space located in Bucharest, being part of
+              Atelierele Scanteia — a creative hub of artist workspaces and galleries in the
+              former communist "Casa Scanteii", in the present House of Free Press.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {studioShots.map((img) => (
+            <div key={img.src} className="aspect-[4/3] overflow-hidden bg-muted">
+              <img
+                src={cdn(img.src, 900)}
+                alt="Point Studio workspace"
+                loading="lazy"
+                className="h-full w-full object-cover hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 grid md:grid-cols-2 gap-6 text-[15px] leading-relaxed text-foreground/90">
+          <div className="bg-background border border-border p-6 md:p-8">
+            <p>
+              Point Studio is a 200 square meters professional photo-video studio and creative
+              work space created as part of Atelierele Scanteia. The space provides professional
+              photo setups, equipment and specialists to accommodate all photography briefs. It
+              has accessible parking, Wi-fi access and comfortable working space, which allows
+              our clients to be present for the entire photo session, without missing out on
+              their day at work.
+            </p>
+          </div>
+          <div className="bg-background border border-border p-6 md:p-8">
+            <p>
+              The fully equipped kitchen and the extensive prop room located on-site, coupled
+              with long lasting relations with food stylists, prop researchers, hair stylists,
+              makeup specialists and other collaborators, assure a great work experience.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* What We Do */}
+      <section className="mx-auto max-w-7xl px-6 py-16">
+        <div className="grid md:grid-cols-2 gap-8 items-start mb-10">
+          <h2 className="font-sans font-bold uppercase tracking-tight text-4xl md:text-5xl leading-[1.05]">
+            What We Do
+          </h2>
+          <div className="bg-background border border-border p-6 md:p-8 text-[15px] leading-relaxed text-foreground/90">
+            <p>
+              We at Point Studio know how to capture the essence of every moment — starting with
+              mouthwatering food photography that brings flavors to life, and extending to all
+              kinds of photography to meet your unique needs. From plates to portraits,
+              architecture, corporate events, industrial sites documentation or landscape, our
+              lens tells your story beautifully.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {whatWeDo.map((c) => (
+            <Link
+              key={c.label}
+              to={c.to}
+              className="relative aspect-[4/5] overflow-hidden group block bg-muted"
+            >
+              {c.img && (
+                <img
+                  src={cdn(c.img, 900)}
+                  alt={c.label}
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+              )}
+              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
+              <div className="absolute inset-0 flex items-end p-5">
+                <div className="text-white font-sans font-bold uppercase tracking-tight text-xl md:text-2xl">
+                  {c.label}
+                </div>
               </div>
             </Link>
           ))}
@@ -120,7 +223,9 @@ function Index() {
       {/* Selected work grid */}
       <section className="mx-auto max-w-7xl px-6 pb-24">
         <div className="mb-10 flex items-end justify-between">
-          <h2 className="font-serif text-3xl md:text-4xl">Selected work</h2>
+          <h2 className="font-sans font-bold uppercase tracking-tight text-3xl md:text-4xl">
+            Selected work
+          </h2>
           <Link to="/food" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">
             View all →
           </Link>
