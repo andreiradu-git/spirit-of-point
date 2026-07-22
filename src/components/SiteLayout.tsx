@@ -94,8 +94,8 @@ export function SiteLayout({
 
       <main className="flex-1">{children}</main>
 
-      <footer className={flushFooter ? "" : "border-t border-border mt-24"}>
-        <div className="mx-auto max-w-7xl px-6 py-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6 text-sm text-muted-foreground">
+      <footer className="bg-[#e5e5e5]">
+        <div className="mx-auto max-w-7xl px-6 pt-4 pb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6 text-sm text-muted-foreground">
           <div>
             <div className="font-serif text-xl text-foreground">Point Studio</div>
             <p className="mt-2 max-w-sm italic">
