@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -29,7 +30,7 @@ export const uploadImage = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     if (!ACCEPTED_TYPES.includes(data.file.type)) {
       throw new Error("Only JPG, PNG, WebP or GIF images are allowed");
     }
@@ -176,5 +177,3 @@ export const updateImageMeta = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
-
-import type { Database } from "@/integrations/supabase/types";
