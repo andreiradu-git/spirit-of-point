@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SiteLayout, cdn } from "@/components/SiteLayout";
-import { Gallery } from "@/components/Gallery";
+import { cdn } from "@/components/SiteLayout";
+import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/people.json";
 
 export const Route = createFileRoute("/people")({
@@ -10,8 +10,7 @@ export const Route = createFileRoute("/people")({
       { title: "Portrait & People Photography — Point Studio" },
       {
         name: "description",
-        content:
-          "Portrait, fashion and business photography by Point Studio in Bucharest.",
+        content: "Portrait, fashion and business photography by Point Studio in Bucharest.",
       },
       { property: "og:title", content: "Portrait & People Photography — Point Studio" },
       { property: "og:description", content: "Portraits, fashion and business photography." },
@@ -22,12 +21,5 @@ export const Route = createFileRoute("/people")({
 });
 
 function PeoplePage() {
-  return (
-    <SiteLayout>
-      <div className="mx-auto max-w-7xl px-6 pt-16 pb-24">
-        <Gallery images={data} columns={3} />
-      </div>
-    </SiteLayout>
-  );
+  return <PortfolioPage tagline="Portrait, Fashion & Business Photography" images={data} />;
 }
-
