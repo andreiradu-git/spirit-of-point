@@ -1,0 +1,88 @@
+import { useEffect, useState } from "react";
+import { cdn } from "./SiteLayout";
+
+type Img = { src: string; alt: string };
+
+export function Gallery({ images, columns = 3 }: { images: Img[]; columns?: number }) {
+  const [active, setActive] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (active === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActive(null);
+      if (e.key === "ArrowRight") setActive((a) => (a === null ? a : (a + 1) % images.length));
+      if (e.key === "ArrowLeft")
+        setActive((a) => (a === null ? a : (a - 1 + images.length) % images.length));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active, images.length]);
+
+  const colClass =
+    columns === 4
+      ? "sm:columns-2 md:columns-3 lg:columns-4"
+      : columns === 2
+        ? "sm:columns-2"
+        : "sm:columns-2 lg:columns-3";
+
+  return (
+    <>
+      <div className={`columns-1 ${colClass} gap-3 [column-fill:_balance]`}>
+        {images.map((img, i) => (
+          <button
+            key={img.src}
+            onClick={() => setActive(i)}
+            className="mb-3 block w-full break-inside-avoid overflow-hidden bg-muted group"
+          >
+            <img
+              src={cdn(img.src, 1000)}
+              alt={img.alt || "Point Studio photograph"}
+              loading="lazy"
+              className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+            />
+          </button>
+        ))}
+      </div>
+
+      {active !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setActive(null)}
+        >
+          <button
+            className="absolute top-4 right-6 text-white text-sm uppercase tracking-widest"
+            onClick={() => setActive(null)}
+          >
+            Close
+          </button>
+          <button
+            className="absolute left-4 md:left-8 text-white text-3xl px-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActive((a) => (a === null ? a : (a - 1 + images.length) % images.length));
+            }}
+            aria-label="Previous"
+          >
+            ‹
+          </button>
+          <img
+            src={cdn(images[active].src, 2000)}
+            alt={images[active].alt || ""}
+            className="max-h-[90vh] max-w-[90vw] object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            className="absolute right-4 md:right-8 text-white text-3xl px-3"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActive((a) => (a === null ? a : (a + 1) % images.length));
+            }}
+            aria-label="Next"
+          >
+            ›
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
