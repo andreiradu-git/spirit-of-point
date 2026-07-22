@@ -28,28 +28,37 @@ export const Route = createFileRoute("/")({
 function Index() {
   const fish = home[1]; // aqw.png — fish + knives hero
   const grid = home.slice(20, 32);
-  const logos = home.filter((i) => /logo|Kaufland/i.test(i.src)).slice(0, 15);
+  const logos = home.filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src));
 
   return (
     <SiteLayout>
-      {/* Hero: split text left + fish image right */}
-      <section className="mx-auto max-w-7xl px-6 pt-6 md:pt-8 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-stretch">
-          <div className="flex flex-col justify-between py-2">
-            <div>
-              <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-5xl leading-[1.05]">
-                Photo-Video Studio and<br />Creative Workspace.
-              </h1>
-              <p className="mt-8 text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
-                We blend creativity with technical expertise and a deep commitment to
-                quality and thats how we transform your ideas into stunning visuals
-                that captivate and sell.
-              </p>
-              <p className="mt-8 font-sans font-bold uppercase tracking-tight text-xl md:text-2xl leading-tight">
-                Let's create toghether<br />unforgetable images!
-              </p>
-            </div>
-            <div className="mt-10 flex gap-10">
+      {/* Fish hero — full width directly under header */}
+      <section className="w-full">
+        <img
+          src={cdn(fish.src, 2000)}
+          alt="Point Studio food photography"
+          className="w-full h-auto object-contain"
+        />
+      </section>
+
+      {/* Text block */}
+      <section className="mx-auto max-w-7xl px-6 pt-10 pb-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
+          <div>
+            <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-5xl leading-[1.05]">
+              Photo-Video Studio and<br />Creative Workspace.
+            </h1>
+            <p className="mt-6 font-sans font-bold uppercase tracking-tight text-xl md:text-2xl leading-tight">
+              Let's create toghether<br />unforgetable images!
+            </p>
+          </div>
+          <div className="flex flex-col justify-between">
+            <p className="text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
+              We blend creativity with technical expertise and a deep commitment to
+              quality and thats how we transform your ideas into stunning visuals
+              that captivate and sell.
+            </p>
+            <div className="mt-8 flex gap-10">
               <div>
                 <div className="font-sans font-bold text-3xl md:text-4xl">10+</div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
@@ -64,18 +73,10 @@ function Index() {
               </div>
             </div>
           </div>
-          <div className="relative h-full min-h-[420px] md:min-h-[560px]">
-            <img
-              src={cdn(fish.src, 1500)}
-              alt="Point Studio food photography"
-              className="absolute inset-0 h-full w-full object-contain object-right"
-            />
-          </div>
         </div>
       </section>
 
-
-      {/* Client logos — small row directly below hero */}
+      {/* Client logos band */}
       {logos.length > 0 && (
         <section className="border-t border-border">
           <div className="mx-auto max-w-7xl px-6 py-8">
