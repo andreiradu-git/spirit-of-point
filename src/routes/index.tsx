@@ -98,9 +98,9 @@ function Index() {
                   Photo-Video Studio and Creative Workspace.
                 </h1>
                 <p className="mt-[1.2cqw] text-white/85 leading-snug text-[1.35cqw]">
-                  We blend creativity with technical expertise and a deep commitment to
-                  quality and thats how we transform your ideas into stunning visuals
-                  that captivate and sell.
+                  We blend creativity with technical expertise
+                  <br className="hidden md:inline" /> and a deep commitment to quality and thats how
+                  <br className="hidden md:inline" /> we transform your ideas into stunning visuals that captivate and sell.
                 </p>
                 <p className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[1.7cqw]">
                   Let's create toghether unforgetable images!
