@@ -10,7 +10,7 @@ export function Gallery({
 }: {
   images: Img[];
   columns?: number;
-  layout?: "grid" | "masonry";
+  layout?: "grid" | "masonry" | "stacked";
 }) {
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
   const [active, setActive] = useState<number | null>(null);
