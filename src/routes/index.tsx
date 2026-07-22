@@ -43,6 +43,27 @@ function Index() {
     { label: "Industrial", img: home[31]?.src, slug: "industrial" },
   ];
 
+  const testimonials = [
+    {
+      quote:
+        "Working with Point Studio was a game-changer. Andrei's eye for detail and technical precision brought our product line to life beyond what we imagined.",
+      name: "Ana Popescu",
+      role: "Brand Manager, Lidl România",
+    },
+    {
+      quote:
+        "The professionalism and creativity at Point Studio are unmatched. Every shoot delivers exactly the mood and quality our campaigns need.",
+      name: "Mihai Ionescu",
+      role: "Marketing Director, Kaufland",
+    },
+    {
+      quote:
+        "A rare mix of craft, patience and vision. Andrei understood our brief instantly and translated it into images that sell.",
+      name: "Elena Georgescu",
+      role: "Creative Lead, Carrefour",
+    },
+  ];
+
 
   return (
     <SiteLayout transparentHeader headerTone="light">
