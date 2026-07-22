@@ -193,19 +193,17 @@ function Index() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
             <div className="md:col-span-5">
-              <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3">01 — Point Studio</div>
-              <h2 className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground">
+              <Editable as="div" id="studio.eyebrow" className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 block">
+                01 — Point Studio
+              </Editable>
+              <Editable as="h2" id="studio.title" className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground block">
                 The Studio
-              </h2>
+              </Editable>
             </div>
             <div className="md:col-span-7 text-[15px] md:text-base leading-relaxed text-foreground/80">
-              <p>
-                Managed by <strong className="text-foreground">Andrei C. Radu</strong>, a graduate in Photo-Video class of the
-                National Arts University, <strong className="text-foreground">Point Studio</strong> is a professional
-                photography studio &amp; creative work space located in Bucharest, being part of
-                Atelierele Scanteia — a creative hub of artist workspaces and galleries in the
-                former communist "Casa Scanteii", in the present House of Free Press.
-              </p>
+              <Editable as="p" id="studio.intro" multiline>
+                Managed by Andrei C. Radu, a graduate in Photo-Video class of the National Arts University, Point Studio is a professional photography studio & creative work space located in Bucharest, being part of Atelierele Scanteia — a creative hub of artist workspaces and galleries in the former communist "Casa Scanteii", in the present House of Free Press.
+              </Editable>
             </div>
           </div>
         </div>
@@ -227,21 +225,15 @@ function Index() {
 
         <div className="mx-auto max-w-7xl px-6">
           <div className="mt-14 grid md:grid-cols-2 gap-10 text-[15px] md:text-base leading-relaxed text-foreground/80">
-            <p>
-              Point Studio is a 200 square meters professional photo-video studio and creative
-              work space created as part of Atelierele Scanteia. The space provides professional
-              photo setups, equipment and specialists to accommodate all photography briefs. It
-              has accessible parking, Wi-fi access and comfortable working space, which allows
-              our clients to be present for the entire photo session, without missing out on
-              their day at work.
-            </p>
-            <p>
-              The fully equipped kitchen and the extensive prop room located on-site, coupled
-              with long lasting relations with food stylists, prop researchers, hair stylists,
-              makeup specialists and other collaborators, assure a great work experience.
-            </p>
+            <Editable as="p" id="studio.body1" multiline>
+              Point Studio is a 200 square meters professional photo-video studio and creative work space created as part of Atelierele Scanteia. The space provides professional photo setups, equipment and specialists to accommodate all photography briefs. It has accessible parking, Wi-fi access and comfortable working space, which allows our clients to be present for the entire photo session, without missing out on their day at work.
+            </Editable>
+            <Editable as="p" id="studio.body2" multiline>
+              The fully equipped kitchen and the extensive prop room located on-site, coupled with long lasting relations with food stylists, prop researchers, hair stylists, makeup specialists and other collaborators, assure a great work experience.
+            </Editable>
           </div>
         </div>
+
       </section>
 
       {/* What We Do */}
