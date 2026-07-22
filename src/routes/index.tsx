@@ -234,19 +234,27 @@ function Index() {
         </div>
       </section>
 
+      {studioActive !== null && studioShots[studioActive] && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4" onClick={() => setStudioActive(null)}>
+          <button className="absolute top-4 right-6 text-white text-sm uppercase tracking-widest" onClick={() => setStudioActive(null)}>Close</button>
+          <button className="absolute left-4 md:left-8 text-white text-3xl px-3" onClick={(e) => { e.stopPropagation(); setStudioActive((a) => a === null ? a : (a - 1 + studioShots.length) % studioShots.length); }} aria-label="Previous">‹</button>
+          <img src={cdn(studioShots[studioActive].src, 2000)} alt={studioShots[studioActive].alt || ""} className="max-h-[90vh] max-w-[90vw] object-contain" onClick={(e) => e.stopPropagation()} />
+          <button className="absolute right-4 md:right-8 text-white text-3xl px-3" onClick={(e) => { e.stopPropagation(); setStudioActive((a) => a === null ? a : (a + 1) % studioShots.length); }} aria-label="Next">›</button>
+        </div>
+      )}
     </SiteLayout>
   );
 }
 
-function StudioTile({ img, className = "" }: { img: { src: string; alt: string }; className?: string; onOpen?: () => void }) {
+function StudioTile({ img, className = "", onOpen }: { img: { src: string; alt: string }; className?: string; onOpen?: () => void }) {
   return (
-    <div className={`relative overflow-hidden group bg-muted ${className}`}>
+    <button onClick={onOpen} className={`relative overflow-hidden group bg-muted ${className}`}>
       <img
         src={cdn(img.src, 1200)}
         alt={img.alt}
         loading="lazy"
         className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
       />
-    </div>
+    </button>
   );
 }
