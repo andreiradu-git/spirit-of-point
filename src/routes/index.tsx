@@ -33,20 +33,22 @@ function Index() {
   return (
     <SiteLayout>
       {/* Hero: split text left + fish image right */}
-      <section className="mx-auto max-w-7xl px-6 pt-10 md:pt-16 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
-          <div>
-            <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-5xl leading-[1.05]">
-              Photo-Video Studio and<br />Creative Workspace.
-            </h1>
-            <p className="mt-8 text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
-              We blend creativity with technical expertise and a deep commitment to
-              quality and thats how we transform your ideas into stunning visuals
-              that captivate and sell.
-            </p>
-            <p className="mt-8 font-sans font-bold uppercase tracking-tight text-xl md:text-2xl leading-tight">
-              Let's create toghether<br />unforgetable images!
-            </p>
+      <section className="mx-auto max-w-7xl px-6 pt-6 md:pt-8 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-stretch">
+          <div className="flex flex-col justify-between py-2">
+            <div>
+              <h1 className="font-sans font-bold uppercase tracking-tight text-3xl sm:text-4xl md:text-5xl leading-[1.05]">
+                Photo-Video Studio and<br />Creative Workspace.
+              </h1>
+              <p className="mt-8 text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
+                We blend creativity with technical expertise and a deep commitment to
+                quality and thats how we transform your ideas into stunning visuals
+                that captivate and sell.
+              </p>
+              <p className="mt-8 font-sans font-bold uppercase tracking-tight text-xl md:text-2xl leading-tight">
+                Let's create toghether<br />unforgetable images!
+              </p>
+            </div>
             <div className="mt-10 flex gap-10">
               <div>
                 <div className="font-sans font-bold text-3xl md:text-4xl">10+</div>
@@ -62,15 +64,16 @@ function Index() {
               </div>
             </div>
           </div>
-          <div className="relative">
+          <div className="relative h-full min-h-[420px] md:min-h-[560px]">
             <img
               src={cdn(fish.src, 1500)}
               alt="Point Studio food photography"
-              className="w-full h-auto object-contain"
+              className="absolute inset-0 h-full w-full object-contain object-right"
             />
           </div>
         </div>
       </section>
+
 
       {/* Client logos — small row directly below hero */}
       {logos.length > 0 && (
