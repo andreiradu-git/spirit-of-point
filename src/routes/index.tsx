@@ -46,7 +46,7 @@ function Index() {
 
   return (
     <SiteLayout transparentHeader headerTone="light">
-      {/* Hero — fish image at natural aspect ratio, text overlaid */}
+      {/* Hero — fish image at natural aspect ratio, text overlaid and scaled to image width */}
       <section className="relative w-full bg-white">
         <div className="relative w-full">
           <img
@@ -55,30 +55,30 @@ function Index() {
             className="block w-full h-auto"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 z-10 mx-auto max-w-7xl px-6 pt-28 md:pt-36 pb-6 md:pb-12 flex flex-col justify-between">
-            <div className="max-w-2xl text-white">
-              <h1 className="font-sans font-bold uppercase tracking-tight text-2xl sm:text-4xl md:text-6xl leading-[1.05]">
+          <div className="absolute inset-0 z-10 mx-auto max-w-7xl px-[3vw] pt-[6vw] pb-[2vw] flex flex-col justify-between">
+            <div className="max-w-[55%] text-white">
+              <h1 className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[4vw]">
                 Photo-Video Studio and<br />Creative Workspace.
               </h1>
-              <p className="mt-3 md:mt-8 text-xs sm:text-sm md:text-lg text-white/85 max-w-md leading-relaxed">
+              <p className="mt-[1.5vw] text-white/85 leading-relaxed text-[1.35vw]">
                 We blend creativity with technical expertise and a deep commitment to
                 quality and thats how we transform your ideas into stunning visuals
                 that captivate and sell.
               </p>
-              <p className="mt-3 md:mt-8 font-sans font-bold uppercase tracking-tight text-sm sm:text-lg md:text-2xl leading-tight">
+              <p className="mt-[1.5vw] font-sans font-bold uppercase tracking-tight leading-tight text-[1.8vw]">
                 Let's create toghether<br />unforgetable images!
               </p>
             </div>
-            <div className="mt-4 md:mt-10 flex gap-6 md:gap-10 text-white">
+            <div className="flex gap-[3vw] text-white">
               <div>
-                <div className="font-sans font-bold text-xl sm:text-2xl md:text-4xl">10+</div>
-                <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                <div className="font-sans font-bold text-[3vw] leading-none">10+</div>
+                <div className="uppercase tracking-widest text-white/70 mt-[0.5vw] text-[0.8vw]">
                   Years of<br />expertise
                 </div>
               </div>
               <div>
-                <div className="font-sans font-bold text-xl sm:text-2xl md:text-4xl">50+</div>
-                <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                <div className="font-sans font-bold text-[3vw] leading-none">50+</div>
+                <div className="uppercase tracking-widest text-white/70 mt-[0.5vw] text-[0.8vw]">
                   International<br />clients
                 </div>
               </div>
@@ -90,7 +90,7 @@ function Index() {
 
       {/* Client logos band — evenly distributed on desktop */}
       {logos.length > 0 && (
-        <section className="border-t border-b border-border bg-background">
+        <section className="border-b border-border bg-background">
           <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-8">
             <div className="flex flex-wrap md:flex-nowrap justify-center md:justify-between items-center gap-x-6 gap-y-4">
               {logos.map((l) => (
