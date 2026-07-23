@@ -31,6 +31,8 @@ export function SiteLayout({
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { settings, update, ready } = useSiteSettings();
+  const { isAdmin } = useAdmin();
+
 
   const nav: NavItem[] = [...BASE_NAV];
   if (settings.showPatterns) {
