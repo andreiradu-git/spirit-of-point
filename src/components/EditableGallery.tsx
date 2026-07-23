@@ -3,6 +3,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useGallery, useInvalidateGallery, type GalleryImage } from "@/hooks/use-gallery";
 import { supabase } from "@/integrations/supabase/client";
+import { cdn, cdnSrcSet } from "@/components/SiteLayout";
 import { useServerFn } from "@tanstack/react-start";
 import {
   DndContext,
@@ -85,9 +86,12 @@ function SortableImage({
         disabled={editable}
       >
         <img
-          src={image.src}
+          src={cdn(image.src, 500)}
+          srcSet={cdnSrcSet(image.src, [300, 500, 800])}
+          sizes="(min-width:1024px) 20vw, (min-width:768px) 33vw, 50vw"
           alt={image.alt ?? ""}
           loading="lazy"
+          decoding="async"
           className={`w-full h-full object-cover ${aspectClass}`}
         />
       </button>
@@ -264,9 +268,12 @@ export function EditableGallery({
             className="block w-full overflow-hidden bg-muted group"
           >
             <img
-              src={img.src}
+              src={cdn(img.src, 500)}
+              srcSet={cdnSrcSet(img.src, [300, 500, 800])}
+              sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
               alt={img.alt ?? ""}
               loading="lazy"
+              decoding="async"
               className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
             />
           </button>
@@ -318,8 +325,9 @@ export function EditableGallery({
               ‹
             </button>
             <img
-              src={images[activeIndex].src}
+              src={cdn(images[activeIndex].src, 2000)}
               alt={images[activeIndex].alt ?? ""}
+              decoding="async"
               className="max-h-[90vh] max-w-[90vw] object-contain"
               onClick={(e) => e.stopPropagation()}
             />
@@ -444,8 +452,9 @@ export function EditableGallery({
             ‹
           </button>
           <img
-            src={images[activeIndex].src}
+            src={cdn(images[activeIndex].src, 2000)}
             alt={images[activeIndex].alt ?? ""}
+            decoding="async"
             className="max-h-[90vh] max-w-[90vw] object-contain"
             onClick={(e) => e.stopPropagation()}
           />

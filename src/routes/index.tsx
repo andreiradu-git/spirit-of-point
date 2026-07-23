@@ -120,13 +120,13 @@ function Index() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
           <div className="absolute inset-0 z-10">
-            <div className="mx-auto max-w-7xl h-full px-4 sm:px-6 pt-[max(4.5rem,9cqw)] sm:pt-[max(5rem,9cqw)] md:pt-[max(6rem,9cqw)] pb-[3cqw] flex flex-col justify-between">
+            <div className="mx-auto max-w-7xl h-full px-4 sm:px-6 pt-[max(3.5rem,8cqw)] sm:pt-[max(5rem,9cqw)] md:pt-[max(6rem,9cqw)] pb-[2cqw] sm:pb-[3cqw] flex flex-col justify-between">
               <div className="max-w-[70%] sm:max-w-[65%] md:max-w-[60%] text-white">
                 <Editable
                   as="h1"
                   id="hero.title"
                   multiline
-                  className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[clamp(0.85rem,3.2cqw,3.2rem)] block"
+                  className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[clamp(0.75rem,3.2cqw,3.2rem)] block"
                 >
                   Photo-Video Studio and Creative Workspace.
                 </Editable>
@@ -134,14 +134,14 @@ function Index() {
                   as="p"
                   id="hero.subtitle"
                   multiline
-                  className="mt-[1.2cqw] text-white/85 leading-snug text-[clamp(0.6rem,1.35cqw,1.15rem)] block"
+                  className="mt-[1.2cqw] text-white/85 leading-snug text-[clamp(0.55rem,1.35cqw,1.15rem)] block"
                 >
                   We blend creativity with technical expertise and a deep commitment to quality and thats how we transform your ideas into stunning visuals that captivate and sell.
                 </Editable>
                 <Editable
                   as="p"
                   id="hero.cta"
-                  className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(0.65rem,1.7cqw,1.5rem)] block"
+                  className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(0.6rem,1.7cqw,1.5rem)] block"
                 >
                   Let's create toghether unforgetable images!
                 </Editable>
@@ -150,14 +150,14 @@ function Index() {
 
               <div className="flex gap-[3cqw] text-white">
                 <div>
-                  <div className="font-sans font-bold leading-none text-[2.6cqw]">10+</div>
-                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[0.85cqw]">
+                  <div className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">10+</div>
+                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)]">
                     Years of<br />expertise
                   </div>
                 </div>
                 <div>
-                  <div className="font-sans font-bold leading-none text-[2.6cqw]">50+</div>
-                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[0.85cqw]">
+                  <div className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">50+</div>
+                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)]">
                     International<br />clients
                   </div>
                 </div>
@@ -169,7 +169,7 @@ function Index() {
                   aria-label="See our Google reviews"
                 >
                   <div className="flex items-center gap-[0.6cqw]">
-                    <svg viewBox="0 0 48 48" className="w-[2.4cqw] h-[2.4cqw]" aria-hidden="true">
+                    <svg viewBox="0 0 48 48" className="w-[clamp(0.9rem,2.4cqw,2rem)] h-[clamp(0.9rem,2.4cqw,2rem)]" aria-hidden="true">
                       <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.5 29.3 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5 43.5 34.8 43.5 24c0-1.2-.1-2.4-.4-3.5z"/>
                       <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.5 29.3 4.5 24 4.5 16.3 4.5 9.7 8.9 6.3 14.7z"/>
                       <path fill="#4CAF50" d="M24 43.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.5 2.2-7.2 2.2-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 39 16.2 43.5 24 43.5z"/>
@@ -178,10 +178,10 @@ function Index() {
                     <div>
                       <div className="flex gap-[0.2cqw]">
                         {[0,1,2,3,4].map((i) => (
-                          <Star key={i} className="w-[1cqw] h-[1cqw] fill-yellow-400 stroke-yellow-400" />
+                          <Star key={i} className="w-[clamp(0.4rem,1cqw,0.9rem)] h-[clamp(0.4rem,1cqw,0.9rem)] fill-yellow-400 stroke-yellow-400" />
                         ))}
                       </div>
-                      <div className="uppercase tracking-widest text-white/70 mt-[0.35cqw] text-[0.85cqw] group-hover:text-white transition-colors">
+                      <div className="uppercase tracking-widest text-white/70 mt-[0.35cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] group-hover:text-white transition-colors">
                         Google<br />Reviews
                       </div>
                     </div>

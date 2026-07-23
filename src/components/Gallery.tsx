@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { cdn } from "./SiteLayout";
+import { cdn, cdnSrcSet } from "./SiteLayout";
 
 type Img = { src: string; alt: string };
 
@@ -38,9 +38,12 @@ export function Gallery({
               className="block w-full overflow-hidden bg-muted"
             >
               <img
-                src={cdn(img.src, 2000)}
+                src={cdn(img.src, 1200)}
+                srcSet={cdnSrcSet(img.src, [600, 900, 1200, 1600])}
+                sizes="100vw"
                 alt={img.alt || "Point Studio photograph"}
                 loading="lazy"
+                decoding="async"
                 className="block w-full h-auto"
               />
             </button>
@@ -73,9 +76,12 @@ export function Gallery({
                 className="block w-full overflow-hidden bg-muted group"
               >
                 <img
-                  src={cdn(img.src, 1000)}
+                  src={cdn(img.src, 500)}
+                  srcSet={cdnSrcSet(img.src, [300, 500, 800])}
+                  sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
                   alt={img.alt || "Point Studio photograph"}
                   loading="lazy"
+                  decoding="async"
                   className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
                 />
               </button>
@@ -112,9 +118,12 @@ export function Gallery({
             className="block w-full self-start overflow-hidden bg-muted group"
           >
             <img
-              src={cdn(img.src, 1000)}
+              src={cdn(img.src, 500)}
+              srcSet={cdnSrcSet(img.src, [300, 500, 800])}
+              sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
               alt={img.alt || "Point Studio photograph"}
               loading="lazy"
+              decoding="async"
               className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
             />
           </button>
