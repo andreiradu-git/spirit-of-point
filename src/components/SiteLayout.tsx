@@ -3,6 +3,8 @@ import { useState, type ReactNode } from "react";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { Editable } from "@/components/Editable";
 import { useSocials, SOCIAL_ICON_PATHS } from "@/hooks/use-socials";
+import { useAdmin } from "@/hooks/use-admin";
+
 
 
 const BASE_NAV = [
@@ -29,6 +31,8 @@ export function SiteLayout({
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { settings, update, ready } = useSiteSettings();
+  const { isAdmin } = useAdmin();
+
 
   const nav: NavItem[] = [...BASE_NAV];
   if (settings.showPatterns) {
@@ -132,7 +136,7 @@ export function SiteLayout({
       </a>
 
 
-      {ready && (
+      {ready && isAdmin && (
         <SettingsPanel
           showVideo={settings.showVideo}
           onToggleVideo={() => update({ showVideo: !settings.showVideo })}
@@ -145,6 +149,7 @@ export function SiteLayout({
     </div>
   );
 }
+
 
 function SocialIcons({ className = "", iconClass = "h-4 w-4" }: { className?: string; iconClass?: string }) {
   const { socials } = useSocials();

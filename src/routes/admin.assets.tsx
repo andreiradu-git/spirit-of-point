@@ -5,7 +5,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
-import { Sparkles, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Sparkles, Loader2, Zap } from "lucide-react";
+
 
 export const Route = createFileRoute("/admin/assets")({
   head: () => ({ meta: [{ title: "Assets — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -143,7 +145,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const [alt, setAlt] = useState(meta?.alt ?? asset.alt ?? "");
   const [saving, setSaving] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
+  const [optBusy, setOptBusy] = useState(false);
+  const [optInfo, setOptInfo] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+
 
   useEffect(() => {
     setLabel(meta?.label ?? "");
@@ -183,6 +188,43 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       alert("AI error: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setAiBusy(false);
+    }
+  };
+
+  const doOptimize = async (maxW = 1600, quality = 0.75) => {
+    if (!asset.storagePath || asset.kind !== "image") return;
+    setOptBusy(true);
+    setOptInfo(null);
+    try {
+      const res = await fetch(asset.url, { cache: "no-store" });
+      if (!res.ok) throw new Error("Fetch failed");
+      const origBlob = await res.blob();
+      const origSize = origBlob.size;
+      const bmp = await createImageBitmap(origBlob);
+      const scale = Math.min(1, maxW / Math.max(bmp.width, bmp.height));
+      const w = Math.round(bmp.width * scale);
+      const h = Math.round(bmp.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(bmp, 0, 0, w, h);
+      const outBlob: Blob = await new Promise((r) =>
+        canvas.toBlob((b) => r(b as Blob), "image/webp", quality),
+      );
+      if (outBlob.size >= origSize) {
+        setOptInfo(`Already optimal (${Math.round(origSize / 1024)} KB)`);
+        return;
+      }
+      const { error } = await supabase.storage
+        .from("media")
+        .update(asset.storagePath, outBlob, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
+      if (error) throw error;
+      setOptInfo(`${Math.round(origSize / 1024)} → ${Math.round(outBlob.size / 1024)} KB · ${w}×${h}`);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+    } catch (e) {
+      alert("Optimize failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setOptBusy(false);
     }
   };
 
@@ -240,6 +282,21 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             {saving ? "Saving…" : "Save"}
           </button>
         </div>
+        {asset.kind === "image" && asset.storagePath && (
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => doOptimize()}
+              disabled={optBusy}
+              title="Resize to max 1600px and re-encode as WebP, replacing the file in storage."
+              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+            >
+              {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+              Optimize
+            </button>
+            {optInfo && <span className="text-[10px] text-emerald-700 truncate">{optInfo}</span>}
+          </div>
+        )}
       </div>
     </div>
   );
