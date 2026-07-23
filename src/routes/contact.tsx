@@ -81,6 +81,9 @@ function ContactPage() {
               {"Piața Presei Libere 1\nCasa Presei Libere — Building Corp A2, et. 3\npart of Atelierele Scânteia · Bucharest, Romania"}
             </Editable>
           </div>
+          <div className="mt-12">
+            <ContactForm />
+          </div>
         </div>
       </section>
 
