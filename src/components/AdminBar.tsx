@@ -32,6 +32,7 @@ export function AdminBar() {
         <Link to="/admin/performance" className="text-xs hover:underline">Performance</Link>
         <Link to="/admin/contacts" className="text-xs hover:underline">Messages</Link>
         <Link to="/admin/assets" className="text-xs hover:underline">Assets</Link>
+        <Link to="/admin/socials" className="text-xs hover:underline">Socials</Link>
         <Link to="/admin/theme" className="text-xs hover:underline">Theme</Link>
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <span className="text-xs">Edit mode</span>
