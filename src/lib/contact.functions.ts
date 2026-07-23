@@ -52,7 +52,7 @@ export const updateContactMessage = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {};
+    const patch: { read_at?: string | null; archived?: boolean } = {};
     if (data.read !== undefined) patch.read_at = data.read ? new Date().toISOString() : null;
     if (data.archived !== undefined) patch.archived = data.archived;
     const { error } = await context.supabase.from("contact_messages").update(patch).eq("id", data.id);
