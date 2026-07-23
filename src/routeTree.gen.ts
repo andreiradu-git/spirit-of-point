@@ -19,6 +19,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkSlugRouteImport } from './routes/work.$slug'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
+import { Route as AdminSocialsRouteImport } from './routes/admin.socials'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
 import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
@@ -75,6 +76,11 @@ const AdminThemeRoute = AdminThemeRouteImport.update({
   path: '/admin/theme',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSocialsRoute = AdminSocialsRouteImport.update({
+  id: '/admin/socials',
+  path: '/admin/socials',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSeoRoute = AdminSeoRouteImport.update({
   id: '/admin/seo',
   path: '/admin/seo',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/socials': typeof AdminSocialsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
 }
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/socials': typeof AdminSocialsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
 }
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/admin/contacts': typeof AdminContactsRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/socials': typeof AdminSocialsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
 }
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/admin/contacts'
     | '/admin/performance'
     | '/admin/seo'
+    | '/admin/socials'
     | '/admin/theme'
     | '/work/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/admin/contacts'
     | '/admin/performance'
     | '/admin/seo'
+    | '/admin/socials'
     | '/admin/theme'
     | '/work/$slug'
   id:
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/admin/contacts'
     | '/admin/performance'
     | '/admin/seo'
+    | '/admin/socials'
     | '/admin/theme'
     | '/work/$slug'
   fileRoutesById: FileRoutesById
@@ -221,6 +233,7 @@ export interface RootRouteChildren {
   AdminContactsRoute: typeof AdminContactsRoute
   AdminPerformanceRoute: typeof AdminPerformanceRoute
   AdminSeoRoute: typeof AdminSeoRoute
+  AdminSocialsRoute: typeof AdminSocialsRoute
   AdminThemeRoute: typeof AdminThemeRoute
   WorkSlugRoute: typeof WorkSlugRoute
 }
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminThemeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/socials': {
+      id: '/admin/socials'
+      path: '/admin/socials'
+      fullPath: '/admin/socials'
+      preLoaderRoute: typeof AdminSocialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/seo': {
       id: '/admin/seo'
       path: '/admin/seo'
@@ -349,6 +369,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminContactsRoute: AdminContactsRoute,
   AdminPerformanceRoute: AdminPerformanceRoute,
   AdminSeoRoute: AdminSeoRoute,
+  AdminSocialsRoute: AdminSocialsRoute,
   AdminThemeRoute: AdminThemeRoute,
   WorkSlugRoute: WorkSlugRoute,
 }
