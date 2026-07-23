@@ -136,6 +136,8 @@ export function SiteLayout({
           onToggleVideo={() => update({ showVideo: !settings.showVideo })}
           showPatterns={settings.showPatterns}
           onTogglePatterns={() => update({ showPatterns: !settings.showPatterns })}
+          showTestimonials={settings.showTestimonials}
+          onToggleTestimonials={() => update({ showTestimonials: !settings.showTestimonials })}
         />
       )}
     </div>
