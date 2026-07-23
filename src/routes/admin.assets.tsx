@@ -5,7 +5,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
-import { Sparkles, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Sparkles, Loader2, Zap } from "lucide-react";
+
 
 export const Route = createFileRoute("/admin/assets")({
   head: () => ({ meta: [{ title: "Assets — Admin" }, { name: "robots", content: "noindex" }] }),
