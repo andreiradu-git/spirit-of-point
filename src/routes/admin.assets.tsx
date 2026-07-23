@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
+import { replaceMediaObject } from "@/lib/media-admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Loader2, Zap, Undo2, ExternalLink } from "lucide-react";
 
@@ -137,6 +138,18 @@ function AdminAssetsPage() {
   );
 }
 
+async function blobToBase64(blob: Blob): Promise<string> {
+  const buf = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+
 function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
@@ -203,6 +216,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       if (!res.ok) throw new Error("Fetch failed");
       const origBlob = await res.blob();
       const origSize = origBlob.size;
+      const origContentType = res.headers.get("content-type") || undefined;
       const bmp = await createImageBitmap(origBlob);
       const scale = Math.min(1, maxW / Math.max(bmp.width, bmp.height));
       const w = Math.round(bmp.width * scale);
@@ -218,15 +232,17 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
         setOptInfo(`Already optimal (${Math.round(origSize / 1024)} KB)`);
         return;
       }
-      // Save a one-time backup of the current file so Revert can restore it.
-      await supabase.storage
-        .from("media")
-        .upload(backupPath, origBlob, { contentType: res.headers.get("content-type") || undefined, upsert: false, cacheControl: "3600" })
-        .catch(() => { /* backup already exists — keep the first original */ });
-      const { error } = await supabase.storage
-        .from("media")
-        .update(asset.storagePath, outBlob, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
-      if (error) throw error;
+      const [origB64, outB64] = await Promise.all([blobToBase64(origBlob), blobToBase64(outBlob)]);
+      await replaceMediaObject({
+        data: {
+          path: asset.storagePath,
+          contentType: "image/webp",
+          dataBase64: outB64,
+          backupPath,
+          origBase64: origB64,
+          origContentType,
+        },
+      });
       setOptInfo(`${Math.round(origSize / 1024)} → ${Math.round(outBlob.size / 1024)} KB · ${w}×${h}`);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
     } catch (e) {
@@ -249,10 +265,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       if (!res.ok) throw new Error("Backup fetch failed");
       const blob = await res.blob();
       const ct = res.headers.get("content-type") || "application/octet-stream";
-      const { error } = await supabase.storage
-        .from("media")
-        .update(asset.storagePath, blob, { contentType: ct, upsert: true, cacheControl: "3600" });
-      if (error) throw error;
+      const b64 = await blobToBase64(blob);
+      await replaceMediaObject({
+        data: { path: asset.storagePath, contentType: ct, dataBase64: b64 },
+      });
       setOptInfo(`Reverted (${Math.round(blob.size / 1024)} KB)`);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
     } catch (e) {

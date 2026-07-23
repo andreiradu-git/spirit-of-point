@@ -120,13 +120,13 @@ function Index() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
           <div className="absolute inset-0 z-10">
-            <div className="mx-auto max-w-7xl h-full px-4 sm:px-6 pt-[max(3.5rem,8cqw)] sm:pt-[max(5rem,9cqw)] md:pt-[max(6rem,9cqw)] pb-[2cqw] sm:pb-[3cqw] flex flex-col justify-between">
-              <div className="max-w-[70%] sm:max-w-[65%] md:max-w-[60%] text-white">
+            <div className="mx-auto max-w-7xl h-full px-3 sm:px-6 pt-[max(3rem,7cqw)] sm:pt-[max(5rem,9cqw)] md:pt-[max(6rem,9cqw)] pb-[1.5cqw] sm:pb-[3cqw] flex flex-col justify-between">
+              <div className="max-w-[68%] sm:max-w-[65%] md:max-w-[60%] text-white">
                 <Editable
                   as="h1"
                   id="hero.title"
                   multiline
-                  className="font-sans font-bold uppercase tracking-tight leading-[1.05] text-[clamp(0.75rem,3.2cqw,3.2rem)] block"
+                  className="font-sans font-bold uppercase tracking-tight leading-[1.02] text-[clamp(0.65rem,3.2cqw,3.2rem)] block"
                 >
                   Photo-Video Studio and Creative Workspace.
                 </Editable>
@@ -134,14 +134,14 @@ function Index() {
                   as="p"
                   id="hero.subtitle"
                   multiline
-                  className="mt-[1.2cqw] text-white/85 leading-snug text-[clamp(0.55rem,1.35cqw,1.15rem)] block"
+                  className="mt-[0.8cqw] text-white/85 leading-[1.15] text-[clamp(0.48rem,1.35cqw,1.15rem)] block"
                 >
                   We blend creativity with technical expertise and a deep commitment to quality and thats how we transform your ideas into stunning visuals that captivate and sell.
                 </Editable>
                 <Editable
                   as="p"
                   id="hero.cta"
-                  className="mt-[1.2cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(0.6rem,1.7cqw,1.5rem)] block"
+                  className="mt-[0.8cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(0.52rem,1.7cqw,1.5rem)] block"
                 >
                   Let's create toghether unforgetable images!
                 </Editable>
