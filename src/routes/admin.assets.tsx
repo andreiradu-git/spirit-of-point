@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
+import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
+import { Sparkles, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/assets")({
   head: () => ({ meta: [{ title: "Assets — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -14,6 +16,7 @@ function AdminAssetsPage() {
   const { user, isAdmin, loading } = useAdmin();
   const navigate = useNavigate();
   const list = useServerFn(listAllAssets);
+  const listMeta = useServerFn(listAssetMeta);
   const [filter, setFilter] = useState<"all" | "images" | "videos" | "unused">("all");
   const [source, setSource] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -28,6 +31,19 @@ function AdminAssetsPage() {
     enabled: !!isAdmin,
     staleTime: 30_000,
   });
+
+  const { data: metas = [] } = useQuery({
+    queryKey: ["admin", "asset-meta"],
+    queryFn: () => listMeta() as Promise<AssetMeta[]>,
+    enabled: !!isAdmin,
+    staleTime: 30_000,
+  });
+
+  const metaMap = useMemo(() => {
+    const m: Record<string, AssetMeta> = {};
+    for (const r of metas) m[r.url] = r;
+    return m;
+  }, [metas]);
 
   const sources = useMemo(() => Array.from(new Set(assets.map((a) => a.source))).sort(), [assets]);
 
@@ -57,7 +73,7 @@ function AdminAssetsPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-serif">Assets library</h1>
           <p className="text-sm text-neutral-600 mt-1">
-            Every image, video and link ever uploaded or referenced on the site — even the ones not shown on any page.
+            Every image, video and link ever uploaded or referenced on the site. Edit label & alt text — or let AI write them.
           </p>
         </div>
 
@@ -99,35 +115,13 @@ function AdminAssetsPage() {
         {isLoading ? (
           <div className="text-sm text-neutral-500">Loading assets…</div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {shown.map((a, i) => (
-              <a
+              <AssetCard
                 key={a.url + i}
-                href={a.url}
-                target="_blank"
-                rel="noreferrer"
-                className="group bg-white border rounded overflow-hidden hover:shadow-md transition-shadow"
-                title={a.url}
-              >
-                <div className="aspect-square bg-neutral-100 relative overflow-hidden">
-                  {a.kind === "image" ? (
-                    <img src={a.url} alt={a.alt ?? ""} className="w-full h-full object-cover" loading="lazy" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs">
-                      {a.kind === "video" ? "▶ VIDEO" : "🔗 LINK"}
-                    </div>
-                  )}
-                  {!a.usedOnSite && (
-                    <span className="absolute top-1 left-1 text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded">
-                      unused
-                    </span>
-                  )}
-                </div>
-                <div className="p-2">
-                  <div className="text-[11px] text-neutral-500 truncate">{a.source}</div>
-                  <div className="text-[11px] text-neutral-800 truncate">{a.name ?? a.url.split("/").pop()}</div>
-                </div>
-              </a>
+                asset={a}
+                meta={metaMap[a.url]}
+              />
             ))}
             {shown.length === 0 && (
               <div className="col-span-full text-sm text-neutral-500 text-center py-12">
@@ -136,6 +130,116 @@ function AdminAssetsPage() {
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
+  const save = useServerFn(saveAssetMeta);
+  const generate = useServerFn(generateAssetMeta);
+  const qc = useQueryClient();
+  const [label, setLabel] = useState(meta?.label ?? "");
+  const [alt, setAlt] = useState(meta?.alt ?? asset.alt ?? "");
+  const [saving, setSaving] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    setLabel(meta?.label ?? "");
+    setAlt(meta?.alt ?? asset.alt ?? "");
+    setDirty(false);
+  }, [meta, asset.alt]);
+
+  const doSave = async () => {
+    setSaving(true);
+    try {
+      await save({ data: { url: asset.url, label: label || null, alt: alt || null } });
+      qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
+      qc.invalidateQueries({ queryKey: ["asset-meta"] });
+      setDirty(false);
+    } catch (e) {
+      alert("Save failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const doAi = async () => {
+    setAiBusy(true);
+    try {
+      const out = await generate({
+        data: { imageUrl: asset.url, context: asset.source, kind: asset.kind },
+      });
+      if (out.label) setLabel(out.label);
+      if (out.alt) setAlt(out.alt);
+      await save({
+        data: { url: asset.url, label: out.label || null, alt: out.alt || null },
+      });
+      qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
+      qc.invalidateQueries({ queryKey: ["asset-meta"] });
+      setDirty(false);
+    } catch (e) {
+      alert("AI error: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border rounded overflow-hidden flex flex-col">
+      <a href={asset.url} target="_blank" rel="noreferrer" className="block aspect-video bg-neutral-100 relative overflow-hidden" title={asset.url}>
+        {asset.kind === "image" ? (
+          <img src={asset.url} alt={alt} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs">
+            {asset.kind === "video" ? "▶ VIDEO" : "🔗 LINK"}
+          </div>
+        )}
+        {!asset.usedOnSite && (
+          <span className="absolute top-1 left-1 text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded">unused</span>
+        )}
+      </a>
+      <div className="p-3 flex flex-col gap-2 text-xs">
+        <div className="text-[11px] text-neutral-500 truncate">{asset.source}</div>
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider text-neutral-500">Label</span>
+          <input
+            value={label}
+            onChange={(e) => { setLabel(e.target.value); setDirty(true); }}
+            placeholder="Short title"
+            className="border rounded px-2 py-1"
+          />
+        </label>
+        <label className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider text-neutral-500">Alt text</span>
+          <textarea
+            value={alt}
+            onChange={(e) => { setAlt(e.target.value); setDirty(true); }}
+            placeholder="Descriptive alt text for SEO & accessibility"
+            rows={2}
+            className="border rounded px-2 py-1 resize-y"
+          />
+        </label>
+        <div className="flex gap-2 mt-1">
+          <button
+            type="button"
+            onClick={doAi}
+            disabled={aiBusy || saving}
+            className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded bg-black text-white hover:bg-neutral-800 disabled:opacity-50"
+          >
+            {aiBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            AI write
+          </button>
+          <button
+            type="button"
+            onClick={doSave}
+            disabled={saving || aiBusy || !dirty}
+            className="flex-1 px-2 py-1.5 rounded border hover:bg-neutral-50 disabled:opacity-50"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
       </div>
     </div>
   );
