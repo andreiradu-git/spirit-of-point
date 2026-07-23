@@ -39,6 +39,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { settings } = useSiteSettings();
   const heroSrc = useImage("hero", home[1]?.src);
   const saveHeroImage = useSaveImage();
   const fish = { src: heroSrc, alt: "Point Studio food photography" };
