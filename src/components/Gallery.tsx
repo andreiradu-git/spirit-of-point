@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { cdn } from "./SiteLayout";
+import { cdn, cdnSrcSet } from "./SiteLayout";
 
 type Img = { src: string; alt: string };
 
