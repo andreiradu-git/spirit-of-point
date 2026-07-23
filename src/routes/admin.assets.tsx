@@ -191,6 +191,43 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
+  const doOptimize = async (maxW = 1600, quality = 0.75) => {
+    if (!asset.storagePath || asset.kind !== "image") return;
+    setOptBusy(true);
+    setOptInfo(null);
+    try {
+      const res = await fetch(asset.url, { cache: "no-store" });
+      if (!res.ok) throw new Error("Fetch failed");
+      const origBlob = await res.blob();
+      const origSize = origBlob.size;
+      const bmp = await createImageBitmap(origBlob);
+      const scale = Math.min(1, maxW / Math.max(bmp.width, bmp.height));
+      const w = Math.round(bmp.width * scale);
+      const h = Math.round(bmp.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(bmp, 0, 0, w, h);
+      const outBlob: Blob = await new Promise((r) =>
+        canvas.toBlob((b) => r(b as Blob), "image/webp", quality),
+      );
+      if (outBlob.size >= origSize) {
+        setOptInfo(`Already optimal (${Math.round(origSize / 1024)} KB)`);
+        return;
+      }
+      const { error } = await supabase.storage
+        .from("media")
+        .update(asset.storagePath, outBlob, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
+      if (error) throw error;
+      setOptInfo(`${Math.round(origSize / 1024)} → ${Math.round(outBlob.size / 1024)} KB · ${w}×${h}`);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+    } catch (e) {
+      alert("Optimize failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setOptBusy(false);
+    }
+  };
+
   return (
     <div className="bg-white border rounded overflow-hidden flex flex-col">
       <a href={asset.url} target="_blank" rel="noreferrer" className="block aspect-video bg-neutral-100 relative overflow-hidden" title={asset.url}>
