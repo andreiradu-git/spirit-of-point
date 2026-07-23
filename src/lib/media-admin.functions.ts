@@ -54,3 +54,27 @@ export const replaceMediaObject = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, size: body.byteLength };
   });
+
+export const deleteMediaObject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { path: string; alsoDeleteBackup?: boolean }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleErr || !isAdmin) throw new Error("Forbidden");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const toDelete = [data.path];
+    if (data.alsoDeleteBackup !== false) toDelete.push(`_originals/${data.path}`);
+    const { error } = await supabaseAdmin.storage.from("media").remove(toDelete);
+    if (error) throw new Error(error.message);
+
+    // Also remove any gallery_images rows that reference the public URL of this object.
+    const publicUrl = supabaseAdmin.storage.from("media").getPublicUrl(data.path).data.publicUrl;
+    await supabaseAdmin.from("gallery_images").delete().eq("src", publicUrl);
+    await supabaseAdmin.from("asset_meta").delete().eq("url", publicUrl);
+    return { ok: true };
+  });
+
