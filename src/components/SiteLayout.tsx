@@ -136,7 +136,7 @@ export function SiteLayout({
       </a>
 
 
-      {ready && (
+      {ready && isAdmin && (
         <SettingsPanel
           showVideo={settings.showVideo}
           onToggleVideo={() => update({ showVideo: !settings.showVideo })}
@@ -149,6 +149,7 @@ export function SiteLayout({
     </div>
   );
 }
+
 
 function SocialIcons({ className = "", iconClass = "h-4 w-4" }: { className?: string; iconClass?: string }) {
   const { socials } = useSocials();
