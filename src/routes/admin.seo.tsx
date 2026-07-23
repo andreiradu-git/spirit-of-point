@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { generateSeoContent } from "@/lib/seo-ai.functions";
 
 export const Route = createFileRoute("/admin/seo")({
   head: () => ({ meta: [{ title: "SEO & AI Visibility — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -42,10 +44,13 @@ type Row = {
   og_image: string;
 };
 
+type GalleryImage = { id: string; src: string; alt: string | null; gallery_id: string };
+
 function AdminSeoPage() {
   const { user, isAdmin, loading } = useAdmin();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const runAi = useServerFn(generateSeoContent);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) navigate({ to: "/auth" });
@@ -61,9 +66,24 @@ function AdminSeoPage() {
     enabled: !!isAdmin,
   });
 
+  const { data: galleryImages } = useQuery({
+    queryKey: ["gallery_images", "seo-audit"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gallery_images")
+        .select("id, src, alt, gallery_id");
+      if (error) throw error;
+      return (data ?? []) as GalleryImage[];
+    },
+    enabled: !!isAdmin,
+  });
+
   const [rows, setRows] = useState<Record<string, Row>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [altBusy, setAltBusy] = useState<string | null>(null);
+  const [altAllBusy, setAltAllBusy] = useState(false);
 
   useEffect(() => {
     const map: Record<string, Row> = {};
@@ -80,17 +100,34 @@ function AdminSeoPage() {
     setRows(map);
   }, [existing]);
 
+  const seoScore = useMemo(() => {
+    const totalPages = DEFAULT_PAGES.length;
+    const pagesWithMeta = DEFAULT_PAGES.filter((p) => {
+      const e = existing?.find((r) => r.path === p.path);
+      return !!(e?.title && e?.description);
+    }).length;
+    const totalImages = galleryImages?.length ?? 0;
+    const imagesWithAlt = galleryImages?.filter((i) => (i.alt ?? "").trim().length > 0).length ?? 0;
+    const metaPct = totalPages ? Math.round((pagesWithMeta / totalPages) * 100) : 0;
+    const altPct = totalImages ? Math.round((imagesWithAlt / totalImages) * 100) : 0;
+    const overall = Math.round((metaPct + altPct) / 2);
+    return { totalPages, pagesWithMeta, totalImages, imagesWithAlt, metaPct, altPct, overall };
+  }, [existing, galleryImages]);
+
   const save = async (path: string) => {
     setSaving(path);
     const r = rows[path];
-    const { error } = await supabase.from("page_seo").upsert({
-      path,
-      title: r.title || null,
-      description: r.description || null,
-      keywords: r.keywords || null,
-      og_image: r.og_image || null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "path" });
+    const { error } = await supabase.from("page_seo").upsert(
+      {
+        path,
+        title: r.title || null,
+        description: r.description || null,
+        keywords: r.keywords || null,
+        og_image: r.og_image || null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "path" },
+    );
     setSaving(null);
     if (error) {
       alert("Save failed: " + error.message);
@@ -116,7 +153,82 @@ function AdminSeoPage() {
     }));
   };
 
+  const aiFill = async (path: string) => {
+    setAiBusy(path);
+    try {
+      const label = DEFAULT_PAGES.find((p) => p.path === path)?.label ?? "";
+      const out = await runAi({
+        data: {
+          kind: "seo",
+          path,
+          label,
+          extraKeywords: rows[path]?.keywords || undefined,
+        },
+      });
+      setRows((prev) => ({
+        ...prev,
+        [path]: {
+          ...prev[path],
+          title: out.title || prev[path].title,
+          description: out.description || prev[path].description,
+          keywords: out.keywords || prev[path].keywords,
+        },
+      }));
+    } catch (e) {
+      alert("AI error: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setAiBusy(null);
+    }
+  };
+
+  const aiAlt = async (img: GalleryImage, context: string) => {
+    setAltBusy(img.id);
+    try {
+      const out = await runAi({
+        data: { kind: "alt", imageUrl: img.src, context },
+      });
+      const alt = out.alt;
+      if (alt) {
+        const { error } = await supabase.from("gallery_images").update({ alt }).eq("id", img.id);
+        if (error) throw error;
+        qc.invalidateQueries({ queryKey: ["gallery_images"] });
+      }
+    } catch (e) {
+      alert("AI error: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setAltBusy(null);
+    }
+  };
+
+  const aiAltAll = async () => {
+    if (!galleryImages) return;
+    const missing = galleryImages.filter((i) => !(i.alt ?? "").trim());
+    if (!missing.length) return;
+    if (!confirm(`Generate alt text for ${missing.length} images? This uses AI credits.`)) return;
+    setAltAllBusy(true);
+    try {
+      // Sequential to avoid rate limits
+      for (const img of missing) {
+        try {
+          const out = await runAi({
+            data: { kind: "alt", imageUrl: img.src, context: "Point Studio portfolio" },
+          });
+          if (out.alt) {
+            await supabase.from("gallery_images").update({ alt: out.alt }).eq("id", img.id);
+          }
+        } catch {
+          // continue on error
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["gallery_images"] });
+    } finally {
+      setAltAllBusy(false);
+    }
+  };
+
   if (loading || !isAdmin) return null;
+
+  const missingCount = galleryImages?.filter((i) => !(i.alt ?? "").trim()).length ?? 0;
 
   return (
     <div className="min-h-screen bg-neutral-50 pt-14 pb-24">
@@ -131,6 +243,42 @@ function AdminSeoPage() {
           <div className="flex gap-2 text-sm">
             <Link to="/admin/analytics" className="px-3 py-1.5 border rounded hover:bg-white">Analytics →</Link>
           </div>
+        </div>
+
+        {/* SEO Score */}
+        <div className="bg-white border rounded-lg p-5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-sm font-medium">SEO Score</div>
+            <div className="text-3xl font-serif">{seoScore.overall}%</div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <ScoreBar
+              label="Pages with metadata"
+              value={seoScore.pagesWithMeta}
+              total={seoScore.totalPages}
+              pct={seoScore.metaPct}
+            />
+            <ScoreBar
+              label="Images with alt text"
+              value={seoScore.imagesWithAlt}
+              total={seoScore.totalImages}
+              pct={seoScore.altPct}
+            />
+          </div>
+          {missingCount > 0 && (
+            <div className="mt-4 flex items-center justify-between bg-neutral-50 border rounded p-3">
+              <div className="text-xs text-neutral-700">
+                {missingCount} image{missingCount === 1 ? "" : "s"} missing alt text. Let AI write them.
+              </div>
+              <button
+                onClick={aiAltAll}
+                disabled={altAllBusy}
+                className="text-xs px-3 py-1.5 bg-black text-white rounded disabled:opacity-50"
+              >
+                {altAllBusy ? "Generating…" : `✨ AI generate all (${missingCount})`}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="bg-white border rounded-lg p-4 mb-6 text-sm">
@@ -148,12 +296,20 @@ function AdminSeoPage() {
             if (!r) return null;
             return (
               <div key={p.path} className="bg-white border rounded-lg p-5">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <div>
                     <div className="font-medium">{p.label}</div>
                     <code className="text-xs text-neutral-500">{p.path}</code>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => aiFill(p.path)}
+                      disabled={aiBusy === p.path}
+                      className="text-xs px-2 py-1 border border-black rounded hover:bg-black hover:text-white disabled:opacity-50"
+                      title="Use ChatGPT-style AI to write title, description and keywords"
+                    >
+                      {aiBusy === p.path ? "AI writing…" : "✨ AI write"}
+                    </button>
                     <button
                       onClick={() => applyDefault(p.path)}
                       className="text-xs px-2 py-1 border rounded hover:bg-neutral-50"
@@ -211,6 +367,61 @@ function AdminSeoPage() {
             );
           })}
         </div>
+
+        {/* Per-image alt text audit */}
+        {galleryImages && galleryImages.length > 0 && (
+          <div className="bg-white border rounded-lg p-5 mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="font-medium">Image alt text audit</div>
+                <div className="text-xs text-neutral-500">
+                  {seoScore.imagesWithAlt} / {seoScore.totalImages} images have alt text. Missing ones are listed below.
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-[420px] overflow-y-auto">
+              {galleryImages
+                .filter((i) => !(i.alt ?? "").trim())
+                .slice(0, 60)
+                .map((img) => (
+                  <div key={img.id} className="border rounded overflow-hidden">
+                    <img src={img.src} alt="" className="w-full h-28 object-cover" />
+                    <div className="p-2">
+                      <button
+                        onClick={() => aiAlt(img, "Point Studio portfolio")}
+                        disabled={altBusy === img.id}
+                        className="w-full text-[11px] px-2 py-1 border border-black rounded hover:bg-black hover:text-white disabled:opacity-50"
+                      >
+                        {altBusy === img.id ? "…" : "✨ AI alt"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+            {missingCount > 60 && (
+              <div className="text-xs text-neutral-500 mt-2">
+                Showing first 60. Use "AI generate all" above to process the rest.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ScoreBar({ label, value, total, pct }: { label: string; value: number; total: number; pct: number }) {
+  const color = pct >= 80 ? "bg-green-600" : pct >= 50 ? "bg-yellow-500" : "bg-red-500";
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span>{label}</span>
+        <span className="text-neutral-500">
+          {value} / {total} · {pct}%
+        </span>
+      </div>
+      <div className="h-2 bg-neutral-100 rounded overflow-hidden">
+        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

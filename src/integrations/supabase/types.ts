@@ -141,29 +141,35 @@ export type Database = {
       }
       page_views: {
         Row: {
+          city: string | null
           country: string | null
           created_at: string
           id: string
           path: string
           referrer: string | null
+          search_query: string | null
           session_id: string | null
           user_agent: string | null
         }
         Insert: {
+          city?: string | null
           country?: string | null
           created_at?: string
           id?: string
           path: string
           referrer?: string | null
+          search_query?: string | null
           session_id?: string | null
           user_agent?: string | null
         }
         Update: {
+          city?: string | null
           country?: string | null
           created_at?: string
           id?: string
           path?: string
           referrer?: string | null
+          search_query?: string | null
           session_id?: string | null
           user_agent?: string | null
         }
