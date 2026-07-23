@@ -287,6 +287,34 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     window.open(asset.url, "_blank", "noopener,noreferrer");
   };
 
+  const doDelete = async () => {
+    if (!asset.storagePath) {
+      alert("This asset lives outside the Media library and cannot be deleted from here. Remove it from its source (gallery, setting, or videos.json).");
+      return;
+    }
+    const msg =
+      `Delete this image permanently?\n\n${asset.name ?? asset.storagePath}\n\n` +
+      (asset.usedOnSite
+        ? "⚠️ This image is used on the site — it will disappear from any gallery that references it.\n\n"
+        : "") +
+      "This also removes its backup and cannot be undone.";
+    if (!window.confirm(msg)) return;
+    setDeleting(true);
+    try {
+      await removeObject({ data: { path: asset.storagePath } });
+      setDeleted(true);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+      qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
+    } catch (e) {
+      alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (deleted) return null;
+
+
   return (
     <div className="bg-white border rounded overflow-hidden flex flex-col">
       <a href={asset.url} target="_blank" rel="noreferrer" className="block aspect-video bg-neutral-100 relative overflow-hidden" title={asset.url}>
