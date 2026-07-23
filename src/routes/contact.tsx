@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import { Editable } from "@/components/Editable";
 import { useText } from "@/hooks/use-site-texts";
+import { ContactForm } from "@/components/ContactForm";
 import data from "@/data/contact.json";
 
 export const Route = createFileRoute("/contact")({
