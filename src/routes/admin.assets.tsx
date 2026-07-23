@@ -428,6 +428,21 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             {optInfo && <div className="text-[10px] text-emerald-700 truncate">{optInfo}</div>}
           </>
         )}
+        <button
+          type="button"
+          onClick={doDelete}
+          disabled={deleting || !asset.storagePath}
+          title={
+            asset.storagePath
+              ? "Permanently delete this file from the Media library (asks for confirmation)."
+              : "External asset — delete it from its original source instead."
+          }
+          className="mt-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+          Delete
+        </button>
+
       </div>
     </div>
   );
