@@ -5,9 +5,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
-import { replaceMediaObject } from "@/lib/media-admin.functions";
+import { replaceMediaObject, deleteMediaObject } from "@/lib/media-admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Loader2, Zap, Undo2, ExternalLink } from "lucide-react";
+import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2 } from "lucide-react";
+
 
 
 export const Route = createFileRoute("/admin/assets")({
