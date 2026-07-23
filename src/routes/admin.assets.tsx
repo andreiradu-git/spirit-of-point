@@ -282,6 +282,21 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             {saving ? "Saving…" : "Save"}
           </button>
         </div>
+        {asset.kind === "image" && asset.storagePath && (
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => doOptimize()}
+              disabled={optBusy}
+              title="Resize to max 1600px and re-encode as WebP, replacing the file in storage."
+              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+            >
+              {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+              Optimize
+            </button>
+            {optInfo && <span className="text-[10px] text-emerald-700 truncate">{optInfo}</span>}
+          </div>
+        )}
       </div>
     </div>
   );
