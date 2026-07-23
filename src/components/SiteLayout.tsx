@@ -239,8 +239,26 @@ function SettingsPanel({
   );
 }
 
-export function cdn(url: string, w = 1500) {
-  // Supabase Storage public URLs do not support Squarespace-style ?format= params
-  if (/supabase\.co\/storage\/v1\/object\/public\//.test(url)) return url;
+export function cdn(url: string, w = 1500, quality = 75) {
+  if (!url) return url;
+  // Supabase Storage: use image transformation endpoint for on-the-fly resizing
+  if (/supabase\.co\/storage\/v1\/object\/public\//.test(url)) {
+    const transformed = url.replace(
+      "/storage/v1/object/public/",
+      "/storage/v1/render/image/public/",
+    );
+    return `${transformed}?width=${w}&quality=${quality}&resize=contain`;
+  }
+  // Squarespace CDN
+  if (/squarespace-cdn\.com/.test(url)) {
+    // pick nearest supported bucket
+    const buckets = [100, 300, 500, 750, 1000, 1500, 2500];
+    const bucket = buckets.find((b) => b >= w) ?? 2500;
+    return `${url}?format=${bucket}w`;
+  }
   return `${url}?format=${w}w`;
+}
+
+export function cdnSrcSet(url: string, widths: number[] = [400, 800, 1200, 1600]) {
+  return widths.map((w) => `${cdn(url, w)} ${w}w`).join(", ");
 }
