@@ -204,6 +204,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       if (!res.ok) throw new Error("Fetch failed");
       const origBlob = await res.blob();
       const origSize = origBlob.size;
+      const origContentType = res.headers.get("content-type") || undefined;
       const bmp = await createImageBitmap(origBlob);
       const scale = Math.min(1, maxW / Math.max(bmp.width, bmp.height));
       const w = Math.round(bmp.width * scale);
@@ -219,15 +220,17 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
         setOptInfo(`Already optimal (${Math.round(origSize / 1024)} KB)`);
         return;
       }
-      // Save a one-time backup of the current file so Revert can restore it.
-      await supabase.storage
-        .from("media")
-        .upload(backupPath, origBlob, { contentType: res.headers.get("content-type") || undefined, upsert: false, cacheControl: "3600" })
-        .catch(() => { /* backup already exists — keep the first original */ });
-      const { error } = await supabase.storage
-        .from("media")
-        .update(asset.storagePath, outBlob, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
-      if (error) throw error;
+      const [origB64, outB64] = await Promise.all([blobToBase64(origBlob), blobToBase64(outBlob)]);
+      await replaceMediaObject({
+        data: {
+          path: asset.storagePath,
+          contentType: "image/webp",
+          dataBase64: outB64,
+          backupPath,
+          origBase64: origB64,
+          origContentType,
+        },
+      });
       setOptInfo(`${Math.round(origSize / 1024)} → ${Math.round(outBlob.size / 1024)} KB · ${w}×${h}`);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
     } catch (e) {
@@ -250,10 +253,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       if (!res.ok) throw new Error("Backup fetch failed");
       const blob = await res.blob();
       const ct = res.headers.get("content-type") || "application/octet-stream";
-      const { error } = await supabase.storage
-        .from("media")
-        .update(asset.storagePath, blob, { contentType: ct, upsert: true, cacheControl: "3600" });
-      if (error) throw error;
+      const b64 = await blobToBase64(blob);
+      await replaceMediaObject({
+        data: { path: asset.storagePath, contentType: ct, dataBase64: b64 },
+      });
       setOptInfo(`Reverted (${Math.round(blob.size / 1024)} KB)`);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
     } catch (e) {
