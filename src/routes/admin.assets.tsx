@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Loader2, Zap } from "lucide-react";
+import { Sparkles, Loader2, Zap, Undo2, ExternalLink } from "lucide-react";
 
 
 export const Route = createFileRoute("/admin/assets")({
@@ -147,6 +147,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const [aiBusy, setAiBusy] = useState(false);
   const [optBusy, setOptBusy] = useState(false);
   const [optInfo, setOptInfo] = useState<string | null>(null);
+  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [dirty, setDirty] = useState(false);
 
 
@@ -191,8 +192,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
+  const backupPath = asset.storagePath ? `_originals/${asset.storagePath}` : null;
+
   const doOptimize = async (maxW = 1600, quality = 0.75) => {
-    if (!asset.storagePath || asset.kind !== "image") return;
+    if (!asset.storagePath || !backupPath || asset.kind !== "image") return;
     setOptBusy(true);
     setOptInfo(null);
     try {
@@ -215,6 +218,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
         setOptInfo(`Already optimal (${Math.round(origSize / 1024)} KB)`);
         return;
       }
+      // Save a one-time backup of the current file so Revert can restore it.
+      await supabase.storage
+        .from("media")
+        .upload(backupPath, origBlob, { contentType: res.headers.get("content-type") || undefined, upsert: false, cacheControl: "3600" })
+        .catch(() => { /* backup already exists — keep the first original */ });
       const { error } = await supabase.storage
         .from("media")
         .update(asset.storagePath, outBlob, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
@@ -226,6 +234,36 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     } finally {
       setOptBusy(false);
     }
+  };
+
+  const doRevert = async () => {
+    if (!asset.storagePath || !backupPath) return;
+    setOptBusy(true);
+    setOptInfo(null);
+    try {
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("media")
+        .createSignedUrl(backupPath, 60);
+      if (signErr || !signed) throw new Error("No backup found for this image.");
+      const res = await fetch(signed.signedUrl, { cache: "no-store" });
+      if (!res.ok) throw new Error("Backup fetch failed");
+      const blob = await res.blob();
+      const ct = res.headers.get("content-type") || "application/octet-stream";
+      const { error } = await supabase.storage
+        .from("media")
+        .update(asset.storagePath, blob, { contentType: ct, upsert: true, cacheControl: "3600" });
+      if (error) throw error;
+      setOptInfo(`Reverted (${Math.round(blob.size / 1024)} KB)`);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+    } catch (e) {
+      alert("Revert failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setOptBusy(false);
+    }
+  };
+
+  const showFullSize = () => {
+    window.open(asset.url, "_blank", "noopener,noreferrer");
   };
 
   return (
