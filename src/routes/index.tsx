@@ -9,6 +9,7 @@ import { EditableGallery } from "@/components/EditableGallery";
 import { EditableLogoBand } from "@/components/EditableLogoBand";
 import { EditableTestimonials, type Testimonial } from "@/components/EditableTestimonials";
 import { useImage, useSaveImage } from "@/hooks/use-site-images";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 
 
