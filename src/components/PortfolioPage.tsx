@@ -89,7 +89,7 @@ export function PortfolioPage({
         </section>
       )}
 
-      {showLogos && <ClientLogos />}
+      {showLogos && <EditableLogoBand />}
 
       {/* Full gallery */}
       {galleryLayout === "stacked" ? (
