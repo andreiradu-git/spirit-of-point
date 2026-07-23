@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_meta: {
+        Row: {
+          alt: string | null
+          label: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          alt?: string | null
+          label?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          alt?: string | null
+          label?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           archived: boolean
