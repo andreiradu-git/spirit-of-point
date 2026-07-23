@@ -18,6 +18,8 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkSlugRouteImport } from './routes/work.$slug'
+import { Route as AdminSeoRouteImport } from './routes/admin.seo'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const VideoRoute = VideoRouteImport.update({
   id: '/video',
@@ -64,6 +66,16 @@ const WorkSlugRoute = WorkSlugRouteImport.update({
   path: '/work/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSeoRoute = AdminSeoRouteImport.update({
+  id: '/admin/seo',
+  path: '/admin/seo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/admin/analytics',
+  path: '/admin/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,6 +86,8 @@ export interface FileRoutesByFullPath {
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +99,8 @@ export interface FileRoutesByTo {
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRoutesById {
@@ -97,6 +113,8 @@ export interface FileRoutesById {
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/seo': typeof AdminSeoRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +128,8 @@ export interface FileRouteTypes {
     | '/patterns'
     | '/people'
     | '/video'
+    | '/admin/analytics'
+    | '/admin/seo'
     | '/work/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +141,8 @@ export interface FileRouteTypes {
     | '/patterns'
     | '/people'
     | '/video'
+    | '/admin/analytics'
+    | '/admin/seo'
     | '/work/$slug'
   id:
     | '__root__'
@@ -132,6 +154,8 @@ export interface FileRouteTypes {
     | '/patterns'
     | '/people'
     | '/video'
+    | '/admin/analytics'
+    | '/admin/seo'
     | '/work/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +168,8 @@ export interface RootRouteChildren {
   PatternsRoute: typeof PatternsRoute
   PeopleRoute: typeof PeopleRoute
   VideoRoute: typeof VideoRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminSeoRoute: typeof AdminSeoRoute
   WorkSlugRoute: typeof WorkSlugRoute
 }
 
@@ -212,6 +238,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/seo': {
+      id: '/admin/seo'
+      path: '/admin/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AdminSeoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/admin/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -224,6 +264,8 @@ const rootRouteChildren: RootRouteChildren = {
   PatternsRoute: PatternsRoute,
   PeopleRoute: PeopleRoute,
   VideoRoute: VideoRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminSeoRoute: AdminSeoRoute,
   WorkSlugRoute: WorkSlugRoute,
 }
 export const routeTree = rootRouteImport

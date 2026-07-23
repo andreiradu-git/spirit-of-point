@@ -13,6 +13,12 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AdminBar } from "@/components/AdminBar";
 import { ContentProtection } from "@/components/ContentProtection";
+import { usePageSeoAndTrack } from "@/hooks/use-page-seo";
+
+function SeoAndAnalytics() {
+  usePageSeoAndTrack();
+  return null;
+}
 
 
 function NotFoundComponent() {
@@ -126,6 +132,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ContentProtection />
       <AdminBar />
+      <SeoAndAnalytics />
       <Outlet />
     </QueryClientProvider>
   );

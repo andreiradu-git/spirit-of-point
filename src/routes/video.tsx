@@ -7,13 +7,17 @@ export const Route = createFileRoute("/video")({
   component: VideoPage,
   head: () => ({
     meta: [
-      { title: "Video — Point Studio" },
+      { title: "Video Production & Motion — Point Studio Bucharest" },
       {
         name: "description",
         content:
-          "Video productions and motion work by Point Studio — Bucharest photo & video studio.",
+          "Commercial video production, motion and reels by Point Studio — Bucharest photo & video studio.",
       },
-      { property: "og:title", content: "Video — Point Studio" },
+      {
+        name: "keywords",
+        content: "video production Bucharest, commercial video, motion photography, product video, advertising video",
+      },
+      { property: "og:title", content: "Video Production — Point Studio" },
       { property: "og:description", content: "Motion, reels and video productions by Point Studio." },
       { property: "og:image", content: cdn(videos[0].poster, 1600) },
       { name: "twitter:image", content: cdn(videos[0].poster, 1600) },

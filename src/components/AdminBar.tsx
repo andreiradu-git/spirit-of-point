@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { useEditMode } from "@/hooks/use-edit-mode";
@@ -26,7 +26,9 @@ export function AdminBar() {
         <span className="font-medium">Admin</span>
         <span className="text-neutral-400 text-xs hidden sm:inline">{user.email}</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <Link to="/admin/seo" className="text-xs hover:underline">SEO</Link>
+        <Link to="/admin/analytics" className="text-xs hover:underline">Analytics</Link>
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <span className="text-xs">Edit mode</span>
           <input
