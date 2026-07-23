@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 export type SiteSettings = {
   showVideo: boolean;
   showPatterns: boolean;
+  showTestimonials: boolean;
 };
 
-const DEFAULTS: SiteSettings = { showVideo: true, showPatterns: true };
+const DEFAULTS: SiteSettings = { showVideo: true, showPatterns: true, showTestimonials: true };
 const KEY = "point-studio-settings";
 const EVT = "point-studio-settings-change";
 

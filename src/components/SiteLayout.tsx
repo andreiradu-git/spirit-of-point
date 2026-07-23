@@ -136,6 +136,8 @@ export function SiteLayout({
           onToggleVideo={() => update({ showVideo: !settings.showVideo })}
           showPatterns={settings.showPatterns}
           onTogglePatterns={() => update({ showPatterns: !settings.showPatterns })}
+          showTestimonials={settings.showTestimonials}
+          onToggleTestimonials={() => update({ showTestimonials: !settings.showTestimonials })}
         />
       )}
     </div>
@@ -170,11 +172,15 @@ function SettingsPanel({
   onToggleVideo,
   showPatterns,
   onTogglePatterns,
+  showTestimonials,
+  onToggleTestimonials,
 }: {
   showVideo: boolean;
   onToggleVideo: () => void;
   showPatterns: boolean;
   onTogglePatterns: () => void;
+  showTestimonials: boolean;
+  onToggleTestimonials: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -200,6 +206,15 @@ function SettingsPanel({
               type="checkbox"
               checked={showPatterns}
               onChange={onTogglePatterns}
+              className="h-4 w-4 accent-foreground"
+            />
+          </label>
+          <label className="flex items-center justify-between text-sm cursor-pointer">
+            <span>Show Testimonials</span>
+            <input
+              type="checkbox"
+              checked={showTestimonials}
+              onChange={onToggleTestimonials}
               className="h-4 w-4 accent-foreground"
             />
           </label>
