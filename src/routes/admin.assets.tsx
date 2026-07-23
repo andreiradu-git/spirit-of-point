@@ -154,6 +154,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
 function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
+  const removeObject = useServerFn(deleteMediaObject);
   const qc = useQueryClient();
   const [label, setLabel] = useState(meta?.label ?? "");
   const [alt, setAlt] = useState(meta?.alt ?? asset.alt ?? "");
@@ -163,6 +164,9 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const [optInfo, setOptInfo] = useState<string | null>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
 
 
   useEffect(() => {
