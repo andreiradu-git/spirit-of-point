@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Loader2, Zap } from "lucide-react";
+import { Sparkles, Loader2, Zap, Undo2, ExternalLink } from "lucide-react";
 
 
 export const Route = createFileRoute("/admin/assets")({
@@ -147,6 +147,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const [aiBusy, setAiBusy] = useState(false);
   const [optBusy, setOptBusy] = useState(false);
   const [optInfo, setOptInfo] = useState<string | null>(null);
+  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [dirty, setDirty] = useState(false);
 
 
@@ -191,8 +192,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
+  const backupPath = asset.storagePath ? `_originals/${asset.storagePath}` : null;
+
   const doOptimize = async (maxW = 1600, quality = 0.75) => {
-    if (!asset.storagePath || asset.kind !== "image") return;
+    if (!asset.storagePath || !backupPath || asset.kind !== "image") return;
     setOptBusy(true);
     setOptInfo(null);
     try {
@@ -215,6 +218,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
         setOptInfo(`Already optimal (${Math.round(origSize / 1024)} KB)`);
         return;
       }
+      // Save a one-time backup of the current file so Revert can restore it.
+      await supabase.storage
+        .from("media")
+        .upload(backupPath, origBlob, { contentType: res.headers.get("content-type") || undefined, upsert: false, cacheControl: "3600" })
+        .catch(() => { /* backup already exists — keep the first original */ });
       const { error } = await supabase.storage
         .from("media")
         .update(asset.storagePath, outBlob, { contentType: "image/webp", upsert: true, cacheControl: "3600" });
@@ -228,11 +236,50 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
+  const doRevert = async () => {
+    if (!asset.storagePath || !backupPath) return;
+    setOptBusy(true);
+    setOptInfo(null);
+    try {
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("media")
+        .createSignedUrl(backupPath, 60);
+      if (signErr || !signed) throw new Error("No backup found for this image.");
+      const res = await fetch(signed.signedUrl, { cache: "no-store" });
+      if (!res.ok) throw new Error("Backup fetch failed");
+      const blob = await res.blob();
+      const ct = res.headers.get("content-type") || "application/octet-stream";
+      const { error } = await supabase.storage
+        .from("media")
+        .update(asset.storagePath, blob, { contentType: ct, upsert: true, cacheControl: "3600" });
+      if (error) throw error;
+      setOptInfo(`Reverted (${Math.round(blob.size / 1024)} KB)`);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+    } catch (e) {
+      alert("Revert failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setOptBusy(false);
+    }
+  };
+
+  const showFullSize = () => {
+    window.open(asset.url, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="bg-white border rounded overflow-hidden flex flex-col">
       <a href={asset.url} target="_blank" rel="noreferrer" className="block aspect-video bg-neutral-100 relative overflow-hidden" title={asset.url}>
         {asset.kind === "image" ? (
-          <img src={asset.url} alt={alt} className="w-full h-full object-cover" loading="lazy" />
+          <img
+            src={asset.url}
+            alt={alt}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onLoad={(e) => {
+              const el = e.currentTarget;
+              setNaturalSize({ w: el.naturalWidth, h: el.naturalHeight });
+            }}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs">
             {asset.kind === "video" ? "▶ VIDEO" : "🔗 LINK"}
@@ -241,7 +288,13 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
         {!asset.usedOnSite && (
           <span className="absolute top-1 left-1 text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded">unused</span>
         )}
+        {asset.kind === "image" && naturalSize && (
+          <span className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded font-mono">
+            {naturalSize.w}×{naturalSize.h}
+          </span>
+        )}
       </a>
+
       <div className="p-3 flex flex-col gap-2 text-xs">
         <div className="text-[11px] text-neutral-500 truncate">{asset.source}</div>
         <label className="flex flex-col gap-0.5">
@@ -282,25 +335,56 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             {saving ? "Saving…" : "Save"}
           </button>
         </div>
-        {asset.kind === "image" && asset.storagePath && (
-          <div className="flex gap-2 items-center">
-            <button
-              type="button"
-              onClick={() => doOptimize()}
-              disabled={optBusy}
-              title="Resize to max 1600px and re-encode as WebP, replacing the file in storage."
-              className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
-            >
-              {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-              Optimize
-            </button>
-            {optInfo && <span className="text-[10px] text-emerald-700 truncate">{optInfo}</span>}
-          </div>
+        {asset.kind === "image" && (
+          <>
+            <div className="flex gap-2 items-stretch">
+              <button
+                type="button"
+                onClick={() => doOptimize()}
+                disabled={optBusy || !asset.storagePath}
+                title={
+                  asset.storagePath
+                    ? "Resize to max 1600px and re-encode as WebP, replacing the file in storage. Keeps a backup so you can Revert."
+                    : "External image (not in Media library) — cannot be replaced. Re-upload it to the Media library to enable Optimize."
+                }
+                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                Optimize
+              </button>
+              <button
+                type="button"
+                onClick={doRevert}
+                disabled={optBusy || !asset.storagePath}
+                title={
+                  asset.storagePath
+                    ? "Restore this image from the backup saved before the last Optimize."
+                    : "Revert only works for images stored in the Media library."
+                }
+                className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Undo2 className="w-3 h-3" />
+                Revert
+              </button>
+              <button
+                type="button"
+                onClick={showFullSize}
+                title="Open the original file in a new tab (native resolution)."
+                className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border hover:bg-neutral-50"
+              >
+                <ExternalLink className="w-3 h-3" />
+                View
+              </button>
+            </div>
+            {optInfo && <div className="text-[10px] text-emerald-700 truncate">{optInfo}</div>}
+          </>
         )}
       </div>
     </div>
   );
 }
+
+
 
 function Stat({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
   return (

@@ -56,14 +56,15 @@ export function SiteLayout({
             : "sticky top-0 z-40 backdrop-blur bg-background/80"
         }`}
       >
-        <div className="mx-auto max-w-7xl px-6 h-24 flex items-center justify-between">
-          <Link to="/" className="flex items-center" aria-label="Point Studio">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 sm:h-20 md:h-24 flex items-center justify-between gap-3">
+          <Link to="/" className="flex items-center shrink-0" aria-label="Point Studio">
             <img
               src="https://images.squarespace-cdn.com/content/v1/61698c11d84cc850768a6bf8/3236b78e-0c1c-48e9-83fd-bbfa1f67650f/LOGO_PSP.png?format=400w"
               alt="Point Studio"
-              className="h-12 md:h-[69px] w-auto object-contain"
+              className="h-10 sm:h-12 md:h-14 lg:h-16 xl:h-[69px] w-auto object-contain"
             />
           </Link>
+
           <div className="hidden md:flex items-center gap-8">
             <nav className="flex gap-8 text-xs uppercase tracking-[0.2em]">
               {nav.map((n) => (
