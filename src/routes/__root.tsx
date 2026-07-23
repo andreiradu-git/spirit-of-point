@@ -131,6 +131,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeInjector />
       <ContentProtection />
       <AdminBar />
       <SeoAndAnalytics />
