@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
+import { replaceMediaObject } from "@/lib/media-admin.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Loader2, Zap, Undo2, ExternalLink } from "lucide-react";
 
