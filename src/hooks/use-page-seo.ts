@@ -71,14 +71,41 @@ export function usePageSeoAndTrack() {
       sid = crypto.randomUUID();
       window.sessionStorage.setItem("ps_sid", sid);
     }
-    supabase
-      .from("page_views")
-      .insert({
-        path,
-        referrer: document.referrer || null,
-        user_agent: navigator.userAgent,
-        session_id: sid,
-      })
-      .then(() => {}, () => {});
+
+    // Best-effort geo lookup, cached per session
+    const geoKey = "ps_geo";
+    const cached = window.sessionStorage.getItem(geoKey);
+    const geoPromise: Promise<{ country?: string; city?: string }> = cached
+      ? Promise.resolve(JSON.parse(cached))
+      : fetch("https://ipapi.co/json/")
+          .then((r) => (r.ok ? r.json() : {}))
+          .then((j: { country_name?: string; city?: string }) => {
+            const g = { country: j.country_name, city: j.city };
+            try {
+              window.sessionStorage.setItem(geoKey, JSON.stringify(g));
+            } catch {}
+            return g;
+          })
+          .catch(() => ({}));
+
+    // Extract search query from URL (?q= or ?s= or ?search=)
+    const params = new URLSearchParams(window.location.search);
+    const searchQuery = params.get("q") || params.get("s") || params.get("search") || null;
+
+    geoPromise.then((geo) => {
+      supabase
+        .from("page_views")
+        .insert({
+          path,
+          referrer: document.referrer || null,
+          user_agent: navigator.userAgent,
+          session_id: sid,
+          country: geo.country ?? null,
+          city: geo.city ?? null,
+          search_query: searchQuery,
+        })
+        .then(() => {}, () => {});
+    });
   }, [path]);
 }
+
