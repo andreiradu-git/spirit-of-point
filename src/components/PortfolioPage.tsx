@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { SiteLayout, cdn } from "./SiteLayout";
 import { EditableGallery } from "./EditableGallery";
-import { ClientLogos } from "./ClientLogos";
+import { EditableLogoBand } from "./EditableLogoBand";
 import { useGallery } from "@/hooks/use-gallery";
 import { Editable } from "./Editable";
 
