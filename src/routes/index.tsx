@@ -287,22 +287,24 @@ function Index() {
       </section>
 
       {/* Testimonials */}
-      <section className="bg-[#e5e5e5]">
-        <div className="mx-auto max-w-7xl px-6 pb-16 md:pb-20">
-          <div className="grid md:grid-cols-12 gap-10 items-end mb-10">
-            <div className="md:col-span-5">
-              <Editable as="div" id="testimonials.eyebrow" className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 block">
-                03 — Kind words
-              </Editable>
-              <Editable as="h2" id="testimonials.title" className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground block">
-                Testimonials
-              </Editable>
+      {settings.showTestimonials && (
+        <section className="bg-[#e5e5e5]">
+          <div className="mx-auto max-w-7xl px-6 pb-16 md:pb-20">
+            <div className="grid md:grid-cols-12 gap-10 items-end mb-10">
+              <div className="md:col-span-5">
+                <Editable as="div" id="testimonials.eyebrow" className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 block">
+                  03 — Kind words
+                </Editable>
+                <Editable as="h2" id="testimonials.title" className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground block">
+                  Testimonials
+                </Editable>
 
+              </div>
             </div>
+            <EditableTestimonials fallback={testimonialFallback} />
           </div>
-          <EditableTestimonials fallback={testimonialFallback} />
-        </div>
-      </section>
+        </section>
+      )}
 
 
 
