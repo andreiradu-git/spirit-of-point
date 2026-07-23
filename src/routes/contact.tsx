@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import { Editable } from "@/components/Editable";
 import { useText } from "@/hooks/use-site-texts";
+import { ContactForm } from "@/components/ContactForm";
 import data from "@/data/contact.json";
 
 export const Route = createFileRoute("/contact")({
@@ -79,6 +80,9 @@ function ContactPage() {
             >
               {"Piața Presei Libere 1\nCasa Presei Libere — Building Corp A2, et. 3\npart of Atelierele Scânteia · Bucharest, Romania"}
             </Editable>
+          </div>
+          <div className="mt-12">
+            <ContactForm />
           </div>
         </div>
       </section>

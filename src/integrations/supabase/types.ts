@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      contact_messages: {
+        Row: {
+          archived: boolean
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          read_at: string | null
+          source_path: string | null
+          subject: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          read_at?: string | null
+          source_path?: string | null
+          subject?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          read_at?: string | null
+          source_path?: string | null
+          subject?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       galleries: {
         Row: {
           created_at: string

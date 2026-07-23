@@ -18,7 +18,11 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkSlugRouteImport } from './routes/work.$slug'
+import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
+import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
+import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
+import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const VideoRoute = VideoRouteImport.update({
@@ -66,9 +70,29 @@ const WorkSlugRoute = WorkSlugRouteImport.update({
   path: '/work/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminThemeRoute = AdminThemeRouteImport.update({
+  id: '/admin/theme',
+  path: '/admin/theme',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSeoRoute = AdminSeoRouteImport.update({
   id: '/admin/seo',
   path: '/admin/seo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPerformanceRoute = AdminPerformanceRouteImport.update({
+  id: '/admin/performance',
+  path: '/admin/performance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminContactsRoute = AdminContactsRouteImport.update({
+  id: '/admin/contacts',
+  path: '/admin/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAssetsRoute = AdminAssetsRouteImport.update({
+  id: '/admin/assets',
+  path: '/admin/assets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -87,7 +111,11 @@ export interface FileRoutesByFullPath {
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/assets': typeof AdminAssetsRoute
+  '/admin/contacts': typeof AdminContactsRoute
+  '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRoutesByTo {
@@ -100,7 +128,11 @@ export interface FileRoutesByTo {
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/assets': typeof AdminAssetsRoute
+  '/admin/contacts': typeof AdminContactsRoute
+  '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRoutesById {
@@ -114,7 +146,11 @@ export interface FileRoutesById {
   '/people': typeof PeopleRoute
   '/video': typeof VideoRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/assets': typeof AdminAssetsRoute
+  '/admin/contacts': typeof AdminContactsRoute
+  '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
+  '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
 }
 export interface FileRouteTypes {
@@ -129,7 +165,11 @@ export interface FileRouteTypes {
     | '/people'
     | '/video'
     | '/admin/analytics'
+    | '/admin/assets'
+    | '/admin/contacts'
+    | '/admin/performance'
     | '/admin/seo'
+    | '/admin/theme'
     | '/work/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -142,7 +182,11 @@ export interface FileRouteTypes {
     | '/people'
     | '/video'
     | '/admin/analytics'
+    | '/admin/assets'
+    | '/admin/contacts'
+    | '/admin/performance'
     | '/admin/seo'
+    | '/admin/theme'
     | '/work/$slug'
   id:
     | '__root__'
@@ -155,7 +199,11 @@ export interface FileRouteTypes {
     | '/people'
     | '/video'
     | '/admin/analytics'
+    | '/admin/assets'
+    | '/admin/contacts'
+    | '/admin/performance'
     | '/admin/seo'
+    | '/admin/theme'
     | '/work/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -169,7 +217,11 @@ export interface RootRouteChildren {
   PeopleRoute: typeof PeopleRoute
   VideoRoute: typeof VideoRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminAssetsRoute: typeof AdminAssetsRoute
+  AdminContactsRoute: typeof AdminContactsRoute
+  AdminPerformanceRoute: typeof AdminPerformanceRoute
   AdminSeoRoute: typeof AdminSeoRoute
+  AdminThemeRoute: typeof AdminThemeRoute
   WorkSlugRoute: typeof WorkSlugRoute
 }
 
@@ -238,11 +290,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/theme': {
+      id: '/admin/theme'
+      path: '/admin/theme'
+      fullPath: '/admin/theme'
+      preLoaderRoute: typeof AdminThemeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/seo': {
       id: '/admin/seo'
       path: '/admin/seo'
       fullPath: '/admin/seo'
       preLoaderRoute: typeof AdminSeoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/performance': {
+      id: '/admin/performance'
+      path: '/admin/performance'
+      fullPath: '/admin/performance'
+      preLoaderRoute: typeof AdminPerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/contacts': {
+      id: '/admin/contacts'
+      path: '/admin/contacts'
+      fullPath: '/admin/contacts'
+      preLoaderRoute: typeof AdminContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/assets': {
+      id: '/admin/assets'
+      path: '/admin/assets'
+      fullPath: '/admin/assets'
+      preLoaderRoute: typeof AdminAssetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/analytics': {
@@ -265,19 +345,13 @@ const rootRouteChildren: RootRouteChildren = {
   PeopleRoute: PeopleRoute,
   VideoRoute: VideoRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminAssetsRoute: AdminAssetsRoute,
+  AdminContactsRoute: AdminContactsRoute,
+  AdminPerformanceRoute: AdminPerformanceRoute,
   AdminSeoRoute: AdminSeoRoute,
+  AdminThemeRoute: AdminThemeRoute,
   WorkSlugRoute: WorkSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
