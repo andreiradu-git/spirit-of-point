@@ -7,14 +7,19 @@ export const Route = createFileRoute("/food")({
   component: FoodPage,
   head: () => ({
     meta: [
-      { title: "Food Photography — Point Studio" },
+      { title: "Best Food Photography & Food Photographer — Point Studio Bucharest" },
       {
         name: "description",
         content:
-          "Food, product and tabletop photography by Point Studio — professional food photographers based in Bucharest.",
+          "Best food photography in Bucharest — professional food, product and advertising photography by Point Studio. Tabletop, editorial and commercial food photographer.",
       },
-      { property: "og:title", content: "Food Photography — Point Studio" },
-      { property: "og:description", content: "Our food & tabletop photography portfolio." },
+      {
+        name: "keywords",
+        content:
+          "best food photography, best food photographer, food photography Bucharest, product photography, advertising photography, tabletop photography, commercial food photographer, professional photography",
+      },
+      { property: "og:title", content: "Best Food Photography — Point Studio Bucharest" },
+      { property: "og:description", content: "Professional food, product and tabletop photography." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
     ],

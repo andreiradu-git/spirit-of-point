@@ -20,13 +20,18 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Point Studio — Photo & Video Studio in Bucharest" },
+      { title: "Point Studio — Best Professional Photography Studio in Bucharest" },
       {
         name: "description",
         content:
-          "Professional food, product, portrait and editorial photography studio based in Bucharest. 10+ years of expertise, 50+ international clients.",
+          "Point Studio — best professional photography in Bucharest for food, product, advertising, corporate and portrait work. 10+ years, 50+ international clients.",
       },
-      { property: "og:title", content: "Point Studio — Photo & Video Studio in Bucharest" },
+      {
+        name: "keywords",
+        content:
+          "best professional photography, best food photography, best food photographer, product photography, advertising photography, corporate photography, portrait photography, photo studio Bucharest, photo video studio Romania, commercial photographer Bucharest",
+      },
+      { property: "og:title", content: "Point Studio — Best Professional Photography Studio in Bucharest" },
       {
         property: "og:description",
         content:

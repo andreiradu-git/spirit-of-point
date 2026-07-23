@@ -7,12 +7,16 @@ export const Route = createFileRoute("/patterns")({
   component: PatternsPage,
   head: () => ({
     meta: [
-      { title: "Patterns & Closeups — Point Studio" },
+      { title: "Patterns, Textures & Product Closeups — Point Studio" },
       {
         name: "description",
-        content: "Textures, backgrounds and closeups from the Point Studio workspace.",
+        content: "Textures, backgrounds and product closeups from Point Studio, Bucharest.",
       },
-      { property: "og:title", content: "Patterns & Closeups — Point Studio" },
+      {
+        name: "keywords",
+        content: "product photography, texture photography, closeup photography, still life photography, macro product photography",
+      },
+      { property: "og:title", content: "Patterns & Product Closeups — Point Studio" },
       { property: "og:description", content: "Textures, backgrounds and closeups." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },

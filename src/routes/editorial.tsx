@@ -7,12 +7,18 @@ export const Route = createFileRoute("/editorial")({
   component: EditorialPage,
   head: () => ({
     meta: [
-      { title: "Editorial & Printed Work — Point Studio" },
+      { title: "Editorial & Advertising Photography — Point Studio Bucharest" },
       {
         name: "description",
-        content: "Printed work, ads, magazines and outdoor campaigns by Point Studio.",
+        content:
+          "Editorial and advertising photography in Bucharest — magazine editorials, print ads and outdoor campaigns by Point Studio.",
       },
-      { property: "og:title", content: "Editorial & Printed Work — Point Studio" },
+      {
+        name: "keywords",
+        content:
+          "editorial photography, advertising photography, magazine photography, print advertising, campaign photography Bucharest, commercial photographer",
+      },
+      { property: "og:title", content: "Editorial & Advertising Photography — Point Studio" },
       { property: "og:description", content: "Our editorial and printed portfolio." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
