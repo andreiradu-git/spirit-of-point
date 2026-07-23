@@ -145,7 +145,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const [alt, setAlt] = useState(meta?.alt ?? asset.alt ?? "");
   const [saving, setSaving] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
+  const [optBusy, setOptBusy] = useState(false);
+  const [optInfo, setOptInfo] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+
 
   useEffect(() => {
     setLabel(meta?.label ?? "");
