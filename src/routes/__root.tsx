@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AdminBar } from "@/components/AdminBar";
+import { ContentProtection } from "@/components/ContentProtection";
 
 
 function NotFoundComponent() {
@@ -123,6 +124,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ContentProtection />
       <AdminBar />
       <Outlet />
     </QueryClientProvider>
