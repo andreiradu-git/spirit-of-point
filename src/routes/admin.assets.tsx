@@ -5,9 +5,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
-import { replaceMediaObject } from "@/lib/media-admin.functions";
+import { replaceMediaObject, deleteMediaObject } from "@/lib/media-admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Loader2, Zap, Undo2, ExternalLink } from "lucide-react";
+import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2 } from "lucide-react";
+
 
 
 export const Route = createFileRoute("/admin/assets")({
@@ -153,6 +154,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
 function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
+  const removeObject = useServerFn(deleteMediaObject);
   const qc = useQueryClient();
   const [label, setLabel] = useState(meta?.label ?? "");
   const [alt, setAlt] = useState(meta?.alt ?? asset.alt ?? "");
@@ -162,6 +164,9 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const [optInfo, setOptInfo] = useState<string | null>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
 
 
   useEffect(() => {
@@ -282,6 +287,34 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     window.open(asset.url, "_blank", "noopener,noreferrer");
   };
 
+  const doDelete = async () => {
+    if (!asset.storagePath) {
+      alert("This asset lives outside the Media library and cannot be deleted from here. Remove it from its source (gallery, setting, or videos.json).");
+      return;
+    }
+    const msg =
+      `Delete this image permanently?\n\n${asset.name ?? asset.storagePath}\n\n` +
+      (asset.usedOnSite
+        ? "⚠️ This image is used on the site — it will disappear from any gallery that references it.\n\n"
+        : "") +
+      "This also removes its backup and cannot be undone.";
+    if (!window.confirm(msg)) return;
+    setDeleting(true);
+    try {
+      await removeObject({ data: { path: asset.storagePath } });
+      setDeleted(true);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+      qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
+    } catch (e) {
+      alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (deleted) return null;
+
+
   return (
     <div className="bg-white border rounded overflow-hidden flex flex-col">
       <a href={asset.url} target="_blank" rel="noreferrer" className="block aspect-video bg-neutral-100 relative overflow-hidden" title={asset.url}>
@@ -395,6 +428,21 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             {optInfo && <div className="text-[10px] text-emerald-700 truncate">{optInfo}</div>}
           </>
         )}
+        <button
+          type="button"
+          onClick={doDelete}
+          disabled={deleting || !asset.storagePath}
+          title={
+            asset.storagePath
+              ? "Permanently delete this file from the Media library (asks for confirmation)."
+              : "External asset — delete it from its original source instead."
+          }
+          className="mt-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+          Delete
+        </button>
+
       </div>
     </div>
   );
