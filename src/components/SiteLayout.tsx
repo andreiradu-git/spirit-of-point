@@ -3,6 +3,8 @@ import { useState, type ReactNode } from "react";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { Editable } from "@/components/Editable";
 import { useSocials, SOCIAL_ICON_PATHS } from "@/hooks/use-socials";
+import { useAdmin } from "@/hooks/use-admin";
+
 
 
 const BASE_NAV = [
