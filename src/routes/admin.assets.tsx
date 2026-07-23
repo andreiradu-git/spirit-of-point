@@ -270,7 +270,16 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     <div className="bg-white border rounded overflow-hidden flex flex-col">
       <a href={asset.url} target="_blank" rel="noreferrer" className="block aspect-video bg-neutral-100 relative overflow-hidden" title={asset.url}>
         {asset.kind === "image" ? (
-          <img src={asset.url} alt={alt} className="w-full h-full object-cover" loading="lazy" />
+          <img
+            src={asset.url}
+            alt={alt}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onLoad={(e) => {
+              const el = e.currentTarget;
+              setNaturalSize({ w: el.naturalWidth, h: el.naturalHeight });
+            }}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs">
             {asset.kind === "video" ? "▶ VIDEO" : "🔗 LINK"}
@@ -279,7 +288,13 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
         {!asset.usedOnSite && (
           <span className="absolute top-1 left-1 text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded">unused</span>
         )}
+        {asset.kind === "image" && naturalSize && (
+          <span className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded font-mono">
+            {naturalSize.w}×{naturalSize.h}
+          </span>
+        )}
       </a>
+
       <div className="p-3 flex flex-col gap-2 text-xs">
         <div className="text-[11px] text-neutral-500 truncate">{asset.source}</div>
         <label className="flex flex-col gap-0.5">
