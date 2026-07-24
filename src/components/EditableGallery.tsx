@@ -20,13 +20,15 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Upload, X, GripVertical, Loader2, Plus } from "lucide-react";
+import { Upload, X, GripVertical, Loader2, Images } from "lucide-react";
 import {
   addGalleryImage,
   removeGalleryImage,
   reorderGalleryImages,
   updateImageMeta,
 } from "@/lib/media.functions";
+import { MediaLibraryPicker } from "./MediaLibraryPicker";
+
 
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -113,12 +115,16 @@ function SortableImage({
           </div>
           <button
             type="button"
-            onClick={() => onRemove(image.id)}
-            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(image.id);
+            }}
+            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
             aria-label="Remove image"
           >
             <X className="w-4 h-4" />
           </button>
+
           {onTitleChange && (
             <input
               type="text"
@@ -163,7 +169,9 @@ export function EditableGallery({
   const [uploading, setUploading] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
 
   const editable = isAdmin && editMode;
 
@@ -214,10 +222,31 @@ export function EditableGallery({
   };
 
   const onRemove = async (id: string) => {
+    if (id.startsWith("fallback-")) {
+      alert(
+        "This image is a placeholder from the source file. It will disappear once you add real images or replace the gallery contents.",
+      );
+      return;
+    }
     if (!confirm("Remove this image from the gallery?")) return;
-    await removeImage({ data: { imageId: id } });
-    invalidate(slug);
+    try {
+      await removeImage({ data: { imageId: id } });
+      invalidate(slug);
+    } catch (e) {
+      console.error("Delete failed", e);
+      alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+    }
   };
+
+  const pickFromLibrary = async (url: string) => {
+    try {
+      await addImage({ data: { gallerySlug: slug, src: url, alt: "" } });
+      invalidate(slug);
+    } catch (e) {
+      alert("Add failed: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
 
   const onAltChange = async (id: string, alt: string) => {
     await updateMeta({ data: { imageId: id, alt } });
@@ -369,12 +398,16 @@ export function EditableGallery({
                       </div>
                       <button
                         type="button"
-                        onClick={() => onRemove(img.id)}
-                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemove(img.id);
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
                         aria-label="Remove image"
                       >
                         <X className="w-4 h-4" />
                       </button>
+
                     </>
                   )}
                 </div>
@@ -392,20 +425,33 @@ export function EditableGallery({
               ),
             )}
             {editable && (
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={uploading}
-                className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
-                  layout === "stacked" ? "py-8" : "aspect-square"
-                }`}
-              >
-                {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Plus className="w-6 h-6" />}
-                <span className="text-xs">{uploading ? "Uploading..." : "Add image"}</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={uploading}
+                  className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
+                    layout === "stacked" ? "py-8" : "aspect-square"
+                  }`}
+                >
+                  {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+                  <span className="text-xs">{uploading ? "Uploading..." : "Upload new"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
+                    layout === "stacked" ? "py-8" : "aspect-square"
+                  }`}
+                >
+                  <Images className="w-6 h-6" />
+                  <span className="text-xs">Pick from library</span>
+                </button>
+              </>
             )}
           </div>
         </SortableContext>
+
         <DragOverlay>
           {activeId ? (
             <div className="opacity-80">
@@ -470,6 +516,13 @@ export function EditableGallery({
           </button>
         </div>
       )}
+      <MediaLibraryPicker
+        open={pickerOpen}
+        kind="image"
+        onClose={() => setPickerOpen(false)}
+        onPick={(a) => pickFromLibrary(a.url)}
+      />
     </div>
+
   );
 }
