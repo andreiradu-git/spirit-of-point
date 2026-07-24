@@ -7,7 +7,8 @@ import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
 import { replaceMediaObject, deleteMediaObject } from "@/lib/media-admin.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2 } from "lucide-react";
+import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2, Upload } from "lucide-react";
+import { useRef } from "react";
 
 
 
@@ -74,11 +75,14 @@ function AdminAssetsPage() {
   return (
     <div className="min-h-screen bg-neutral-50 pt-14 pb-24">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-serif">Assets library</h1>
-          <p className="text-sm text-neutral-600 mt-1">
-            Every image, video and link ever uploaded or referenced on the site. Edit label & alt text — or let AI write them.
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-serif">Assets library</h1>
+            <p className="text-sm text-neutral-600 mt-1">
+              Every image, video and link ever uploaded or referenced on the site. Edit label & alt text — or let AI write them.
+            </p>
+          </div>
+          <DirectUpload />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -458,3 +462,71 @@ function Stat({ label, value, highlight }: { label: string; value: number; highl
     </div>
   );
 }
+
+function DirectUpload() {
+  const qc = useQueryClient();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [folder, setFolder] = useState("uploads");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const onFiles = async (files: File[]) => {
+    if (!files.length) return;
+    setBusy(true);
+    setMsg(null);
+    let ok = 0;
+    let fail = 0;
+    try {
+      for (const file of files) {
+        const ext = file.name.split(".").pop() || "bin";
+        const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
+        const cleanFolder = folder.replace(/^\/+|\/+$/g, "") || "uploads";
+        const path = `${cleanFolder}/${base}-${Date.now()}.${ext}`;
+        const { error } = await supabase.storage.from("media").upload(path, file, {
+          contentType: file.type || undefined,
+          upsert: false,
+        });
+        if (error) { fail++; console.error(error); } else { ok++; }
+      }
+      setMsg(`${ok} uploaded${fail ? `, ${fail} failed` : ""}`);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+      qc.invalidateQueries({ queryKey: ["media-picker", "assets"] });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border rounded-lg p-3 flex items-center gap-2 text-sm">
+      <input
+        value={folder}
+        onChange={(e) => setFolder(e.target.value)}
+        placeholder="folder (e.g. uploads)"
+        className="border rounded px-2 py-1 text-xs w-32"
+      />
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-black text-white hover:bg-neutral-800 disabled:opacity-50"
+      >
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+        Upload files
+      </button>
+      {msg && <span className="text-xs text-neutral-600">{msg}</span>}
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        className="hidden"
+        accept="image/*,video/*"
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? []);
+          onFiles(files);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+

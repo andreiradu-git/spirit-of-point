@@ -27,6 +27,7 @@ export function AdminBar() {
         <span className="text-neutral-400 text-xs hidden sm:inline">{user.email}</span>
       </div>
       <div className="flex items-center gap-3">
+        <Link to="/" className="text-xs px-2 py-0.5 border border-white/40 rounded hover:bg-white/10">← Site</Link>
         <Link to="/admin/seo" className="text-xs hover:underline">SEO</Link>
         <Link to="/admin/analytics" className="text-xs hover:underline">Analytics</Link>
         <Link to="/admin/performance" className="text-xs hover:underline">Performance</Link>
