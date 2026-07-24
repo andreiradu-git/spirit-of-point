@@ -516,6 +516,13 @@ export function EditableGallery({
           </button>
         </div>
       )}
+      <MediaLibraryPicker
+        open={pickerOpen}
+        kind="image"
+        onClose={() => setPickerOpen(false)}
+        onPick={(a) => pickFromLibrary(a.url)}
+      />
     </div>
+
   );
 }
