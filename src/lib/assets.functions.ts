@@ -84,24 +84,39 @@ export const listAllAssets = createServerFn({ method: "GET" })
       .from("site_settings")
       .select("key, value");
     const settingAssets: SiteAsset[] = [];
-    for (const row of settings ?? []) {
-      const v = row.value as unknown;
-      const url =
-        typeof v === "string"
-          ? v
-          : v && typeof v === "object" && "url" in (v as Record<string, unknown>)
-            ? String((v as Record<string, unknown>).url)
-            : null;
-      if (!url || !/^https?:\/\//.test(url)) continue;
+    const pushSettingAsset = (url: string, key: string, alt?: string | null) => {
+      if (!url || !/^https?:\/\//.test(url)) return;
       usedUrls.add(url);
-      const isVideo = /\.(mp4|webm|mov)$/i.test(url) || row.key.includes("video");
+      const isVideo = /\.(mp4|webm|mov)$/i.test(url) || key.includes("video");
       settingAssets.push({
         kind: isVideo ? "video" : "image",
         url,
-        source: `Setting: ${row.key}`,
+        source: `Setting: ${key}`,
+        alt: alt ?? null,
         usedOnSite: true,
       });
+    };
+    for (const row of settings ?? []) {
+      const v = row.value as unknown;
+      if (typeof v === "string") {
+        pushSettingAsset(v, row.key);
+      } else if (v && typeof v === "object") {
+        const obj = v as Record<string, unknown>;
+        if (typeof obj.url === "string") pushSettingAsset(obj.url, row.key);
+        const list = Array.isArray(obj.items) ? obj.items : Array.isArray(v) ? (v as unknown[]) : null;
+        if (list) {
+          for (const it of list) {
+            if (it && typeof it === "object") {
+              const item = it as Record<string, unknown>;
+              const url = typeof item.src === "string" ? item.src : typeof item.url === "string" ? item.url : null;
+              const alt = typeof item.alt === "string" ? item.alt : null;
+              if (url) pushSettingAsset(url, row.key, alt);
+            }
+          }
+        }
+      }
     }
+
 
     // 4) videos.json + external video links stored in list settings (rich lists)
     let videoAssets: SiteAsset[] = [];
