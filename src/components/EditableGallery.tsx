@@ -20,7 +20,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Upload, X, GripVertical, Loader2, Plus, Images } from "lucide-react";
+import { Upload, X, GripVertical, Loader2, Images } from "lucide-react";
 import {
   addGalleryImage,
   removeGalleryImage,
