@@ -3,13 +3,26 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X, Image as ImageIcon } from "lucide-react";
+import { MediaLibraryPicker } from "./MediaLibraryPicker";
 
 
 type Logo = { id: string; src: string; alt?: string };
 
 const MAX_SIZE = 10 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"];
+
+export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[] }) {
+  const { isAdmin } = useAdmin();
+  const { editMode } = useEditMode();
+  const editable = isAdmin && editMode;
+  const { items, save } = useSiteList<Logo>("client-logos", fallback);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
 export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[] }) {
   const { isAdmin } = useAdmin();
