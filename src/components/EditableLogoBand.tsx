@@ -24,16 +24,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
   const [canRight, setCanRight] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
 
-export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[] }) {
-  const { isAdmin } = useAdmin();
-  const { editMode } = useEditMode();
-  const editable = isAdmin && editMode;
-  const { items, save } = useSiteList<Logo>("client-logos", fallback);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [canLeft, setCanLeft] = useState(false);
-  const [canRight, setCanRight] = useState(false);
+
 
   const updateArrows = () => {
     const el = scrollRef.current;
