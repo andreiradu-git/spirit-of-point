@@ -20,13 +20,15 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Upload, X, GripVertical, Loader2, Plus } from "lucide-react";
+import { Upload, X, GripVertical, Loader2, Plus, Images } from "lucide-react";
 import {
   addGalleryImage,
   removeGalleryImage,
   reorderGalleryImages,
   updateImageMeta,
 } from "@/lib/media.functions";
+import { MediaLibraryPicker } from "./MediaLibraryPicker";
+
 
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
