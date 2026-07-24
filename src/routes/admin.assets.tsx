@@ -74,11 +74,14 @@ function AdminAssetsPage() {
   return (
     <div className="min-h-screen bg-neutral-50 pt-14 pb-24">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-serif">Assets library</h1>
-          <p className="text-sm text-neutral-600 mt-1">
-            Every image, video and link ever uploaded or referenced on the site. Edit label & alt text — or let AI write them.
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-serif">Assets library</h1>
+            <p className="text-sm text-neutral-600 mt-1">
+              Every image, video and link ever uploaded or referenced on the site. Edit label & alt text — or let AI write them.
+            </p>
+          </div>
+          <DirectUpload />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
