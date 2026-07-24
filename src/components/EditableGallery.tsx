@@ -425,20 +425,33 @@ export function EditableGallery({
               ),
             )}
             {editable && (
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={uploading}
-                className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
-                  layout === "stacked" ? "py-8" : "aspect-square"
-                }`}
-              >
-                {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Plus className="w-6 h-6" />}
-                <span className="text-xs">{uploading ? "Uploading..." : "Add image"}</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={uploading}
+                  className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
+                    layout === "stacked" ? "py-8" : "aspect-square"
+                  }`}
+                >
+                  {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+                  <span className="text-xs">{uploading ? "Uploading..." : "Upload new"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
+                    layout === "stacked" ? "py-8" : "aspect-square"
+                  }`}
+                >
+                  <Images className="w-6 h-6" />
+                  <span className="text-xs">Pick from library</span>
+                </button>
+              </>
             )}
           </div>
         </SortableContext>
+
         <DragOverlay>
           {activeId ? (
             <div className="opacity-80">
