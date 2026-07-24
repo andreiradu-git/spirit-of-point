@@ -398,12 +398,16 @@ export function EditableGallery({
                       </div>
                       <button
                         type="button"
-                        onClick={() => onRemove(img.id)}
-                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemove(img.id);
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
                         aria-label="Remove image"
                       >
                         <X className="w-4 h-4" />
                       </button>
+
                     </>
                   )}
                 </div>
