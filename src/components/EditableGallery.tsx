@@ -222,10 +222,31 @@ export function EditableGallery({
   };
 
   const onRemove = async (id: string) => {
+    if (id.startsWith("fallback-")) {
+      alert(
+        "This image is a placeholder from the source file. It will disappear once you add real images or replace the gallery contents.",
+      );
+      return;
+    }
     if (!confirm("Remove this image from the gallery?")) return;
-    await removeImage({ data: { imageId: id } });
-    invalidate(slug);
+    try {
+      await removeImage({ data: { imageId: id } });
+      invalidate(slug);
+    } catch (e) {
+      console.error("Delete failed", e);
+      alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+    }
   };
+
+  const pickFromLibrary = async (url: string) => {
+    try {
+      await addImage({ data: { gallerySlug: slug, src: url, alt: "" } });
+      invalidate(slug);
+    } catch (e) {
+      alert("Add failed: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
 
   const onAltChange = async (id: string, alt: string) => {
     await updateMeta({ data: { imageId: id, alt } });
