@@ -179,19 +179,38 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
               </div>
             ))}
             {editable && (
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={uploading}
-                className="shrink-0 h-8 px-3 border-2 border-dashed border-border rounded flex items-center gap-1 text-xs text-muted-foreground hover:bg-accent"
-              >
-                {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                Add logo
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={uploading}
+                  className="shrink-0 h-8 px-3 border-2 border-dashed border-border rounded flex items-center gap-1 text-xs text-muted-foreground hover:bg-accent"
+                >
+                  {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                  Upload
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  className="shrink-0 h-8 px-3 border-2 border-dashed border-border rounded flex items-center gap-1 text-xs text-muted-foreground hover:bg-accent"
+                >
+                  <ImageIcon className="w-3 h-3" />
+                  Pick from library
+                </button>
+              </>
             )}
           </div>
         </div>
       </div>
+      <MediaLibraryPicker
+        open={pickerOpen}
+        kind="image"
+        onClose={() => setPickerOpen(false)}
+        onPick={(a) =>
+          save([...items, { id: crypto.randomUUID(), src: a.url, alt: a.alt ?? a.name ?? "Client logo" }])
+        }
+      />
+
 
 
       <input
