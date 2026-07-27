@@ -209,18 +209,11 @@ export function EditableGallery({
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
-      const path = `${slug}/${base}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("media").upload(path, file, {
-        contentType: file.type,
-        upsert: false,
+      const dataBase64 = await fileToBase64(file);
+      const res = await upload({
+        data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
       });
-      if (error) throw error;
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("media").getPublicUrl(path);
-      await addImage({ data: { gallerySlug: slug, src: publicUrl, alt: "" } });
+      await addImage({ data: { gallerySlug: slug, src: res.url, alt: "" } });
       invalidate(slug);
     } catch (e) {
       console.error("Upload failed", e);
