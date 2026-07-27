@@ -581,3 +581,37 @@ function DirectUpload() {
   );
 }
 
+function MigrateToR2Button() {
+  const qc = useQueryClient();
+  const migrate = useServerFn(migrateSupabaseToR2);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <div className="flex items-center gap-2">
+      {msg && <span className="text-xs text-neutral-600">{msg}</span>}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          if (!confirm("Copy all Media library files to Cloudflare R2 and rewrite URLs across the site? Originals in Supabase are kept as backup.")) return;
+          setBusy(true);
+          setMsg("Migrating…");
+          try {
+            const r = await migrate({ data: undefined as never }) as { totalFiles: number; copied: number; skipped: number; failed: number; rewrites: number };
+            setMsg(`${r.copied} copied, ${r.skipped} skipped, ${r.failed} failed · ${r.rewrites} URL rewrites`);
+            qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+          } catch (e) {
+            setMsg(`Migration error: ${e instanceof Error ? e.message : String(e)}`);
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-black text-black hover:bg-black hover:text-white text-xs"
+      >
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
+        Migrate Media → R2
+      </button>
+    </div>
+  );
+}
+
