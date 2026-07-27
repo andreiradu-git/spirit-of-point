@@ -10,6 +10,7 @@ export type SiteAsset = {
   name?: string;
   size?: number;
   contentType?: string;
+  storagePath?: never;
   r2Key?: string;
   usedOnSite: boolean;
 };

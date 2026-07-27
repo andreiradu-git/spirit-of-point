@@ -41,6 +41,28 @@ export const deleteR2Object = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const replaceR2Object = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        key: z.string().min(1).max(600),
+        contentType: z.string().max(160).optional().default("application/octet-stream"),
+        dataBase64: z.string().min(1),
+        backupKey: z.string().max(700).optional(),
+        origBase64: z.string().optional(),
+        origContentType: z.string().max(160).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    if (data.backupKey && data.origBase64) {
+      await putR2Object(data.backupKey, b64ToBytes(data.origBase64), data.origContentType || data.contentType);
+    }
+    const body = b64ToBytes(data.dataBase64);
+    const url = await putR2Object(data.key, body, data.contentType);
+    return { ok: true, url, size: body.byteLength };
+  });
+
 export const migrateSupabaseToR2 = createServerFn({ method: "POST" }).handler(async () => {
   const { publicUrl } = getR2Client();
   const legacyUrlPrefixes = [
