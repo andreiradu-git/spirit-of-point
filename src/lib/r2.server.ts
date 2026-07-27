@@ -82,7 +82,8 @@ function isR2Bucket(value: unknown): value is R2BucketBinding {
 async function resolveBucketBinding(): Promise<R2BucketBinding | undefined> {
   // 1) Modern Cloudflare Workers env import
   try {
-    const mod = (await import(/* @vite-ignore */ "cloudflare:workers")) as {
+    const moduleName = "cloudflare:workers";
+    const mod = (await import(/* @vite-ignore */ moduleName)) as {
       env?: Record<string, unknown>;
     };
     const candidate = mod.env?.[BINDING_NAME];
