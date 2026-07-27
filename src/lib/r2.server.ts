@@ -1,4 +1,3 @@
-import { AwsClient } from "aws4fetch";
 import { getRequest } from "@tanstack/react-start/server";
 import { getStartContext } from "@tanstack/start-storage-context";
 
@@ -10,44 +9,45 @@ export type R2Object = {
   lastModified?: string;
 };
 
-type R2ClientBundle = {
-  client: AwsClient;
-  endpoint: string;
-  bucket: string;
-  publicUrl: string;
+const BINDING_NAME = "MYASSETS";
+const PUBLIC_URL = "https://images.pointstudio.ro";
+
+// Minimal shape of the Cloudflare R2Bucket binding we rely on.
+type R2BucketBinding = {
+  put: (
+    key: string,
+    value: ArrayBuffer | ArrayBufferView | ReadableStream | string | null,
+    options?: {
+      httpMetadata?: { contentType?: string; cacheControl?: string };
+    },
+  ) => Promise<unknown>;
+  get: (key: string) => Promise<{
+    body: ReadableStream;
+    arrayBuffer: () => Promise<ArrayBuffer>;
+    httpMetadata?: { contentType?: string };
+    size: number;
+  } | null>;
+  delete: (key: string) => Promise<void>;
+  list: (options?: {
+    limit?: number;
+    cursor?: string;
+    prefix?: string;
+  }) => Promise<{
+    objects: Array<{
+      key: string;
+      size: number;
+      uploaded: Date;
+      httpMetadata?: { contentType?: string };
+    }>;
+    truncated: boolean;
+    cursor?: string;
+  }>;
 };
 
-type RuntimeSource =
-  | "cloudflare:workers.env"
-  | "env"
-  | "request.runtime.cloudflare.env"
-  | "globalThis.__POINTSTUDIO_WORKER_ENV__"
-  | "globalThis.__env__";
-
-type RuntimeValue = {
-  value?: string;
-  source?: RuntimeSource;
-  name?: string;
-};
-
-export type R2RuntimeDebug = {
-  runtime: RuntimeSource | "none";
-  hasAccessKey: boolean;
-  hasSecret: boolean;
-  hasAccount: boolean;
-  hasEndpoint: boolean;
-  hasBucket: boolean;
-};
-
-export type R2RuntimeDiagnostics = R2RuntimeDebug & {
-  runtimeName: string;
-  contextKeys: string[];
-  contextAfterGlobalMiddlewaresKeys: string[];
-  requestRuntimeKeys: string[];
-  requestRuntimeCloudflareKeys: string[];
-  workerEnvKeys: string[];
-  globalEnvKeys: string[];
-  cloudflareWorkersEnvKeys: string[];
+export type R2RuntimeDiagnostics = {
+  runtime: "cloudflare-worker" | "none";
+  hasBucketBinding: boolean;
+  bindingName: string;
 };
 
 declare global {
@@ -59,199 +59,86 @@ declare global {
 type CloudflareRuntimeRequest = Request & {
   runtime?: {
     name?: string;
-    cloudflare?: {
-      env?: Record<string, unknown>;
-      context?: unknown;
-    };
+    cloudflare?: { env?: Record<string, unknown>; context?: unknown };
   };
 };
 
 type StartContextWithCloudflareEnv = {
-  contextAfterGlobalMiddlewares?: {
-    cloudflareEnv?: Record<string, unknown>;
-    cloudflareCtx?: unknown;
-  };
+  contextAfterGlobalMiddlewares?: { cloudflareEnv?: Record<string, unknown> };
   request?: CloudflareRuntimeRequest;
 };
 
-function recordKeys(value: unknown): string[] {
-  return value && typeof value === "object" ? Object.keys(value as Record<string, unknown>).sort() : [];
+function isR2Bucket(value: unknown): value is R2BucketBinding {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    typeof (value as { put?: unknown }).put === "function" &&
+    typeof (value as { get?: unknown }).get === "function" &&
+    typeof (value as { list?: unknown }).list === "function" &&
+    typeof (value as { delete?: unknown }).delete === "function"
+  );
 }
 
-function normalizeEnvValue(value: unknown): string | undefined {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
+async function resolveBucketBinding(): Promise<R2BucketBinding | undefined> {
+  // 1) Modern Cloudflare Workers env import
+  try {
+    const moduleName = "cloudflare:workers";
+    const mod = (await import(/* @vite-ignore */ moduleName)) as {
+      env?: Record<string, unknown>;
+    };
+    const candidate = mod.env?.[BINDING_NAME];
+    if (isR2Bucket(candidate)) return candidate;
+  } catch {
+    // not in a Cloudflare runtime that supports the module import
   }
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
+
+  // 2) TanStack Start request context (populated by src/server.ts)
+  try {
+    const ctx = getStartContext({ throwIfNotFound: false }) as
+      | StartContextWithCloudflareEnv
+      | undefined;
+    const fromCtx = ctx?.contextAfterGlobalMiddlewares?.cloudflareEnv?.[BINDING_NAME];
+    if (isR2Bucket(fromCtx)) return fromCtx;
+    const fromReq = ctx?.request?.runtime?.cloudflare?.env?.[BINDING_NAME];
+    if (isR2Bucket(fromReq)) return fromReq;
+  } catch {}
+
+  // 3) Request runtime binding
+  try {
+    const req = getRequest() as CloudflareRuntimeRequest;
+    const fromReq = req.runtime?.cloudflare?.env?.[BINDING_NAME];
+    if (isR2Bucket(fromReq)) return fromReq;
+  } catch {}
+
+  // 4) Global fallbacks
+  const fromGlobal = globalThis.__POINTSTUDIO_WORKER_ENV__?.[BINDING_NAME];
+  if (isR2Bucket(fromGlobal)) return fromGlobal;
+  const fromNitro = globalThis.__env__?.[BINDING_NAME];
+  if (isR2Bucket(fromNitro)) return fromNitro;
+
   return undefined;
 }
 
-async function readCloudflareWorkersRuntimeValue(name: string): Promise<RuntimeValue> {
-  try {
-    const moduleName = "cloudflare:workers";
-    const cloudflareWorkers = (await import(/* @vite-ignore */ moduleName)) as { env?: Record<string, unknown> };
-    const value = normalizeEnvValue(cloudflareWorkers.env?.[name]);
-    return value ? { value, source: "cloudflare:workers.env", name } : {};
-  } catch {
-    return {};
+async function getBucket(): Promise<R2BucketBinding> {
+  const bucket = await resolveBucketBinding();
+  if (!bucket) {
+    throw new Error(
+      `Cloudflare R2 binding "${BINDING_NAME}" not found in the Worker runtime`,
+    );
   }
+  return bucket;
 }
 
-async function readCloudflareWorkersEnvKeys(): Promise<string[]> {
-  try {
-    const moduleName = "cloudflare:workers";
-    const cloudflareWorkers = (await import(/* @vite-ignore */ moduleName)) as { env?: Record<string, unknown> };
-    return recordKeys(cloudflareWorkers.env);
-  } catch {
-    return [];
-  }
-}
-
-function readContextRuntimeValue(name: string): RuntimeValue {
-  try {
-    const startContext = getStartContext({ throwIfNotFound: false }) as StartContextWithCloudflareEnv | undefined;
-    const value = normalizeEnvValue(startContext?.contextAfterGlobalMiddlewares?.cloudflareEnv?.[name]);
-    if (value) return { value, source: "env", name };
-
-    const requestValue = normalizeEnvValue(startContext?.request?.runtime?.cloudflare?.env?.[name]);
-    return requestValue ? { value: requestValue, source: "request.runtime.cloudflare.env", name } : {};
-  } catch {
-    return {};
-  }
-}
-
-function readRequestRuntimeValue(name: string): RuntimeValue {
-  try {
-    const request = getRequest() as CloudflareRuntimeRequest;
-    const value = normalizeEnvValue(request.runtime?.cloudflare?.env?.[name]);
-    return value ? { value, source: "request.runtime.cloudflare.env", name } : {};
-  } catch {
-    return {};
-  }
-}
-
-async function readRuntimeEnv(name: string): Promise<RuntimeValue> {
-  const cloudflareWorkersValue = await readCloudflareWorkersRuntimeValue(name);
-  if (cloudflareWorkersValue.value) return cloudflareWorkersValue;
-
-  const contextValue = readContextRuntimeValue(name);
-  if (contextValue.value) return contextValue;
-
-  const requestValue = readRequestRuntimeValue(name);
-  if (requestValue.value) return requestValue;
-
-  const workerValue = normalizeEnvValue(globalThis.__POINTSTUDIO_WORKER_ENV__?.[name]);
-  if (workerValue) return { value: workerValue, source: "globalThis.__POINTSTUDIO_WORKER_ENV__", name };
-
-  const nitroValue = normalizeEnvValue(globalThis.__env__?.[name]);
-  if (nitroValue) return { value: nitroValue, source: "globalThis.__env__", name };
-
-  return {};
-}
-
-async function readFirstRuntimeEnv(names: string[]): Promise<RuntimeValue> {
-  for (const name of names) {
-    const result = await readRuntimeEnv(name);
-    if (result.value) return result;
-  }
-  return {};
-}
-
-function runtimeValue(names: string[]): Promise<RuntimeValue> {
-  return readFirstRuntimeEnv(names);
-}
-
-function firstRuntimeSource(...values: RuntimeValue[]): RuntimeSource | "none" {
-  return values.find((value) => value.source)?.source ?? "none";
-}
-
-export async function getR2Client(): Promise<R2ClientBundle> {
-  const accessKeyId = await runtimeValue(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
-  const secretAccessKey = await runtimeValue([
-    "R2_SECRET_ACCESS_KEY",
-    "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
-    "AWS_SECRET_ACCESS_KEY",
-  ]);
-  const accountId = await runtimeValue(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
-  let endpoint = await runtimeValue(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
-  const bucket = await runtimeValue(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
-  const publicUrl = await runtimeValue(["R2_PUBLIC_URL", "CLOUDFLARE_R2_PUBLIC_URL"]);
-
-  if (!endpoint.value && accountId.value) {
-    endpoint = {
-      value: `https://${accountId.value}.r2.cloudflarestorage.com`,
-      source: accountId.source,
-      name: accountId.name,
-    };
-  }
-
-  const resolvedPublicUrl = publicUrl.value || "https://images.pointstudio.ro";
-  const debug = await getR2RuntimeDebug();
-  console.info("R2 runtime", debug);
-
-  if (!accessKeyId.value || !secretAccessKey.value || !endpoint.value || !bucket.value || !resolvedPublicUrl) {
-    throw new Error("Cloudflare R2 runtime configuration unavailable");
-  }
-
-  let cleanEndpoint = endpoint.value.replace(/\/+$/, "");
-  const suffix = `/${bucket.value}`;
-  if (cleanEndpoint.endsWith(suffix)) cleanEndpoint = cleanEndpoint.slice(0, -suffix.length);
-
-  const client = new AwsClient({
-    accessKeyId: accessKeyId.value,
-    secretAccessKey: secretAccessKey.value,
-    service: "s3",
-    region: "auto",
-  });
-
-  return { client, endpoint: cleanEndpoint, bucket: bucket.value, publicUrl: resolvedPublicUrl.replace(/\/+$/, "") };
-}
-
-export async function getR2RuntimeDebug(): Promise<R2RuntimeDebug> {
-  const accessKeyId = await runtimeValue(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
-  const secretAccessKey = await runtimeValue([
-    "R2_SECRET_ACCESS_KEY",
-    "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
-    "AWS_SECRET_ACCESS_KEY",
-  ]);
-  const accountId = await runtimeValue(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
-  const directEndpoint = await runtimeValue(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
-  const bucket = await runtimeValue(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
-
-  const endpointResolvedFromAccountId = !directEndpoint.value && Boolean(accountId.value);
-
-  return {
-    runtime: firstRuntimeSource(accessKeyId, secretAccessKey, accountId, directEndpoint, bucket),
-    hasAccessKey: Boolean(accessKeyId.value),
-    hasSecret: Boolean(secretAccessKey.value),
-    hasAccount: Boolean(accountId.value),
-    hasEndpoint: Boolean(directEndpoint.value || endpointResolvedFromAccountId),
-    hasBucket: Boolean(bucket.value),
-  };
+export async function getR2Client(): Promise<{ publicUrl: string }> {
+  return { publicUrl: PUBLIC_URL };
 }
 
 export async function getR2RuntimeDiagnostics(): Promise<R2RuntimeDiagnostics> {
-  const debug = await getR2RuntimeDebug();
-  const startContext = getStartContext({ throwIfNotFound: false }) as StartContextWithCloudflareEnv | undefined;
-  let request: CloudflareRuntimeRequest | undefined;
-
-  try {
-    request = getRequest() as CloudflareRuntimeRequest;
-  } catch {
-    request = startContext?.request;
-  }
-
+  const bucket = await resolveBucketBinding();
   return {
-    ...debug,
-    runtimeName: request?.runtime?.name ?? globalThis.__POINTSTUDIO_WORKER_RUNTIME__ ?? "unknown",
-    contextKeys: recordKeys(startContext),
-    contextAfterGlobalMiddlewaresKeys: recordKeys(startContext?.contextAfterGlobalMiddlewares),
-    requestRuntimeKeys: recordKeys(request?.runtime),
-    requestRuntimeCloudflareKeys: recordKeys(request?.runtime?.cloudflare),
-    workerEnvKeys: recordKeys(globalThis.__POINTSTUDIO_WORKER_ENV__),
-    globalEnvKeys: recordKeys(globalThis.__env__),
-    cloudflareWorkersEnvKeys: await readCloudflareWorkersEnvKeys(),
+    runtime: bucket ? "cloudflare-worker" : "none",
+    hasBucketBinding: Boolean(bucket),
+    bindingName: BINDING_NAME,
   };
 }
 
@@ -270,81 +157,62 @@ export function sanitizeFileName(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-function decodeXml(value: string): string {
-  return value
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-}
-
 export async function listR2ObjectsDirect(): Promise<R2Object[]> {
-  const { client, endpoint, bucket, publicUrl } = await getR2Client();
+  const bucket = await getBucket();
   const results: R2Object[] = [];
-  let continuationToken: string | undefined;
+  let cursor: string | undefined;
 
   do {
-    const params = new URLSearchParams({ "list-type": "2", "max-keys": "1000" });
-    if (continuationToken) params.set("continuation-token", continuationToken);
-    const res = await client.fetch(`${endpoint}/${bucket}/?${params.toString()}`, { method: "GET" });
-    if (!res.ok) throw new Error(`R2 list failed [${res.status}]: ${await res.text()}`);
-    const xml = await res.text();
-    const contents = xml.match(/<Contents>[\s\S]*?<\/Contents>/g) ?? [];
-
-    for (const c of contents) {
-      const key = c.match(/<Key>([^<]+)<\/Key>/)?.[1];
-      const size = Number(c.match(/<Size>(\d+)<\/Size>/)?.[1] ?? 0);
-      const lastModified = c.match(/<LastModified>([^<]+)<\/LastModified>/)?.[1];
-      if (!key) continue;
-      const cleanKey = decodeXml(key);
+    const page = await bucket.list({ limit: 1000, cursor });
+    for (const obj of page.objects) {
       results.push({
-        key: cleanKey,
-        url: `${publicUrl}/${cleanKey}`,
-        size,
-        lastModified,
+        key: obj.key,
+        url: `${PUBLIC_URL}/${obj.key}`,
+        size: obj.size,
+        contentType: obj.httpMetadata?.contentType,
+        lastModified:
+          obj.uploaded instanceof Date ? obj.uploaded.toISOString() : undefined,
       });
     }
-
-    continuationToken = /<IsTruncated>true<\/IsTruncated>/.test(xml)
-      ? xml.match(/<NextContinuationToken>([^<]+)<\/NextContinuationToken>/)?.[1]
-      : undefined;
-  } while (continuationToken);
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
 
   return results;
 }
 
-export async function putR2Object(key: string, body: Uint8Array, contentType?: string): Promise<string> {
-  const { client, endpoint, bucket, publicUrl } = await getR2Client();
-  const res = await client.fetch(`${endpoint}/${bucket}/${encodeURI(key)}`, {
-    method: "PUT",
-    body: body as BodyInit,
-    headers: {
-      "content-type": contentType || "application/octet-stream",
-      "cache-control": "public, max-age=31536000, immutable",
+export async function putR2Object(
+  key: string,
+  body: Uint8Array,
+  contentType?: string,
+): Promise<string> {
+  const bucket = await getBucket();
+  await bucket.put(key, body, {
+    httpMetadata: {
+      contentType: contentType || "application/octet-stream",
+      cacheControl: "public, max-age=31536000, immutable",
     },
   });
-  if (!res.ok) throw new Error(`R2 upload failed [${res.status}]: ${await res.text()}`);
-  return `${publicUrl}/${key}`;
+  return `${PUBLIC_URL}/${key}`;
 }
 
 export async function deleteR2ObjectDirect(key: string): Promise<void> {
-  const { client, endpoint, bucket } = await getR2Client();
-  const res = await client.fetch(`${endpoint}/${bucket}/${encodeURI(key)}`, { method: "DELETE" });
-  if (!res.ok && res.status !== 404) {
-    throw new Error(`R2 delete failed [${res.status}]: ${await res.text()}`);
-  }
+  const bucket = await getBucket();
+  await bucket.delete(key);
 }
 
-export async function copyR2ObjectDirect(fromKey: string, toKey: string): Promise<string> {
-  const { client, endpoint, bucket, publicUrl } = await getR2Client();
-  const res = await client.fetch(`${endpoint}/${bucket}/${encodeURI(toKey)}`, {
-    method: "PUT",
-    headers: {
-      "x-amz-copy-source": `/${bucket}/${encodeURI(fromKey)}`,
-      "cache-control": "public, max-age=31536000, immutable",
+export async function copyR2ObjectDirect(
+  fromKey: string,
+  toKey: string,
+): Promise<string> {
+  const bucket = await getBucket();
+  const source = await bucket.get(fromKey);
+  if (!source) throw new Error(`R2 copy failed: source "${fromKey}" not found`);
+  const body = new Uint8Array(await source.arrayBuffer());
+  await bucket.put(toKey, body, {
+    httpMetadata: {
+      contentType: source.httpMetadata?.contentType || "application/octet-stream",
+      cacheControl: "public, max-age=31536000, immutable",
     },
   });
-  if (!res.ok) throw new Error(`R2 copy failed [${res.status}]: ${await res.text()}`);
-  return `${publicUrl}/${toKey}`;
+  return `${PUBLIC_URL}/${toKey}`;
 }
