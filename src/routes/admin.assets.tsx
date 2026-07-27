@@ -493,6 +493,25 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
+  const doDeleteAll = async () => {
+    if (!asset.r2Key) return;
+    const parts = [asset.r2Key, asset.optimizedKey].filter(Boolean) as string[];
+    if (!window.confirm(`Delete this asset permanently?\n\n${parts.join("\n")}\n\nThis cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      for (const k of parts) {
+        await removeR2({ data: { key: k } });
+      }
+      setDeleted(true);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+      qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
+    } catch (e) {
+      alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
 
   if (deleted) return null;
 
@@ -569,6 +588,17 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
           >
             <ExternalLink className="w-3 h-3" />
           </a>
+          {asset.r2Key && (
+            <button
+              type="button"
+              onClick={doDeleteAll}
+              disabled={deleting}
+              className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
+              title="Delete asset (original + optimized)"
+            >
+              {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            </button>
+          )}
         </div>
 
         <label className="flex flex-col gap-0.5">
