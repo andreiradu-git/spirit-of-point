@@ -4,6 +4,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const KIND = z.enum(["seo", "alt"]);
 
+/**
+ * SEO / alt-text generator. AI is delegated to `ai-service.server.ts`.
+ * Supabase is used only for the admin gate (temporary, until Auth phase).
+ */
 export const generateSeoContent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data) =>
@@ -27,36 +31,22 @@ export const generateSeoContent = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!role) throw new Error("Forbidden");
 
-    const { openaiChat, parseJsonLoose } = await import("./openai.server");
-
-    let systemPrompt = "";
-    let userPrompt = "";
+    const svc = await import("./ai-service.server");
 
     if (data.kind === "seo") {
-      systemPrompt =
-        "You write concise, high-converting SEO metadata for a professional photography studio (Point Studio, Bucharest). Return STRICT JSON only, no prose, no markdown, matching schema {\"title\":string,\"description\":string,\"keywords\":string}. Title <= 60 chars. Description 140-160 chars. Keywords: 8-14 comma-separated phrases, targeting Google and AI answer engines. Include locale (Bucharest / Romania) where natural.";
-      userPrompt = `Page: ${data.label ?? data.path ?? "Home"} (${data.path ?? "/"}).\nExtra keyword hints: ${data.extraKeywords ?? "best professional photography, food photography, product photography, advertising, corporate, portrait, editorial, commercial photographer Bucharest"}.\nWrite metadata for this page.`;
-    } else {
-      systemPrompt =
-        "You write descriptive, SEO-friendly alt text for photography portfolio images. Return STRICT JSON only, schema {\"alt\":string}. Alt text: 8-16 words, describes the visible subject, mood, lighting; no 'image of' prefix; include the category or brand when clear.";
-      userPrompt = `Category / context: ${data.context ?? "photography"}. Image URL: ${data.imageUrl}. Write the alt text.`;
-    }
-
-    const messages: import("./openai.server").ChatMessage[] = [
-      { role: "system", content: systemPrompt },
-    ];
-    if (data.kind === "alt" && data.imageUrl) {
-      messages.push({
-        role: "user",
-        content: [
-          { type: "text", text: userPrompt },
-          { type: "image_url", image_url: { url: data.imageUrl } },
-        ],
+      const r = await svc.generateSeoText({
+        path: data.path,
+        label: data.label,
+        extraKeywords: data.extraKeywords,
       });
-    } else {
-      messages.push({ role: "user", content: userPrompt });
+      return { ...r, alt: "" } as Record<string, string>;
     }
 
-    const raw = await openaiChat({ messages, jsonMode: true });
-    return parseJsonLoose<Record<string, string>>(raw);
+    if (!data.imageUrl) throw new Error("imageUrl required for alt generation");
+    const r = await svc.generateAltText({
+      imageUrl: data.imageUrl,
+      context: data.context,
+    });
+    return { ...r, title: "", description: "", keywords: "" } as Record<string, string>;
   });
+
