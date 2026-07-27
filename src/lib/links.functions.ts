@@ -21,8 +21,7 @@ export const generateLinkMeta = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!role) throw new Error("Forbidden");
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const { openaiChat, parseJsonLoose } = await import("./openai.server");
 
     // Best-effort fetch of page title/description for context.
     let pageInfo = "";
@@ -46,33 +45,14 @@ export const generateLinkMeta = createServerFn({ method: "POST" })
       'You write link metadata for the Point Studio (Bucharest photo/video studio) website. Return STRICT JSON only: {"title": string, "description": string, "category": string}. title: 2-6 word display label. description: 1 short sentence. category: one of "social", "portfolio", "press", "shop", "resource", "other". No markdown.';
     const user = `URL: ${data.url}\nContext: ${data.context ?? "external link"}\n${pageInfo}`;
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        response_format: { type: "json_object" },
-      }),
+    const raw = await openaiChat({
+      jsonMode: true,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
     });
-    if (!res.ok) {
-      const t = await res.text();
-      if (res.status === 429) throw new Error("Rate limit — try again in a moment.");
-      if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Settings → Plans & credits.");
-      throw new Error(`AI error (${res.status}): ${t.slice(0, 200)}`);
-    }
-    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const raw = json.choices?.[0]?.message?.content ?? "{}";
-    let parsed: { title?: string; description?: string; category?: string } = {};
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (m) parsed = JSON.parse(m[0]);
-    }
+    const parsed = parseJsonLoose<{ title?: string; description?: string; category?: string }>(raw);
     return {
       title: (parsed.title ?? "").trim(),
       description: (parsed.description ?? "").trim(),

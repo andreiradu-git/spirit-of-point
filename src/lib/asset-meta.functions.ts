@@ -88,14 +88,15 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
       .from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
     if (!role) throw new Error("Forbidden");
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const { openaiChat, parseJsonLoose } = await import("./openai.server");
 
     const system =
       'You write metadata for a professional photography studio (Point Studio, Bucharest). Return STRICT JSON only with keys: {"label": string, "alt": string, "caption": string, "description": string, "tags": string[]}. label: 2-6 word title. alt: 8-16 word descriptive alt (no "image of" prefix). caption: 1 short sentence for display under the image. description: 2-3 sentences describing subject, mood, lighting, styling. tags: 4-8 lowercase single-word or short-phrase tags. No markdown.';
     const user = `Context: ${data.context ?? "portfolio asset"}. Asset kind: ${data.kind ?? "image"}. URL: ${data.imageUrl}. Write all metadata fields.`;
 
-    const messages: Array<{ role: string; content: unknown }> = [{ role: "system", content: system }];
+    const messages: import("./openai.server").ChatMessage[] = [
+      { role: "system", content: system },
+    ];
     if (data.kind !== "video" && data.kind !== "link") {
       messages.push({
         role: "user",
@@ -108,32 +109,10 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
       messages.push({ role: "user", content: user });
     }
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages,
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (!res.ok) {
-      const t = await res.text();
-      if (res.status === 429) throw new Error("Rate limit — try again in a moment.");
-      if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Settings → Plans & credits.");
-      throw new Error(`AI error (${res.status}): ${t.slice(0, 200)}`);
-    }
-    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const raw = json.choices?.[0]?.message?.content ?? "{}";
-    const parseSafe = (s: string) => {
-      try { return JSON.parse(s); } catch {
-        const m = s.match(/\{[\s\S]*\}/);
-        return m ? JSON.parse(m[0]) : {};
-      }
-    };
-    const parsed = parseSafe(raw) as {
+    const raw = await openaiChat({ messages, jsonMode: true });
+    const parsed = parseJsonLoose<{
       label?: string; alt?: string; caption?: string; description?: string; tags?: unknown;
-    };
+    }>(raw);
     const tags = Array.isArray(parsed.tags)
       ? parsed.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 12)
       : [];
