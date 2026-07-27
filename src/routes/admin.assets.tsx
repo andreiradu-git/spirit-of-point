@@ -493,6 +493,25 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
+  const doDeleteAll = async () => {
+    if (!asset.r2Key) return;
+    const parts = [asset.r2Key, asset.optimizedKey].filter(Boolean) as string[];
+    if (!window.confirm(`Delete this asset permanently?\n\n${parts.join("\n")}\n\nThis cannot be undone.`)) return;
+    setDeleting(true);
+    try {
+      for (const k of parts) {
+        await removeR2({ data: { key: k } });
+      }
+      setDeleted(true);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+      qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
+    } catch (e) {
+      alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
 
   if (deleted) return null;
 
