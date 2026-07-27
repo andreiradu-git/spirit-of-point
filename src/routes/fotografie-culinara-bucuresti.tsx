@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
 import { fotografieCulinaraContent as C } from "@/data/fotografie-culinara";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 const URL = "https://www.pointstudio.ro/fotografie-culinara-bucuresti";
 
@@ -57,6 +58,22 @@ export const Route = createFileRoute("/fotografie-culinara-bucuresti")({
 });
 
 function FotografieCulinaraPage() {
+  const { settings, ready } = useSiteSettings();
+  if (ready && !settings.showFotografieCulinara) {
+    return (
+      <SiteLayout>
+        <div className="mx-auto max-w-2xl px-6 py-24 text-center space-y-4">
+          <h1 className="font-serif text-2xl">Pagina este momentan ascunsă</h1>
+          <p className="text-muted-foreground">
+            Această pagină a fost dezactivată din panoul de control al site-ului.
+          </p>
+          <Link to="/" className="inline-block text-sm underline underline-offset-4">
+            Înapoi la Home
+          </Link>
+        </div>
+      </SiteLayout>
+    );
+  }
   return (
     <SiteLayout>
       <article className="mx-auto max-w-3xl px-6 py-12 md:py-20 space-y-10">
