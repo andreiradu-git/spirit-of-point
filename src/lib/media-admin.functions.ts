@@ -1,26 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  b64ToBytes,
+  deleteR2ObjectDirect,
+  getR2Client,
+  putR2Object,
+} from "@/lib/r2.server";
 
-type ReplaceInput = {
-  path: string;
-  contentType: string;
-  dataBase64: string;
-  backupPath?: string;
-  origBase64?: string;
-  origContentType?: string;
-  cacheControl?: string;
-};
-
-function b64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
+// Replace the R2 object at `key` with new bytes. Optionally back up the
+// existing bytes to `backupKey` (used by the optimizer to preserve originals).
 export const replaceMediaObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: ReplaceInput) => input)
+  .inputValidator((input) =>
+    z
+      .object({
+        key: z.string().min(1).max(600),
+        contentType: z.string().max(160).optional().default("application/octet-stream"),
+        dataBase64: z.string().min(1),
+        backupKey: z.string().max(700).optional(),
+        origBase64: z.string().optional(),
+        origContentType: z.string().max(160).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
@@ -28,36 +31,25 @@ export const replaceMediaObject = createServerFn({ method: "POST" })
     });
     if (roleErr || !isAdmin) throw new Error("Forbidden");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const cacheControl = data.cacheControl ?? "31536000";
-
-    if (data.backupPath && data.origBase64) {
-      const orig = b64ToBytes(data.origBase64);
-      // Ignore "already exists" — first backup wins.
-      await supabaseAdmin.storage
-        .from("media")
-        .upload(data.backupPath, orig, {
-          contentType: data.origContentType,
-          upsert: false,
-          cacheControl,
-        });
+    if (data.backupKey && data.origBase64) {
+      await putR2Object(
+        data.backupKey,
+        b64ToBytes(data.origBase64),
+        data.origContentType || data.contentType,
+      );
     }
-
     const body = b64ToBytes(data.dataBase64);
-    const { error } = await supabaseAdmin.storage
-      .from("media")
-      .update(data.path, body, {
-        contentType: data.contentType,
-        upsert: true,
-        cacheControl,
-      });
-    if (error) throw new Error(error.message);
-    return { ok: true, size: body.byteLength };
+    const url = await putR2Object(data.key, body, data.contentType);
+    return { ok: true, url, size: body.byteLength };
   });
 
+// Delete an R2 object (and any legacy backup pair). Also removes gallery_images
+// / asset_meta rows that pointed to the deleted object's public URL.
 export const deleteMediaObject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { path: string; alsoDeleteBackup?: boolean }) => input)
+  .inputValidator((input) =>
+    z.object({ key: z.string().min(1).max(600), alsoDeleteBackup: z.boolean().optional() }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
@@ -65,16 +57,18 @@ export const deleteMediaObject = createServerFn({ method: "POST" })
     });
     if (roleErr || !isAdmin) throw new Error("Forbidden");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const toDelete = [data.path];
-    if (data.alsoDeleteBackup !== false) toDelete.push(`_originals/${data.path}`);
-    const { error } = await supabaseAdmin.storage.from("media").remove(toDelete);
-    if (error) throw new Error(error.message);
+    const { publicUrl } = await getR2Client();
+    await deleteR2ObjectDirect(data.key);
+    if (data.alsoDeleteBackup !== false) {
+      try {
+        await deleteR2ObjectDirect(`_originals/${data.key}`);
+      } catch {
+        /* backup may not exist — ignore */
+      }
+    }
 
-    // Also remove any gallery_images rows that reference the public URL of this object.
-    const publicUrl = supabaseAdmin.storage.from("media").getPublicUrl(data.path).data.publicUrl;
-    await supabaseAdmin.from("gallery_images").delete().eq("src", publicUrl);
-    await supabaseAdmin.from("asset_meta").delete().eq("url", publicUrl);
+    const objectUrl = `${publicUrl}/${data.key}`;
+    await context.supabase.from("gallery_images").delete().eq("src", objectUrl);
+    await context.supabase.from("asset_meta").delete().eq("url", objectUrl);
     return { ok: true };
   });
-

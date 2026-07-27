@@ -7,6 +7,7 @@ export type R2Object = {
   size: number;
   contentType?: string;
   lastModified?: string;
+  originalName?: string;
 };
 
 const BINDING_NAME = "MY_ASSETS";
@@ -19,12 +20,14 @@ type R2BucketBinding = {
     value: ArrayBuffer | ArrayBufferView | ReadableStream | string | null,
     options?: {
       httpMetadata?: { contentType?: string; cacheControl?: string };
+      customMetadata?: Record<string, string>;
     },
   ) => Promise<unknown>;
   get: (key: string) => Promise<{
     body: ReadableStream;
     arrayBuffer: () => Promise<ArrayBuffer>;
     httpMetadata?: { contentType?: string };
+    customMetadata?: Record<string, string>;
     size: number;
   } | null>;
   delete: (key: string) => Promise<void>;
@@ -32,12 +35,14 @@ type R2BucketBinding = {
     limit?: number;
     cursor?: string;
     prefix?: string;
+    include?: Array<"httpMetadata" | "customMetadata">;
   }) => Promise<{
     objects: Array<{
       key: string;
       size: number;
       uploaded: Date;
       httpMetadata?: { contentType?: string };
+      customMetadata?: Record<string, string>;
     }>;
     truncated: boolean;
     cursor?: string;
@@ -200,13 +205,41 @@ export function sanitizeFileName(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+export type AssetKind = "image" | "video" | "file";
+
+export function inferKindFromContentType(ct?: string, filename?: string): AssetKind {
+  const c = (ct || "").toLowerCase();
+  if (c.startsWith("image/")) return "image";
+  if (c.startsWith("video/")) return "video";
+  const n = (filename || "").toLowerCase();
+  if (/\.(jpe?g|png|gif|webp|avif|svg|bmp|tiff?)$/.test(n)) return "image";
+  if (/\.(mp4|webm|mov|m4v)$/.test(n)) return "video";
+  return "file";
+}
+
+/**
+ * Produce a predictable object key: `{folder}/YYYY/MM/{uuid}.{ext}`.
+ * The original filename is intentionally NOT part of the key — store it as
+ * R2 customMetadata (originalName) instead.
+ */
+export function makeR2Key(kind: AssetKind, filename: string): string {
+  const folder = kind === "image" ? "images" : kind === "video" ? "videos" : "files";
+  const now = new Date();
+  const yyyy = String(now.getUTCFullYear());
+  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const rawExt = (filename.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const ext = rawExt || (kind === "image" ? "jpg" : kind === "video" ? "mp4" : "bin");
+  const uuid = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  return `${folder}/${yyyy}/${mm}/${uuid}.${ext}`;
+}
+
 export async function listR2ObjectsDirect(): Promise<R2Object[]> {
   const bucket = await getBucket();
   const results: R2Object[] = [];
   let cursor: string | undefined;
 
   do {
-    const page = await bucket.list({ limit: 1000, cursor });
+    const page = await bucket.list({ limit: 1000, cursor, include: ["httpMetadata", "customMetadata"] });
     for (const obj of page.objects) {
       results.push({
         key: obj.key,
@@ -215,6 +248,7 @@ export async function listR2ObjectsDirect(): Promise<R2Object[]> {
         contentType: obj.httpMetadata?.contentType,
         lastModified:
           obj.uploaded instanceof Date ? obj.uploaded.toISOString() : undefined,
+        originalName: obj.customMetadata?.originalName,
       });
     }
     cursor = page.truncated ? page.cursor : undefined;
@@ -227,13 +261,17 @@ export async function putR2Object(
   key: string,
   body: Uint8Array,
   contentType?: string,
+  originalName?: string,
 ): Promise<string> {
   const bucket = await getBucket();
+  const customMetadata: Record<string, string> = {};
+  if (originalName) customMetadata.originalName = originalName.slice(0, 240);
   await bucket.put(key, body, {
     httpMetadata: {
       contentType: contentType || "application/octet-stream",
       cacheControl: "public, max-age=31536000, immutable",
     },
+    ...(Object.keys(customMetadata).length ? { customMetadata } : {}),
   });
   return `${PUBLIC_URL}/${key}`;
 }
@@ -256,6 +294,7 @@ export async function copyR2ObjectDirect(
       contentType: source.httpMetadata?.contentType || "application/octet-stream",
       cacheControl: "public, max-age=31536000, immutable",
     },
+    ...(source.customMetadata ? { customMetadata: source.customMetadata } : {}),
   });
   return `${PUBLIC_URL}/${toKey}`;
 }

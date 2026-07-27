@@ -3,62 +3,11 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+// NOTE: All file uploads/deletes are handled through Cloudflare R2
+// (`src/lib/r2.functions.ts` — `uploadToR2` / `deleteR2Object` /
+// `replaceR2Object`). Supabase Storage is no longer used anywhere on the site.
 
-function publicUrl(bucket: string, path: string) {
-  const url = process.env.SUPABASE_URL;
-  if (!url) throw new Error("Missing SUPABASE_URL");
-  return `${url}/storage/v1/object/public/${bucket}/${encodeURIComponent(path)}`;
-}
 
-function sanitizePath(fileName: string) {
-  return fileName
-    .toLowerCase()
-    .replace(/[^a-z0-9.\-_]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-export const uploadImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data) =>
-    z
-      .object({
-        file: z.instanceof(File).refine((f) => f.size <= MAX_FILE_SIZE, "Max 20 MB"),
-        prefix: z.string().default("uploads"),
-      })
-      .parse(data),
-  )
-  .handler(async ({ data }) => {
-    if (!ACCEPTED_TYPES.includes(data.file.type)) {
-      throw new Error("Only JPG, PNG, WebP or GIF images are allowed");
-    }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const ext = data.file.name.split(".").pop() || "jpg";
-    const base = sanitizePath(data.file.name.replace(/\.[^.]+$/, "")) || "image";
-    const path = `${data.prefix}/${base}-${Date.now()}.${ext}`;
-
-    const arrayBuffer = await data.file.arrayBuffer();
-    const { error } = await supabaseAdmin.storage.from("media").upload(path, new Uint8Array(arrayBuffer), {
-      contentType: data.file.type,
-      upsert: false,
-    });
-    if (error) throw error;
-
-    return { url: publicUrl("media", path), path };
-  });
-
-export const deleteImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data) => z.object({ path: z.string() }).parse(data))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.storage.from("media").remove([data.path]);
-    if (error) throw error;
-    return { ok: true };
-  });
 
 export const getGalleries = createServerFn({ method: "GET" }).handler(async () => {
   const { createClient } = await import("@supabase/supabase-js");

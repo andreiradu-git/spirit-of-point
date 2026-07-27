@@ -2,9 +2,9 @@ import { useState, useRef, type ReactNode } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useGallery, useInvalidateGallery, type GalleryImage } from "@/hooks/use-gallery";
-import { supabase } from "@/integrations/supabase/client";
 import { cdn, cdnSrcSet } from "@/components/SiteLayout";
 import { useServerFn } from "@tanstack/react-start";
+import { uploadToR2 } from "@/lib/r2.functions";
 import {
   DndContext,
   closestCenter,
@@ -32,6 +32,14 @@ import { MediaLibraryPicker } from "./MediaLibraryPicker";
 
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+async function fileToBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(bin);
+}
 
 type Props = {
   slug: string;
@@ -165,6 +173,7 @@ export function EditableGallery({
   const removeImage = useServerFn(removeGalleryImage);
   const reorder = useServerFn(reorderGalleryImages);
   const updateMeta = useServerFn(updateImageMeta);
+  const upload = useServerFn(uploadToR2);
 
   const [uploading, setUploading] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -200,18 +209,11 @@ export function EditableGallery({
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
-      const path = `${slug}/${base}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("media").upload(path, file, {
-        contentType: file.type,
-        upsert: false,
+      const dataBase64 = await fileToBase64(file);
+      const res = await upload({
+        data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
       });
-      if (error) throw error;
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("media").getPublicUrl(path);
-      await addImage({ data: { gallerySlug: slug, src: publicUrl, alt: "" } });
+      await addImage({ data: { gallerySlug: slug, src: res.url, alt: "" } });
       invalidate(slug);
     } catch (e) {
       console.error("Upload failed", e);

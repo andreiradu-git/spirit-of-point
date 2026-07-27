@@ -21,6 +21,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkSlugRouteImport } from './routes/work.$slug'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
+import { Route as AdminStorageCleanupRouteImport } from './routes/admin.storage-cleanup'
 import { Route as AdminSocialsRouteImport } from './routes/admin.socials'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
@@ -91,6 +92,11 @@ const AdminThemeRoute = AdminThemeRouteImport.update({
   path: '/admin/theme',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminStorageCleanupRoute = AdminStorageCleanupRouteImport.update({
+  id: '/admin/storage-cleanup',
+  path: '/admin/storage-cleanup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSocialsRoute = AdminSocialsRouteImport.update({
   id: '/admin/socials',
   path: '/admin/socials',
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/socials': typeof AdminSocialsRoute
+  '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
   '/api/debug/r2': typeof ApiDebugR2Route
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/socials': typeof AdminSocialsRoute
+  '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
   '/api/debug/r2': typeof ApiDebugR2Route
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/socials': typeof AdminSocialsRoute
+  '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
   '/api/debug/r2': typeof ApiDebugR2Route
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/admin/performance'
     | '/admin/seo'
     | '/admin/socials'
+    | '/admin/storage-cleanup'
     | '/admin/theme'
     | '/work/$slug'
     | '/api/debug/r2'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/admin/performance'
     | '/admin/seo'
     | '/admin/socials'
+    | '/admin/storage-cleanup'
     | '/admin/theme'
     | '/work/$slug'
     | '/api/debug/r2'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/admin/performance'
     | '/admin/seo'
     | '/admin/socials'
+    | '/admin/storage-cleanup'
     | '/admin/theme'
     | '/work/$slug'
     | '/api/debug/r2'
@@ -286,6 +298,7 @@ export interface RootRouteChildren {
   AdminPerformanceRoute: typeof AdminPerformanceRoute
   AdminSeoRoute: typeof AdminSeoRoute
   AdminSocialsRoute: typeof AdminSocialsRoute
+  AdminStorageCleanupRoute: typeof AdminStorageCleanupRoute
   AdminThemeRoute: typeof AdminThemeRoute
   WorkSlugRoute: typeof WorkSlugRoute
   ApiDebugR2Route: typeof ApiDebugR2Route
@@ -377,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminThemeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/storage-cleanup': {
+      id: '/admin/storage-cleanup'
+      path: '/admin/storage-cleanup'
+      fullPath: '/admin/storage-cleanup'
+      preLoaderRoute: typeof AdminStorageCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/socials': {
       id: '/admin/socials'
       path: '/admin/socials'
@@ -454,6 +474,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPerformanceRoute: AdminPerformanceRoute,
   AdminSeoRoute: AdminSeoRoute,
   AdminSocialsRoute: AdminSocialsRoute,
+  AdminStorageCleanupRoute: AdminStorageCleanupRoute,
   AdminThemeRoute: AdminThemeRoute,
   WorkSlugRoute: WorkSlugRoute,
   ApiDebugR2Route: ApiDebugR2Route,

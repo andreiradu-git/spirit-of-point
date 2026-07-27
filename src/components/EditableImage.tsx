@@ -1,7 +1,8 @@
 import { useRef, useState, type ReactNode } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { uploadToR2 } from "@/lib/r2.functions";
 import { Upload, Loader2 } from "lucide-react";
 
 type Props = {
@@ -17,13 +18,21 @@ type Props = {
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
+async function fileToBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(bin);
+}
+
 export function EditableImage({
   src,
   alt = "",
   onChange,
   className = "",
   imgClassName = "",
-  prefix = "site",
+  prefix: _prefix = "site",
   children,
 }: Props) {
   const { isAdmin } = useAdmin();
@@ -31,6 +40,7 @@ export function EditableImage({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const editable = isAdmin && editMode;
+  const upload = useServerFn(uploadToR2);
 
   const handleFile = async (file: File) => {
     if (!file) return;
@@ -45,19 +55,11 @@ export function EditableImage({
 
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
-      const path = `${prefix}/${base}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("media").upload(path, file, {
-        contentType: file.type,
-        upsert: false,
+      const dataBase64 = await fileToBase64(file);
+      const res = await upload({
+        data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
       });
-      if (error) throw error;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("media").getPublicUrl(path);
-      onChange?.(publicUrl);
+      onChange?.(res.url);
     } catch (e) {
       console.error("Upload failed", e);
       alert("Upload failed. Please try again.");

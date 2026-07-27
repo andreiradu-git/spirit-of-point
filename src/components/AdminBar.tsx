@@ -33,6 +33,7 @@ export function AdminBar() {
         <Link to="/admin/performance" className="text-xs hover:underline">Performance</Link>
         <Link to="/admin/contacts" className="text-xs hover:underline">Messages</Link>
         <Link to="/admin/assets" className="text-xs hover:underline">Assets</Link>
+        <Link to="/admin/storage-cleanup" className="text-xs hover:underline">Cleanup</Link>
         <Link to="/admin/socials" className="text-xs hover:underline">Socials</Link>
         <Link to="/admin/links" className="text-xs hover:underline">Links</Link>
         <Link to="/admin/theme" className="text-xs hover:underline">Theme</Link>
