@@ -16,6 +16,23 @@ type R2ClientBundle = {
   publicUrl: string;
 };
 
+type RuntimeSource = "env" | "request.runtime.cloudflare.env" | "globalThis.__POINTSTUDIO_WORKER_ENV__" | "globalThis.__env__" | "process.env";
+
+type RuntimeValue = {
+  value?: string;
+  source?: RuntimeSource;
+  name?: string;
+};
+
+export type R2RuntimeDebug = {
+  workerBindingSeen: boolean;
+  available: Record<"R2_ACCESS_KEY_ID" | "R2_SECRET_ACCESS_KEY" | "R2_ACCOUNT_ID" | "R2_ENDPOINT" | "R2_BUCKET_NAME", boolean>;
+  sources: Record<"R2_ACCESS_KEY_ID" | "R2_SECRET_ACCESS_KEY" | "R2_ACCOUNT_ID" | "R2_ENDPOINT" | "R2_BUCKET_NAME", RuntimeSource | null>;
+  resolvedNames: Record<"R2_ACCESS_KEY_ID" | "R2_SECRET_ACCESS_KEY" | "R2_ACCOUNT_ID" | "R2_ENDPOINT" | "R2_BUCKET_NAME", string | null>;
+  endpointResolvedFromAccountId: boolean;
+  r2ClientFile: string;
+};
+
 declare global {
   var __POINTSTUDIO_WORKER_ENV__: Record<string, unknown> | undefined;
   var __env__: Record<string, unknown> | undefined;
@@ -47,57 +64,139 @@ function readRequestEnv(name: string): string | undefined {
   }
 }
 
-function readRuntimeEnv(name: string): string | undefined {
+function readRequestRuntimeValue(name: string): RuntimeValue {
+  try {
+    const request = getRequest() as CloudflareRuntimeRequest;
+    const value = normalizeEnvValue(request.runtime?.cloudflare?.env?.[name]);
+    return value ? { value, source: "request.runtime.cloudflare.env", name } : {};
+  } catch {
+    return {};
+  }
+}
+
+function readRuntimeEnv(name: string): RuntimeValue {
+  const requestValue = readRequestRuntimeValue(name);
+  if (requestValue.value) return requestValue;
+
+  const workerValue = normalizeEnvValue(globalThis.__POINTSTUDIO_WORKER_ENV__?.[name]);
+  if (workerValue) return { value: workerValue, source: "globalThis.__POINTSTUDIO_WORKER_ENV__", name };
+
+  const nitroValue = normalizeEnvValue(globalThis.__env__?.[name]);
+  if (nitroValue) return { value: nitroValue, source: "globalThis.__env__", name };
+
   const processEnv = typeof process !== "undefined" ? process.env?.[name] : undefined;
-  return (
-    normalizeEnvValue(processEnv) ||
-    normalizeEnvValue(globalThis.__POINTSTUDIO_WORKER_ENV__?.[name]) ||
-    normalizeEnvValue(globalThis.__env__?.[name]) ||
-    readRequestEnv(name)
+  const processValue = normalizeEnvValue(processEnv);
+  if (processValue) return { value: processValue, source: "process.env", name };
+
+  return {};
+}
+
+function readFirstRuntimeEnv(names: string[]): RuntimeValue {
+  for (const name of names) {
+    const result = readRuntimeEnv(name);
+    if (result.value) return result;
+  }
+  return {};
+}
+
+function runtimeValue(names: string[]): RuntimeValue {
+  return readFirstRuntimeEnv(names);
+}
+
+function workerBindingSeen(): boolean {
+  try {
+    const request = getRequest() as CloudflareRuntimeRequest;
+    if (request.runtime?.cloudflare?.env && Object.keys(request.runtime.cloudflare.env).length > 0) return true;
+  } catch {
+    // Ignore: getRequest is only available during server requests.
+  }
+  return Boolean(
+    (globalThis.__POINTSTUDIO_WORKER_ENV__ && Object.keys(globalThis.__POINTSTUDIO_WORKER_ENV__).length > 0) ||
+      (globalThis.__env__ && Object.keys(globalThis.__env__).length > 0),
   );
 }
 
-function readFirstRuntimeEnv(names: string[]): string | undefined {
-  for (const name of names) {
-    const value = readRuntimeEnv(name);
-    if (value) return value;
-  }
-  return undefined;
-}
-
 export function getR2Client(): R2ClientBundle {
-  const accessKeyId = readFirstRuntimeEnv(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
-  const secretAccessKey = readFirstRuntimeEnv(["R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY"]);
-  const accountId = readFirstRuntimeEnv(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
-  let endpoint = readFirstRuntimeEnv(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
-  const bucket = readFirstRuntimeEnv(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
-  const publicUrl = readFirstRuntimeEnv(["R2_PUBLIC_URL", "CLOUDFLARE_R2_PUBLIC_URL"]) || "https://images.pointstudio.ro";
+  const accessKeyId = runtimeValue(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
+  const secretAccessKey = runtimeValue(["R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY"]);
+  const accountId = runtimeValue(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
+  let endpoint = runtimeValue(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
+  const bucket = runtimeValue(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
+  const publicUrl = runtimeValue(["R2_PUBLIC_URL", "CLOUDFLARE_R2_PUBLIC_URL"]);
 
-  if (!endpoint && accountId) endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
+  if (!endpoint.value && accountId.value) {
+    endpoint = {
+      value: `https://${accountId.value}.r2.cloudflarestorage.com`,
+      source: accountId.source,
+      name: accountId.name,
+    };
+  }
 
-  if (!accessKeyId || !secretAccessKey || !endpoint || !bucket || !publicUrl) {
+  const resolvedPublicUrl = publicUrl.value || "https://images.pointstudio.ro";
+
+  if (!accessKeyId.value || !secretAccessKey.value || !endpoint.value || !bucket.value || !resolvedPublicUrl) {
     const missing = [
-      ...(!accessKeyId ? ["R2_ACCESS_KEY_ID"] : []),
-      ...(!secretAccessKey ? ["R2_SECRET_ACCESS_KEY"] : []),
-      ...(!endpoint ? ["R2_ENDPOINT or R2_ACCOUNT_ID"] : []),
-      ...(!bucket ? ["R2_BUCKET_NAME or R2_BUCKET"] : []),
-      ...(!publicUrl ? ["R2_PUBLIC_URL"] : []),
+      ...(!accessKeyId.value ? ["R2_ACCESS_KEY_ID"] : []),
+      ...(!secretAccessKey.value ? ["R2_SECRET_ACCESS_KEY"] : []),
+      ...(!endpoint.value ? ["R2_ENDPOINT or R2_ACCOUNT_ID"] : []),
+      ...(!bucket.value ? ["R2_BUCKET_NAME or R2_BUCKET"] : []),
     ];
+    const sourceSummary = getR2RuntimeDebug().sources;
+    console.info("R2 runtime configuration check", sourceSummary);
     throw new Error(`Cloudflare R2 is not configured: ${missing.join(", ")}`);
   }
 
-  endpoint = endpoint.replace(/\/+$/, "");
-  const suffix = `/${bucket}`;
-  if (endpoint.endsWith(suffix)) endpoint = endpoint.slice(0, -suffix.length);
+  let cleanEndpoint = endpoint.value.replace(/\/+$/, "");
+  const suffix = `/${bucket.value}`;
+  if (cleanEndpoint.endsWith(suffix)) cleanEndpoint = cleanEndpoint.slice(0, -suffix.length);
 
   const client = new AwsClient({
-    accessKeyId,
-    secretAccessKey,
+    accessKeyId: accessKeyId.value,
+    secretAccessKey: secretAccessKey.value,
     service: "s3",
     region: "auto",
   });
 
-  return { client, endpoint, bucket, publicUrl: publicUrl.replace(/\/+$/, "") };
+  return { client, endpoint: cleanEndpoint, bucket: bucket.value, publicUrl: resolvedPublicUrl.replace(/\/+$/, "") };
+}
+
+export function getR2RuntimeDebug(): R2RuntimeDebug {
+  const accessKeyId = runtimeValue(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
+  const secretAccessKey = runtimeValue(["R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY"]);
+  const accountId = runtimeValue(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
+  const directEndpoint = runtimeValue(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
+  const bucket = runtimeValue(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
+
+  const endpointResolvedFromAccountId = !directEndpoint.value && Boolean(accountId.value);
+  const endpointSource = directEndpoint.source ?? (endpointResolvedFromAccountId ? accountId.source : undefined);
+  const endpointName = directEndpoint.name ?? (endpointResolvedFromAccountId ? accountId.name : undefined);
+
+  return {
+    workerBindingSeen: workerBindingSeen(),
+    available: {
+      R2_ACCESS_KEY_ID: Boolean(accessKeyId.value),
+      R2_SECRET_ACCESS_KEY: Boolean(secretAccessKey.value),
+      R2_ACCOUNT_ID: Boolean(accountId.value),
+      R2_ENDPOINT: Boolean(directEndpoint.value || endpointResolvedFromAccountId),
+      R2_BUCKET_NAME: Boolean(bucket.value),
+    },
+    sources: {
+      R2_ACCESS_KEY_ID: accessKeyId.source ?? null,
+      R2_SECRET_ACCESS_KEY: secretAccessKey.source ?? null,
+      R2_ACCOUNT_ID: accountId.source ?? null,
+      R2_ENDPOINT: endpointSource ?? null,
+      R2_BUCKET_NAME: bucket.source ?? null,
+    },
+    resolvedNames: {
+      R2_ACCESS_KEY_ID: accessKeyId.name ?? null,
+      R2_SECRET_ACCESS_KEY: secretAccessKey.name ?? null,
+      R2_ACCOUNT_ID: accountId.name ?? null,
+      R2_ENDPOINT: endpointName ?? null,
+      R2_BUCKET_NAME: bucket.name ?? null,
+    },
+    endpointResolvedFromAccountId,
+    r2ClientFile: "src/lib/r2.server.ts",
+  };
 }
 
 export function b64ToBytes(b64: string): Uint8Array {
