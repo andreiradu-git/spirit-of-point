@@ -233,13 +233,10 @@ export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
     // gallery_images
     const { data: imgs } = await supabaseAdmin
       .from("gallery_images")
-      .select("id, src, thumb_src");
+      .select("id, src");
     for (const row of imgs ?? []) {
-      const patch: Record<string, string> = {};
-      if (row.src && hasAny(row.src)) patch.src = rewrite(row.src);
-      if (row.thumb_src && hasAny(row.thumb_src)) patch.thumb_src = rewrite(row.thumb_src);
-      if (Object.keys(patch).length) {
-        await supabaseAdmin.from("gallery_images").update(patch).eq("id", row.id);
+      if (row.src && hasAny(row.src)) {
+        await supabaseAdmin.from("gallery_images").update({ src: rewrite(row.src) }).eq("id", row.id);
         rewrites++;
       }
     }
