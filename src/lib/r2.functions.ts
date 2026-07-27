@@ -63,32 +63,82 @@ export const replaceR2Object = createServerFn({ method: "POST" })
     return { ok: true, url, size: body.byteLength };
   });
 
-export const migrateSupabaseToR2 = createServerFn({ method: "POST" }).handler(async () => {
-  const { publicUrl } = getR2Client();
-  const legacyUrlPrefixes = [
-    process.env.LEGACY_MEDIA_PUBLIC_URL,
-    process.env.VITE_SUPABASE_URL ? `${process.env.VITE_SUPABASE_URL}/storage/v1/object/public/media/` : undefined,
-    process.env.SUPABASE_URL ? `${process.env.SUPABASE_URL}/storage/v1/object/public/media/` : undefined,
-  ].filter((v): v is string => Boolean(v));
+export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        assets: z
+          .array(
+            z.object({
+              url: z.string().url(),
+              name: z.string().optional(),
+              contentType: z.string().optional(),
+            }),
+          )
+          .optional()
+          .default([]),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const { publicUrl } = getR2Client();
+    const existing = new Set((await listR2ObjectsDirect()).map((object) => object.key));
+    const seenUrls = new Set<string>();
+    let copied = 0;
+    let skipped = 0;
+    let failed = 0;
+    const migrated: Array<{ from: string; to: string; key: string }> = [];
 
-  if (legacyUrlPrefixes.length === 0) {
-    return {
-      totalFiles: 0,
-      copied: 0,
-      skipped: 0,
-      failed: 0,
-      rewrites: 0,
-      message:
-        "R2 upload is active. Legacy migration needs a public legacy media URL prefix to discover old storage URLs, but no Supabase env is required for new uploads.",
+    const makeKey = (assetUrl: string, name?: string) => {
+      const url = new URL(assetUrl);
+      const decodedPath = decodeURIComponent(url.pathname.replace(/^\/+/, ""));
+      const mediaMarker = "storage/v1/object/public/media/";
+      if (decodedPath.includes(mediaMarker)) {
+        return decodedPath.slice(decodedPath.indexOf(mediaMarker) + mediaMarker.length);
+      }
+      const rawName = name || decodedPath.split("/").pop() || "asset";
+      const clean = sanitizeFileName(rawName) || `asset-${Date.now()}`;
+      return `migrated/${clean}`;
     };
-  }
 
-  return {
-    totalFiles: 0,
-    copied: 0,
-    skipped: 0,
-    failed: 0,
-    rewrites: 0,
-    message: `R2 is configured at ${publicUrl}. Legacy storage copying is disabled in the Supabase-free asset flow; upload new files directly to R2 from Assets.`,
-  };
-});
+    for (const asset of data.assets) {
+      if (seenUrls.has(asset.url) || asset.url.startsWith(`${publicUrl}/`)) {
+        skipped++;
+        continue;
+      }
+      seenUrls.add(asset.url);
+      const key = makeKey(asset.url, asset.name);
+      const nextUrl = `${publicUrl}/${key}`;
+      if (existing.has(key)) {
+        skipped++;
+        migrated.push({ from: asset.url, to: nextUrl, key });
+        continue;
+      }
+      try {
+        const res = await fetch(asset.url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`source fetch failed [${res.status}]`);
+        const blob = await res.blob();
+        const body = new Uint8Array(await blob.arrayBuffer());
+        await putR2Object(key, body, asset.contentType || blob.type || res.headers.get("content-type") || undefined);
+        copied++;
+        existing.add(key);
+        migrated.push({ from: asset.url, to: nextUrl, key });
+      } catch (e) {
+        console.error("R2 direct URL migration failed", asset.url, e);
+        failed++;
+      }
+    }
+
+    return {
+      totalFiles: data.assets.length,
+      copied,
+      skipped,
+      failed,
+      rewrites: 0,
+      migrated,
+      message:
+        migrated.length > 0
+          ? "Files copied to R2. Replace old gallery/page references with the new R2 assets from the library where needed."
+          : "R2 upload is active. No non-R2 assets were found to copy.",
+    };
+  });

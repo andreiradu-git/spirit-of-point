@@ -83,7 +83,7 @@ function AdminAssetsPage() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <DirectUpload />
-            <MigrateToR2Button />
+            <MigrateToR2Button assets={assets} />
           </div>
         </div>
 
@@ -554,7 +554,7 @@ function DirectUpload() {
   );
 }
 
-function MigrateToR2Button() {
+function MigrateToR2Button({ assets }: { assets: SiteAsset[] }) {
   const qc = useQueryClient();
   const migrate = useServerFn(migrateSupabaseToR2);
   const [busy, setBusy] = useState(false);
@@ -570,8 +570,22 @@ function MigrateToR2Button() {
           setBusy(true);
           setMsg("Migrating…");
           try {
-            const r = await migrate({ data: undefined as never }) as { totalFiles: number; copied: number; skipped: number; failed: number; rewrites: number };
-            setMsg(`${r.copied} copied, ${r.skipped} skipped, ${r.failed} failed · ${r.rewrites} URL rewrites`);
+            const candidates = Array.from(
+              new Map(
+                assets
+                  .filter((asset) => !asset.r2Key && /^https?:\/\//.test(asset.url))
+                  .map((asset) => [asset.url, { url: asset.url, name: asset.name, contentType: asset.contentType }]),
+              ).values(),
+            );
+            const r = await migrate({ data: { assets: candidates } }) as {
+              totalFiles: number;
+              copied: number;
+              skipped: number;
+              failed: number;
+              rewrites: number;
+              message?: string;
+            };
+            setMsg(`${r.copied} copied, ${r.skipped} skipped, ${r.failed} failed${r.message ? ` · ${r.message}` : ""}`);
             qc.invalidateQueries({ queryKey: ["admin", "assets"] });
           } catch (e) {
             setMsg(`Migration error: ${e instanceof Error ? e.message : String(e)}`);
