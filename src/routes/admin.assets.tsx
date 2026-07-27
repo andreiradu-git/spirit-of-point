@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
 import { uploadToR2, deleteR2Object, migrateSupabaseToR2, replaceR2Object } from "@/lib/r2.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2, Cloud } from "lucide-react";
 import { useRef } from "react";
 
@@ -31,7 +32,7 @@ function AdminAssetsPage() {
 
   const { data: assets = [], isLoading } = useQuery({
     queryKey: ["admin", "assets"],
-    queryFn: () => list() as Promise<SiteAsset[]>,
+    queryFn: async () => mergeAssets(await list() as SiteAsset[]),
     enabled: !!isAdmin,
     staleTime: 30_000,
   });
