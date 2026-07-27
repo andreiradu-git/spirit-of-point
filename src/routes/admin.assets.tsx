@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
 import { replaceMediaObject, deleteMediaObject } from "@/lib/media-admin.functions";
-import { uploadToR2, deleteR2Object } from "@/lib/r2.functions";
+import { uploadToR2, deleteR2Object, migrateSupabaseToR2 } from "@/lib/r2.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2, Upload, Cloud } from "lucide-react";
 import { useRef } from "react";
@@ -83,7 +83,10 @@ function AdminAssetsPage() {
               Every image, video and link ever uploaded or referenced on the site. Edit label & alt text — or let AI write them.
             </p>
           </div>
-          <DirectUpload />
+          <div className="flex flex-col items-end gap-2">
+            <DirectUpload />
+            <MigrateToR2Button />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -523,10 +526,11 @@ function DirectUpload() {
           }
         } catch (e) {
           fail++;
-          console.error(e);
+          console.error("upload failed", file.name, e);
+          setMsg(`Upload failed for ${file.name}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
-      setMsg(`${ok} uploaded${fail ? `, ${fail} failed` : ""}`);
+      if (fail === 0) setMsg(`${ok} uploaded`);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
       qc.invalidateQueries({ queryKey: ["media-picker", "assets"] });
     } finally {
@@ -573,6 +577,40 @@ function DirectUpload() {
           e.target.value = "";
         }}
       />
+    </div>
+  );
+}
+
+function MigrateToR2Button() {
+  const qc = useQueryClient();
+  const migrate = useServerFn(migrateSupabaseToR2);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <div className="flex items-center gap-2">
+      {msg && <span className="text-xs text-neutral-600">{msg}</span>}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          if (!confirm("Copy all Media library files to Cloudflare R2 and rewrite URLs across the site? Originals in Supabase are kept as backup.")) return;
+          setBusy(true);
+          setMsg("Migrating…");
+          try {
+            const r = await migrate({ data: undefined as never }) as { totalFiles: number; copied: number; skipped: number; failed: number; rewrites: number };
+            setMsg(`${r.copied} copied, ${r.skipped} skipped, ${r.failed} failed · ${r.rewrites} URL rewrites`);
+            qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+          } catch (e) {
+            setMsg(`Migration error: ${e instanceof Error ? e.message : String(e)}`);
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-black text-black hover:bg-black hover:text-white text-xs"
+      >
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
+        Migrate Media → R2
+      </button>
     </div>
   );
 }
