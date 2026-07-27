@@ -24,19 +24,19 @@ async function getServerEntry(): Promise<ServerEntry> {
 
 function bindWorkerEnv(env: unknown) {
   if (!env || typeof env !== "object") return;
+  const rawEnv = env as Record<string, unknown>;
 
   const stringEnv: Record<string, string> = {};
-  for (const [key, value] of Object.entries(env as Record<string, unknown>)) {
+  for (const [key, value] of Object.entries(rawEnv)) {
     if (typeof value === "string") stringEnv[key] = value;
   }
 
-  if (Object.keys(stringEnv).length === 0) return;
   globalThis.__POINTSTUDIO_WORKER_ENV__ = {
     ...(globalThis.__POINTSTUDIO_WORKER_ENV__ ?? {}),
-    ...stringEnv,
+    ...rawEnv,
   };
 
-  if (typeof process !== "undefined") {
+  if (typeof process !== "undefined" && Object.keys(stringEnv).length > 0) {
     process.env = {
       ...process.env,
       ...stringEnv,
