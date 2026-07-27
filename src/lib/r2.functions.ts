@@ -152,13 +152,24 @@ export const replaceR2Object = createServerFn({ method: "POST" })
 export const scanStorageOrphans = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
+      try {
+        return await p;
+      } catch (e) {
+        console.warn("[storage-cleanup] CMS query failed, continuing:", e);
+        return { data: null };
+      }
+    };
     const [objects, galleries, settings, pages, pageSeo, assetMeta] = await Promise.all([
-      listR2ObjectsDirect(),
-      context.supabase.from("gallery_images").select("src, gallery_id"),
-      context.supabase.from("site_settings").select("key, value"),
-      context.supabase.from("pages").select("slug, body"),
-      context.supabase.from("page_seo").select("path, og_image"),
-      context.supabase.from("asset_meta").select("url"),
+      listR2ObjectsDirect().catch((e) => {
+        console.error("[storage-cleanup] R2 list failed", e);
+        return [] as Awaited<ReturnType<typeof listR2ObjectsDirect>>;
+      }),
+      safe(context.supabase.from("gallery_images").select("src, gallery_id")),
+      safe(context.supabase.from("site_settings").select("key, value")),
+      safe(context.supabase.from("pages").select("slug, body")),
+      safe(context.supabase.from("page_seo").select("path, og_image")),
+      safe(context.supabase.from("asset_meta").select("url")),
     ]);
 
     // Build one big haystack containing every referenced URL/string in the CMS.
