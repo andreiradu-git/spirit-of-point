@@ -151,16 +151,20 @@ function Index() {
 
               <div className="flex gap-[3cqw] text-white">
                 <div>
-                  <div className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">10+</div>
-                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)]">
-                    Years of<br />expertise
-                  </div>
+                  <Editable as="div" id="hero.stat1.value" className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">
+                    10+
+                  </Editable>
+                  <Editable as="div" id="hero.stat1.label" multiline className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] whitespace-pre-line">
+                    {"Years of\nexpertise"}
+                  </Editable>
                 </div>
                 <div>
-                  <div className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">50+</div>
-                  <div className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)]">
-                    International<br />clients
-                  </div>
+                  <Editable as="div" id="hero.stat2.value" className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">
+                    50+
+                  </Editable>
+                  <Editable as="div" id="hero.stat2.label" multiline className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] whitespace-pre-line">
+                    {"International\nclients"}
+                  </Editable>
                 </div>
                 <a
                   href="https://www.google.com/search?q=point+studio+bucuresti"

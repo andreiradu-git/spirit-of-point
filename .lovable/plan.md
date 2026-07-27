@@ -1,70 +1,39 @@
-# Interfață de editare tip Squarespace
+## Scope
 
-Construim un CMS integrat în site, accesibil doar pentru tine (admin), care îți permite să editezi tot conținutul live, fără cod.
+Editable hero stats + patru etape CMS. Livrez incremental, în ordinea de mai jos. La final revenim la debugging upload R2.
 
-## 1. Autentificare admin
+### 0. Stats editabile pe hero (rapid)
+- În `src/routes/index.tsx`, înlocuiesc textele hardcoded (`10+`, `Years of expertise`, `50+`, `International clients`) cu `<Editable id="hero.stat1.value" />`, `hero.stat1.label`, `hero.stat2.value`, `hero.stat2.label`. Se salvează prin `useSaveText` (deja existent).
 
-- Pagina `/auth` (email + parolă) — Lovable Cloud gestionează conturile.
-- Primul cont creat primește automat rol `admin` (tabelul `user_roles` există deja).
-- Când ești logat ca admin, apare o bară de editare fixă sus cu: **Edit mode ON/OFF**, **Salvează**, **Logout**.
+### Etapa A — Media Manager R2 complet
+Fișier: `src/routes/admin.assets.tsx` + `src/lib/r2.functions.ts` + `src/lib/asset-meta.functions.ts`.
+- Search box (nume/label/alt) + filter chips: All / Image / Video / File.
+- Sort: Name, Size, Date.
+- Grid cu preview, size uman, data upload, badge "Used on site".
+- Acțiuni per card: Copy URL, Rename (nou `renameR2Object` — copy+delete), Delete cu confirm, Optimize/Revert (existent).
+- Drag&drop multi-upload cu progress bar per fișier (Promise.all + state map).
+- Câmpuri editabile extinse pe `asset_meta`: `label`, `alt`, `caption`, `description`, `tags` (text[]). Migrare adaugă coloanele.
+- Buton "AI Generate all" per asset — extind `generateAssetMeta` să returneze toate 5 câmpuri.
 
-## 2. Ce vei putea edita (în același UI, direct pe pagină)
+### Etapa B — Video CMS
+Fișier: `src/routes/video.tsx`.
+- Sursă: `R2 upload` sau `URL extern` (YouTube/Vimeo/MP4) — detectare automată în player (iframe pt YT/Vimeo, `<video>` pt MP4).
+- Replace video, delete, drag&drop reorder (dnd-kit e deja instalat? verific; altfel HTML5 native).
+- AI meta pe poster (folosind `generateAssetMeta`).
 
-**Header**
-- Logo (upload imagine)
-- Iconițe social (Instagram, Pinterest, etc.) — adaugă/șterge/reordonează, editează link
+### Etapa C — Testimonials carousel
+Fișier: `src/components/EditableTestimonials.tsx`.
+- Carousel orizontal cu swipe touch + mouse drag, autoplay (pauză pe hover), săgeți, dots.
+- Folosesc `embla-carousel-react` (deja shadcn/ui carousel îl folosește) — verific instalare.
 
-**Meniu**
-- Adaugă / șterge / redenumește / reordonează (drag) pagini
-- Ascunde/afișează fiecare item (toggle-ul Video există deja, îl integrăm)
+### Etapa D — Links Manager
+Nou: `src/routes/admin.links.tsx` + tabel `links` (id, key, label, url, description, group, sort).
+- CRUD complet + AI generate description/label din URL.
+- Hook `useLinks(group)` pt afișare pe site (ex. footer, sidebar).
 
-**Homepage**
-- Imaginea hero (peștele) — schimbă
-- Toate textele (titlu, paragraf, "10+ YEARS…", "50+ CLIENTS")
-- Banda de logouri clienți — upload/șterge/reordonează
-- Secțiunea "The Studio" — text + galerie (add/remove/reorder/upload)
-- Secțiunea "What We Do" — cardurile categorii (imagine, titlu, link)
-- Testimoniale — text/video, add/remove/reorder
+### Note tehnice
+- Toate migrațiile respectă GRANT-urile pentru authenticated + service_role, RLS activ.
+- Nu ating fluxul de upload R2 în afara `admin.assets` decât în Etapa B (video upload) — bug-ul de env va fi tratat separat la final.
 
-**Pagini portofoliu (Food, People, Editorial, Patterns, Video, categorii What We Do)**
-- Titlu / tagline / descriere
-- Galeria: upload multiplu, ștergere, reordonare drag & drop, editare alt text
-- Layout (grid / stacked / filmstrip)
-
-**Footer**
-- Text copyright, link-uri sociale, informații contact
-
-**Pagina Contact**
-- Text, email, telefon, adresă
-- Coordonatele hărții Google
-
-**Pagini generice**
-- Creează pagini noi și adaugă-le în meniu
-- Șterge pagini existente
-
-## 3. Detalii tehnice (pentru referință)
-
-**Backend (Lovable Cloud — deja setat):**
-- Tabelele `pages`, `galleries`, `gallery_images`, `menu_items`, `site_settings`, `user_roles` există.
-- Bucket `media` (privat) există pentru upload-uri; îl facem public pentru afișare.
-- Vom popula DB-ul cu conținutul actual (migrare din JSON-uri → DB) printr-o migrație de seed.
-
-**Frontend:**
-- Toate componentele (Hero, ClientLogos, Studio, WhatWeDo, Testimonials, Gallery, Footer, SiteLayout) vor citi din DB via `useQuery` în loc de constante hardcodate.
-- Wrapper `<Editable field="...">` afișează textul normal, iar în edit mode devine `contentEditable` cu salvare automată (debounced).
-- Componenta `<EditableImage>` pentru imagini (click → upload nou).
-- Componenta `<EditableGallery>` cu drag-drop (dnd-kit), buton "+ Add images", buton ștergere per imagine.
-- Server functions protejate cu `requireSupabaseAuth` + verificare rol admin pentru toate mutațiile.
-
-**Livrare pe etape:**
-1. Auth + rol admin + bară edit mode
-2. Migrare conținut actual în DB + citire din DB (site funcționează identic cu azi)
-3. Editare texte inline (Header, Hero, secțiuni, Footer, Contact)
-4. Upload imagini + editare galerii cu drag-drop
-5. Manager meniu (add/remove/reorder pagini)
-6. Creator pagini noi
-
-## Ce trebuie de la tine
-
-- Confirmă emailul pe care vrei să-l folosești ca admin (îl vei crea la `/auth` după ce livrez pasul 1).
-- Confirmi că mergem pe toate cele 6 etape mai sus, sau vrei să tăiem/prioritizăm ceva?
+## Livrare
+Confirm la fiecare etapă înainte de următoarea, sau merg tot lanțul dacă spui "mergi până la capăt". Începem?
