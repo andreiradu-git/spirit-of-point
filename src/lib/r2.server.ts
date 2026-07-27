@@ -80,6 +80,48 @@ function isR2Bucket(value: unknown): value is R2BucketBinding {
 }
 
 async function resolveBucketBinding(): Promise<R2BucketBinding | undefined> {
+  // Diagnostic logging requested: print available env keys at each source.
+  try {
+    const ctx = getStartContext({ throwIfNotFound: false }) as
+      | StartContextWithCloudflareEnv
+      | undefined;
+    const cloudflareEnv = ctx?.contextAfterGlobalMiddlewares?.cloudflareEnv;
+    console.log("cloudflareEnv keys", Object.keys(cloudflareEnv ?? {}));
+    console.log("binding", cloudflareEnv?.[BINDING_NAME]);
+  } catch (e) {
+    console.log("cloudflareEnv keys <error>", e);
+  }
+  try {
+    const request = getRequest() as CloudflareRuntimeRequest;
+    console.log(
+      "request.runtime.cloudflare.env keys",
+      Object.keys(request.runtime?.cloudflare?.env ?? {}),
+    );
+  } catch (e) {
+    console.log("request.runtime.cloudflare.env keys <error>", e);
+  }
+  try {
+    console.log(
+      "globalThis.__POINTSTUDIO_WORKER_ENV__ keys",
+      Object.keys(globalThis.__POINTSTUDIO_WORKER_ENV__ ?? {}),
+    );
+    console.log(
+      "globalThis.__env__ keys",
+      Object.keys(globalThis.__env__ ?? {}),
+    );
+  } catch (e) {
+    console.log("global env keys <error>", e);
+  }
+  try {
+    const moduleName = "cloudflare:workers";
+    const mod = (await import(/* @vite-ignore */ moduleName)) as {
+      env?: Record<string, unknown>;
+    };
+    console.log("cloudflare:workers env keys", Object.keys(mod.env ?? {}));
+  } catch (e) {
+    console.log("cloudflare:workers import <error>", e);
+  }
+
   // 1) Modern Cloudflare Workers env import
   try {
     const moduleName = "cloudflare:workers";
@@ -118,6 +160,7 @@ async function resolveBucketBinding(): Promise<R2BucketBinding | undefined> {
 
   return undefined;
 }
+
 
 async function getBucket(): Promise<R2BucketBinding> {
   const bucket = await resolveBucketBinding();
