@@ -23,8 +23,8 @@ import {
   optimizeImageBlob,
   blobToBase64 as optBlobToBase64,
   withExt,
-  withSuffix,
 } from "@/lib/optimize-image";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sparkles,
