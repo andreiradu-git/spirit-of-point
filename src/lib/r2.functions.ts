@@ -105,58 +105,22 @@ export const listR2Objects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => listR2ObjectsDirect());
 
-// Deletes the primary R2 object and any related generated files from previous
-// optimization runs (webp/jpg/jpeg/avif/png variants, thumbnails, and the
-// `_originals/` backup). Missing siblings are silently ignored — only the
-// primary key must exist. R2-only; no Supabase dependency.
+// Deletes exactly one R2 object by key. Never expands by prefix or by any
+// derived sibling — the caller must pass the precise key it wants gone.
+// R2-only; no Supabase dependency.
 export const deleteR2Object = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
         key: z.string().min(1).max(600),
-        includeRelated: z.boolean().optional().default(true),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const deleted: string[] = [];
-    const failed: Array<{ key: string; error: string }> = [];
-
-    const tryDelete = async (key: string, required: boolean) => {
-      try {
-        await deleteR2ObjectDirect(key);
-        deleted.push(key);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        if (required) failed.push({ key, error: msg });
-        // sibling misses are expected and swallowed
-      }
-    };
-
-    await tryDelete(data.key, true);
-
-    if (data.includeRelated) {
-      const exts = ["webp", "jpg", "jpeg", "avif", "png", "gif"];
-      const dot = data.key.lastIndexOf(".");
-      const base = dot > 0 ? data.key.slice(0, dot) : data.key;
-      const candidates = new Set<string>();
-      for (const ext of exts) {
-        candidates.add(`${base}.${ext}`);
-        candidates.add(`${base}.thumb.${ext}`);
-        candidates.add(`_originals/${base}.${ext}`);
-      }
-      candidates.add(`_originals/${data.key}`);
-      candidates.delete(data.key);
-      for (const k of candidates) await tryDelete(k, false);
-    }
-
-    if (failed.length) {
-      throw new Error(
-        `Delete failed for: ${failed.map((f) => `${f.key} (${f.error})`).join("; ")}`,
-      );
-    }
-    return { ok: true, deleted };
+    await deleteR2ObjectDirect(data.key);
+    return { ok: true, deleted: [data.key] };
   });
+
 
 export const replaceR2Object = createServerFn({ method: "POST" })
   .inputValidator((input) =>
