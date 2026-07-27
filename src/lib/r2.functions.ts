@@ -60,7 +60,7 @@ export const uploadToR2 = createServerFn({ method: "POST" })
     const url = `${endpoint}/${bucket}/${encodeURI(key)}`;
     const res = await client.fetch(url, {
       method: "PUT",
-      body,
+      body: body as BodyInit,
       headers: {
         "content-type": data.contentType || "application/octet-stream",
         "cache-control": "public, max-age=31536000, immutable",
