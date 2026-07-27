@@ -16,7 +16,7 @@ type R2ClientBundle = {
   publicUrl: string;
 };
 
-type RuntimeSource = "env" | "request.runtime.cloudflare.env" | "globalThis.__POINTSTUDIO_WORKER_ENV__" | "globalThis.__env__" | "process.env";
+type RuntimeSource = "env" | "globalThis.__POINTSTUDIO_WORKER_ENV__" | "globalThis.__env__" | "process.env";
 
 type RuntimeValue = {
   value?: string;
@@ -68,7 +68,7 @@ function readRequestRuntimeValue(name: string): RuntimeValue {
   try {
     const request = getRequest() as CloudflareRuntimeRequest;
     const value = normalizeEnvValue(request.runtime?.cloudflare?.env?.[name]);
-    return value ? { value, source: "request.runtime.cloudflare.env", name } : {};
+    return value ? { value, source: "env", name } : {};
   } catch {
     return {};
   }
