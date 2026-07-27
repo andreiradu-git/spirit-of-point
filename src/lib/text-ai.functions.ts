@@ -1,18 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * Generic ChatGPT-style text writer. Used by the inline Editable component
- * and any admin surface that needs AI-authored copy.
- *
- * The AI itself is delegated to `ai-service.server.ts` (pure OpenAI).
- * `requireSupabaseAuth` is the current admin gate for the admin UI, and
- * will be replaced during the Auth migration phase.
+ * Generic ChatGPT-style text writer. Pure OpenAI — zero Supabase dependency.
  */
 export const generateSiteText = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((d) =>
+  .inputValidator((d) =>
     z
       .object({
         fieldId: z.string().optional(),
@@ -24,15 +17,7 @@ export const generateSiteText = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data, context }) => {
-    const { data: role } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!role) throw new Error("Forbidden");
-
+  .handler(async ({ data }) => {
     const { generateSiteCopy } = await import("./ai-service.server");
     return generateSiteCopy({
       fieldId: data.fieldId,

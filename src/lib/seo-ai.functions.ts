@@ -1,16 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const KIND = z.enum(["seo", "alt"]);
 
 /**
- * SEO / alt-text generator. AI is delegated to `ai-service.server.ts`.
- * Supabase is used only for the admin gate (temporary, until Auth phase).
+ * SEO / alt-text generator. Pure OpenAI — zero Supabase dependency.
  */
 export const generateSeoContent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((data) =>
+  .inputValidator((data) =>
     z
       .object({
         kind: KIND,
@@ -22,15 +19,7 @@ export const generateSeoContent = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
-    const { data: role } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!role) throw new Error("Forbidden");
-
+  .handler(async ({ data }) => {
     const svc = await import("./ai-service.server");
 
     if (data.kind === "seo") {
@@ -49,4 +38,3 @@ export const generateSeoContent = createServerFn({ method: "POST" })
     });
     return { ...r, title: "", description: "", keywords: "" } as Record<string, string>;
   });
-
