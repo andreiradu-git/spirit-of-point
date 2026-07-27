@@ -67,7 +67,7 @@ export const saveAssetMeta = createServerFn({ method: "POST" })
     if (data.tags !== undefined) payload.tags = data.tags;
     const { error } = await context.supabase
       .from("asset_meta")
-      .upsert(payload, { onConflict: "url" });
+      .upsert(payload as never, { onConflict: "url" });
     if (error) throw error;
     return { ok: true };
   });
