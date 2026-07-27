@@ -4,6 +4,19 @@ import { useSiteSettings } from "@/hooks/use-site-settings";
 import { Editable } from "@/components/Editable";
 import { useSocials, SOCIAL_ICON_PATHS } from "@/hooks/use-socials";
 import { useAdmin } from "@/hooks/use-admin";
+import { fotografieCulinaraContent } from "@/data/fotografie-culinara";
+
+function FotografieCulinaraFooterLink() {
+  if (!fotografieCulinaraContent.isVisibleInNav) return null;
+  return (
+    <Link
+      to="/fotografie-culinara-bucuresti"
+      className="mt-2 block text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+    >
+      {fotografieCulinaraContent.navLinkLabel}
+    </Link>
+  );
+}
 
 
 
