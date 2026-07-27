@@ -139,22 +139,87 @@ function VideoPage() {
     await save(videos.filter((_, idx) => idx !== i));
   };
 
+  const generatePosterFor = async (item: VideoItem): Promise<Partial<VideoItem>> => {
+    const url = item.videoUrl || item.src;
+    if (!url) return {};
+    try {
+      const res = await derivePoster(url);
+      const meta: Partial<VideoItem> = {
+        duration: res.duration ?? item.duration,
+        width: res.width ?? item.width,
+        height: res.height ?? item.height,
+        posterAuto: true,
+      };
+      if (res.needsUpload && res.blob) {
+        // Convert blob → base64 and push to R2 as an image asset.
+        const buf = new Uint8Array(await res.blob.arrayBuffer());
+        let bin = "";
+        for (let i = 0; i < buf.length; i += 0x8000) {
+          bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + 0x8000)));
+        }
+        const { url: posterUrl } = await upload({
+          data: {
+            filename: `poster-${Date.now()}.webp`,
+            contentType: "image/webp",
+            dataBase64: btoa(bin),
+            kind: "image",
+          },
+        });
+        return { ...meta, posterUrl, poster: posterUrl };
+      }
+      if (res.posterUrl) {
+        return { ...meta, posterUrl: res.posterUrl, poster: res.posterUrl };
+      }
+      return { ...meta, posterUrl: DEFAULT_VIDEO_POSTER, poster: DEFAULT_VIDEO_POSTER };
+    } catch (e) {
+      console.error("Poster generation failed", e);
+      return { posterUrl: DEFAULT_VIDEO_POSTER, poster: DEFAULT_VIDEO_POSTER, posterAuto: true };
+    }
+  };
+
   const updateVideo = async (i: number, patch: Partial<VideoItem>) => {
     const next = [...videos];
-    const merged = { ...next[i], ...patch };
-    // Auto-fill poster from YouTube thumbnail if src is a YouTube URL and poster is empty
-    if (patch.src && !merged.poster) {
-      const d = detectEmbed(patch.src);
-      if (d.kind === "youtube" && d.id) {
-        merged.poster = `https://i.ytimg.com/vi/${d.id}/hqdefault.jpg`;
+    const prev = next[i];
+    const merged: VideoItem = { ...prev, ...patch };
+
+    // Keep videoUrl <-> src in sync for back-compat.
+    if (patch.src !== undefined) merged.videoUrl = patch.src;
+    if (patch.videoUrl !== undefined) merged.src = patch.videoUrl;
+
+    // Regenerate poster only when the video URL changes AND either no poster
+    // is set or the existing poster was auto-generated (never overwrite a
+    // custom poster the user pasted or picked).
+    const newSrc = merged.videoUrl || merged.src;
+    const prevSrc = prev.videoUrl || prev.src;
+    const videoChanged = newSrc && newSrc !== prevSrc;
+    const posterChangedByUser =
+      patch.poster !== undefined || patch.posterUrl !== undefined;
+
+    if (posterChangedByUser) {
+      merged.posterUrl = patch.posterUrl ?? patch.poster ?? merged.posterUrl;
+      merged.poster = patch.poster ?? patch.posterUrl ?? merged.poster;
+      merged.posterAuto = false;
+    } else if (videoChanged) {
+      const hasCustom = (prev.posterUrl || prev.poster) && prev.posterAuto === false;
+      if (!hasCustom) {
+        const gen = await generatePosterFor(merged);
+        Object.assign(merged, gen);
       }
     }
+
     next[i] = merged;
     try {
       await save(next);
     } catch (e) {
       alert("Save failed: " + (e instanceof Error ? e.message : String(e)));
     }
+  };
+
+  const regeneratePoster = async (i: number) => {
+    const gen = await generatePosterFor(videos[i]);
+    const next = [...videos];
+    next[i] = { ...next[i], ...gen };
+    await save(next);
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
