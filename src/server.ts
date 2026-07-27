@@ -11,6 +11,14 @@ declare global {
   var __POINTSTUDIO_WORKER_ENV__: Record<string, unknown> | undefined;
 }
 
+type CloudflareRuntimeRequest = Request & {
+  runtime?: {
+    cloudflare?: {
+      env?: Record<string, unknown>;
+    };
+  };
+};
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 async function getServerEntry(): Promise<ServerEntry> {
@@ -22,25 +30,27 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function bindWorkerEnv(env: unknown) {
+function bindWorkerEnv(request: Request, env: unknown) {
   if (!env || typeof env !== "object") return;
   const rawEnv = env as Record<string, unknown>;
-
-  const stringEnv: Record<string, string> = {};
-  for (const [key, value] of Object.entries(rawEnv)) {
-    if (typeof value === "string") stringEnv[key] = value;
-  }
 
   globalThis.__POINTSTUDIO_WORKER_ENV__ = {
     ...(globalThis.__POINTSTUDIO_WORKER_ENV__ ?? {}),
     ...rawEnv,
   };
 
-  if (typeof process !== "undefined" && Object.keys(stringEnv).length > 0) {
-    process.env = {
-      ...process.env,
-      ...stringEnv,
+  try {
+    const runtimeRequest = request as CloudflareRuntimeRequest;
+    runtimeRequest.runtime = {
+      ...(runtimeRequest.runtime ?? {}),
+      cloudflare: {
+        ...(runtimeRequest.runtime?.cloudflare ?? {}),
+        env: rawEnv,
+      },
     };
+  } catch {
+    // Some Request implementations may be non-extensible; the global binding
+    // above remains the fallback for code running inside this same Worker.
   }
 }
 
@@ -73,7 +83,7 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      bindWorkerEnv(env);
+      bindWorkerEnv(request, env);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
