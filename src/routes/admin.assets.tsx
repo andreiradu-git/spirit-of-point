@@ -51,19 +51,23 @@ async function mergeAssets(r2Assets: SiteAsset[]): Promise<SiteAsset[]> {
   const referenced: SiteAsset[] = [];
   const usedUrls = new Set<string>();
 
-  const { data: galleries } = await supabase
-    .from("galleries")
-    .select("slug, gallery_images(src, alt)");
-  for (const gallery of galleries ?? []) {
-    for (const image of (gallery.gallery_images ?? []) as Array<{ src: string; alt: string | null }>) {
-      usedUrls.add(image.src);
-      referenced.push({ kind: "image", url: image.src, source: `Gallery: ${gallery.slug}`, alt: image.alt, usedOnSite: true });
+  try {
+    const { data: galleries } = await supabase
+      .from("galleries")
+      .select("slug, gallery_images(src, alt)");
+    for (const gallery of galleries ?? []) {
+      for (const image of (gallery.gallery_images ?? []) as Array<{ src: string; alt: string | null }>) {
+        usedUrls.add(image.src);
+        referenced.push({ kind: "image", url: image.src, source: `Gallery: ${gallery.slug}`, alt: image.alt, usedOnSite: true });
+      }
     }
-  }
 
-  const { data: settings } = await supabase.from("site_settings").select("key, value");
-  for (const row of settings ?? []) collectSettingUrls(row.value, row.key, referenced);
-  for (const asset of referenced) usedUrls.add(asset.url);
+    const { data: settings } = await supabase.from("site_settings").select("key, value");
+    for (const row of settings ?? []) collectSettingUrls(row.value, row.key, referenced);
+    for (const asset of referenced) usedUrls.add(asset.url);
+  } catch (e) {
+    console.warn("Site asset references unavailable; showing R2 library only", e);
+  }
 
   const merged = r2Assets.map((asset) => ({ ...asset, usedOnSite: usedUrls.has(asset.url) || asset.usedOnSite }));
   const seen = new Set(merged.map((asset) => asset.url));
