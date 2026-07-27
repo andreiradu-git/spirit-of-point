@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import fallbackVideos from "@/data/videos.json";
 import { useAdmin } from "@/hooks/use-admin";
@@ -8,9 +8,24 @@ import { useAssetMeta, useInvalidateAssetMeta } from "@/hooks/use-asset-meta";
 import { useSiteList } from "@/hooks/use-site-list";
 import { useServerFn } from "@tanstack/react-start";
 import { saveAssetMeta, generateAssetMeta } from "@/lib/asset-meta.functions";
+import { uploadToR2 } from "@/lib/r2.functions";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
-import { Sparkles, Loader2, Plus, Trash2, Images, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type VideoItem = { title: string; poster: string; src: string };
 
@@ -24,11 +39,6 @@ export const Route = createFileRoute("/video")({
         content:
           "Commercial video production, motion and reels by Point Studio — Bucharest photo & video studio.",
       },
-      {
-        name: "keywords",
-        content:
-          "video production Bucharest, commercial video, motion photography, product video, advertising video",
-      },
       { property: "og:title", content: "Video Production — Point Studio" },
       { property: "og:description", content: "Motion, reels and video productions by Point Studio." },
       { property: "og:image", content: cdn(fallbackVideos[0].poster, 1600) },
@@ -36,6 +46,33 @@ export const Route = createFileRoute("/video")({
     ],
   }),
 });
+
+function detectEmbed(url: string): { kind: "youtube" | "vimeo" | "file"; id?: string } {
+  if (!url) return { kind: "file" };
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  if (yt) return { kind: "youtube", id: yt[1] };
+  const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vm) return { kind: "vimeo", id: vm[1] };
+  return { kind: "file" };
+}
+
+function embedUrl(url: string): string | null {
+  const d = detectEmbed(url);
+  if (d.kind === "youtube") return `https://www.youtube.com/embed/${d.id}?autoplay=1&rel=0`;
+  if (d.kind === "vimeo") return `https://player.vimeo.com/video/${d.id}?autoplay=1`;
+  return null;
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+  }
+  return btoa(bin);
+}
 
 function VideoPage() {
   const [active, setActive] = useState<number | null>(null);
@@ -47,25 +84,29 @@ function VideoPage() {
   const [pickerFor, setPickerFor] = useState<
     | { kind: "poster"; index: number }
     | { kind: "video"; index: number }
-    | { kind: "new-poster" }
     | null
   >(null);
   const [uploadingFor, setUploadingFor] = useState<number | null>(null);
+  const upload = useServerFn(uploadToR2);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  const ids = useMemo(() => videos.map((_, i) => `v-${i}`), [videos]);
 
   const uploadVideoFile = async (file: File, index: number) => {
     setUploadingFor(index);
     try {
-      const ext = file.name.split(".").pop() || "mp4";
-      const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
-      const path = `videos/${base}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("media").upload(path, file, {
-        contentType: file.type,
-        upsert: false,
+      const dataBase64 = await fileToBase64(file);
+      const { url } = await upload({
+        data: {
+          filename: file.name,
+          contentType: file.type || "video/mp4",
+          dataBase64,
+          folder: "videos",
+        },
       });
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
       const next = [...videos];
-      next[index] = { ...next[index], src: publicUrl };
+      next[index] = { ...next[index], src: url };
       await save(next);
     } catch (e) {
       alert("Upload failed: " + (e instanceof Error ? e.message : String(e)));
@@ -74,8 +115,7 @@ function VideoPage() {
     }
   };
 
-  const addVideo = () =>
-    save([...videos, { title: "New video", poster: "", src: "" }]);
+  const addVideo = () => save([...videos, { title: "New video", poster: "", src: "" }]);
 
   const removeVideo = async (i: number) => {
     if (!confirm("Delete this video?")) return;
@@ -88,132 +128,52 @@ function VideoPage() {
     await save(next);
   };
 
+  const onDragEnd = async (e: DragEndEvent) => {
+    const { active: a, over } = e;
+    if (!over || a.id === over.id) return;
+    const from = ids.indexOf(String(a.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+    await save(arrayMove(videos, from, to));
+  };
+
+  const activeEmbed = active !== null ? embedUrl(videos[active]?.src || "") : null;
+
   return (
     <SiteLayout>
       <div className="mx-auto max-w-7xl px-6 pt-16 pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {videos.map((v, i) => {
-            const meta = metaMap[v.poster];
-            const label = meta?.label || v.title;
-            const alt = meta?.alt || v.title;
-            return (
-              <div key={i} className="flex flex-col gap-2">
-                <div className="relative">
-                  <button
-                    onClick={() => v.src && setActive(i)}
-                    className="group relative aspect-video overflow-hidden bg-neutral-900 text-left w-full"
-                  >
-                    {v.poster ? (
-                      <img
-                        src={cdn(v.poster, 1400)}
-                        alt={alt}
-                        className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-neutral-500 text-sm">
-                        No poster
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-16 w-16 rounded-full bg-white/90 flex items-center justify-center text-black text-2xl">
-                        ▶
-                      </div>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-                      <div className="font-serif text-2xl">{label}</div>
-                      {!v.src && (
-                        <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
-                          Coming soon
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                  {editable && (
-                    <button
-                      onClick={() => removeVideo(i)}
-                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded shadow-lg hover:bg-red-600 z-10"
-                      aria-label="Delete video"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-                {editable && (
-                  <div className="bg-white border border-blue-400/60 border-dashed rounded p-2 flex flex-col gap-2 text-xs">
-                    <input
-                      defaultValue={v.title}
-                      onBlur={(e) => updateVideo(i, { title: e.target.value })}
-                      placeholder="Title"
-                      className="border rounded px-2 py-1"
-                    />
-                    <div className="flex gap-1.5 items-center">
-                      <span className="text-neutral-500 w-12 shrink-0">Poster:</span>
-                      <input
-                        defaultValue={v.poster}
-                        onBlur={(e) => updateVideo(i, { poster: e.target.value })}
-                        placeholder="Poster URL"
-                        className="border rounded px-2 py-1 flex-1 min-w-0"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setPickerFor({ kind: "poster", index: i })}
-                        className="p-1.5 border rounded hover:bg-neutral-100"
-                        title="Pick from library"
-                      >
-                        <Images className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex gap-1.5 items-center">
-                      <span className="text-neutral-500 w-12 shrink-0">Video:</span>
-                      <input
-                        defaultValue={v.src}
-                        onBlur={(e) => updateVideo(i, { src: e.target.value })}
-                        placeholder="Video URL (mp4/webm)"
-                        className="border rounded px-2 py-1 flex-1 min-w-0"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setPickerFor({ kind: "video", index: i })}
-                        className="p-1.5 border rounded hover:bg-neutral-100"
-                        title="Pick from library"
-                      >
-                        <Images className="w-3.5 h-3.5" />
-                      </button>
-                      <label className="p-1.5 border rounded hover:bg-neutral-100 cursor-pointer" title="Upload video">
-                        {uploadingFor === i ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Upload className="w-3.5 h-3.5" />
-                        )}
-                        <input
-                          type="file"
-                          accept="video/mp4,video/webm,video/quicktime"
-                          className="hidden"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) uploadVideoFile(f, i);
-                            e.target.value = "";
-                          }}
-                        />
-                      </label>
-                    </div>
-                    <VideoMetaEditor url={v.poster} initialLabel={label} initialAlt={alt} />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          {editable && (
-            <button
-              onClick={addVideo}
-              className="aspect-video border-2 border-dashed border-neutral-300 rounded flex flex-col items-center justify-center gap-2 text-neutral-500 hover:bg-neutral-50"
-            >
-              <Plus className="w-8 h-8" />
-              <span className="text-sm">Add video</span>
-            </button>
-          )}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={ids} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {videos.map((v, i) => (
+                <VideoCard
+                  key={ids[i]}
+                  id={ids[i]}
+                  v={v}
+                  index={i}
+                  editable={editable}
+                  meta={metaMap[v.poster]}
+                  uploading={uploadingFor === i}
+                  onOpen={() => v.src && setActive(i)}
+                  onDelete={() => removeVideo(i)}
+                  onUpdate={(patch) => updateVideo(i, patch)}
+                  onPickPoster={() => setPickerFor({ kind: "poster", index: i })}
+                  onPickVideo={() => setPickerFor({ kind: "video", index: i })}
+                  onUploadFile={(f) => uploadVideoFile(f, i)}
+                />
+              ))}
+              {editable && (
+                <button
+                  onClick={addVideo}
+                  className="aspect-video border-2 border-dashed border-neutral-300 rounded flex flex-col items-center justify-center gap-2 text-neutral-500 hover:bg-neutral-50"
+                >
+                  <Plus className="w-8 h-8" />
+                  <span className="text-sm">Add video</span>
+                </button>
+              )}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {active !== null && videos[active]?.src && (
@@ -227,13 +187,24 @@ function VideoPage() {
           >
             Close
           </button>
-          <video
-            src={videos[active].src}
-            controls
-            autoPlay
-            className="max-h-[90vh] max-w-[90vw]"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {activeEmbed ? (
+            <iframe
+              src={activeEmbed}
+              className="w-[90vw] h-[calc(90vw*9/16)] max-h-[90vh] max-w-[calc(90vh*16/9)]"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              onClick={(e) => e.stopPropagation()}
+              title="Video player"
+            />
+          ) : (
+            <video
+              src={videos[active].src}
+              controls
+              autoPlay
+              className="max-h-[90vh] max-w-[90vw]"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
         </div>
       )}
 
@@ -251,6 +222,174 @@ function VideoPage() {
   );
 }
 
+function VideoCard({
+  id,
+  v,
+  editable,
+  meta,
+  uploading,
+  onOpen,
+  onDelete,
+  onUpdate,
+  onPickPoster,
+  onPickVideo,
+  onUploadFile,
+}: {
+  id: string;
+  v: VideoItem;
+  index: number;
+  editable: boolean;
+  meta: { label?: string | null; alt?: string | null } | undefined;
+  uploading: boolean;
+  onOpen: () => void;
+  onDelete: () => void;
+  onUpdate: (patch: Partial<VideoItem>) => void;
+  onPickPoster: () => void;
+  onPickVideo: () => void;
+  onUploadFile: (f: File) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+    disabled: !editable,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  const label = meta?.label || v.title;
+  const alt = meta?.alt || v.title;
+  const embed = detectEmbed(v.src);
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex flex-col gap-2">
+      <div className="relative">
+        <button
+          onClick={onOpen}
+          className="group relative aspect-video overflow-hidden bg-neutral-900 text-left w-full"
+        >
+          {v.poster ? (
+            <img
+              src={cdn(v.poster, 1400)}
+              alt={alt}
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-neutral-500 text-sm">
+              No poster
+            </div>
+          )}
+          <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="h-16 w-16 rounded-full bg-white/90 flex items-center justify-center text-black text-2xl">
+              ▶
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+            <div className="font-serif text-2xl">{label}</div>
+            {!v.src && (
+              <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                Coming soon
+              </div>
+            )}
+            {v.src && embed.kind !== "file" && (
+              <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
+                {embed.kind}
+              </div>
+            )}
+          </div>
+        </button>
+        {editable && (
+          <>
+            <button
+              {...attributes}
+              {...listeners}
+              className="absolute top-2 left-2 p-2 bg-black/60 text-white rounded shadow-lg cursor-grab active:cursor-grabbing z-10"
+              aria-label="Drag to reorder"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded shadow-lg hover:bg-red-600 z-10"
+              aria-label="Delete video"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </>
+        )}
+      </div>
+      {editable && (
+        <div className="bg-white border border-blue-400/60 border-dashed rounded p-2 flex flex-col gap-2 text-xs">
+          <input
+            defaultValue={v.title}
+            onBlur={(e) => onUpdate({ title: e.target.value })}
+            placeholder="Title"
+            className="border rounded px-2 py-1"
+          />
+          <div className="flex gap-1.5 items-center">
+            <span className="text-neutral-500 w-12 shrink-0">Poster:</span>
+            <input
+              defaultValue={v.poster}
+              onBlur={(e) => onUpdate({ poster: e.target.value })}
+              placeholder="Poster URL"
+              className="border rounded px-2 py-1 flex-1 min-w-0"
+            />
+            <button
+              type="button"
+              onClick={onPickPoster}
+              className="p-1.5 border rounded hover:bg-neutral-100"
+              title="Pick from library"
+            >
+              <Images className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex gap-1.5 items-center">
+            <span className="text-neutral-500 w-12 shrink-0">Video:</span>
+            <input
+              defaultValue={v.src}
+              onBlur={(e) => onUpdate({ src: e.target.value })}
+              placeholder="MP4 URL, YouTube or Vimeo link"
+              className="border rounded px-2 py-1 flex-1 min-w-0"
+            />
+            <button
+              type="button"
+              onClick={onPickVideo}
+              className="p-1.5 border rounded hover:bg-neutral-100"
+              title="Pick from library"
+            >
+              <Images className="w-3.5 h-3.5" />
+            </button>
+            <label
+              className="p-1.5 border rounded hover:bg-neutral-100 cursor-pointer"
+              title="Upload video to Cloudflare R2"
+            >
+              {uploading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Upload className="w-3.5 h-3.5" />
+              )}
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onUploadFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+          <VideoMetaEditor url={v.poster} initialLabel={label} initialAlt={alt} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function VideoMetaEditor({
   url,
   initialLabel,
@@ -265,14 +404,22 @@ function VideoMetaEditor({
   const invalidate = useInvalidateAssetMeta();
   const [label, setLabel] = useState(initialLabel);
   const [alt, setAlt] = useState(initialAlt);
+  const [caption, setCaption] = useState("");
   const [saving, setSaving] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
 
-  const doSave = async (nextLabel = label, nextAlt = alt) => {
+  const doSave = async (patch?: { label?: string; alt?: string; caption?: string }) => {
     if (!url) return;
     setSaving(true);
     try {
-      await save({ data: { url, label: nextLabel || null, alt: nextAlt || null } });
+      await save({
+        data: {
+          url,
+          label: (patch?.label ?? label) || null,
+          alt: (patch?.alt ?? alt) || null,
+          caption: (patch?.caption ?? caption) || null,
+        },
+      });
       invalidate();
     } catch (e) {
       alert("Save failed: " + (e instanceof Error ? e.message : String(e)));
@@ -285,12 +432,13 @@ function VideoMetaEditor({
     if (!url) return;
     setAiBusy(true);
     try {
-      const out = await generate({
+      const out = (await generate({
         data: { imageUrl: url, context: "Video showreel poster", kind: "image" },
-      });
+      })) as { label?: string; alt?: string; caption?: string };
       if (out.label) setLabel(out.label);
       if (out.alt) setAlt(out.alt);
-      await doSave(out.label || label, out.alt || alt);
+      if (out.caption) setCaption(out.caption);
+      await doSave({ label: out.label, alt: out.alt, caption: out.caption });
     } catch (e) {
       alert("AI error: " + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -304,7 +452,7 @@ function VideoMetaEditor({
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         onBlur={() => doSave()}
-        placeholder="AI label (shown on card)"
+        placeholder="Label (shown on card)"
         className="border rounded px-2 py-1"
       />
       <textarea
@@ -315,6 +463,14 @@ function VideoMetaEditor({
         placeholder="Alt text"
         className="border rounded px-2 py-1 resize-y"
       />
+      <textarea
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
+        onBlur={() => doSave()}
+        rows={2}
+        placeholder="Caption / description"
+        className="border rounded px-2 py-1 resize-y"
+      />
       <div className="flex gap-2">
         <button
           type="button"
@@ -323,7 +479,7 @@ function VideoMetaEditor({
           className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded bg-black text-white hover:bg-neutral-800 disabled:opacity-50"
         >
           {aiBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-          AI label + alt
+          AI write all
         </button>
         {saving && <span className="text-[10px] text-neutral-500 self-center">Saving…</span>}
       </div>
