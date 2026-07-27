@@ -6,8 +6,8 @@ import { useSocials, SOCIAL_ICON_PATHS } from "@/hooks/use-socials";
 import { useAdmin } from "@/hooks/use-admin";
 import { fotografieCulinaraContent } from "@/data/fotografie-culinara";
 
-function FotografieCulinaraFooterLink() {
-  if (!fotografieCulinaraContent.isVisibleInNav) return null;
+function FotografieCulinaraFooterLink({ visible }: { visible: boolean }) {
+  if (!visible || !fotografieCulinaraContent.isVisibleInNav) return null;
   return (
     <Link
       to="/fotografie-culinara-bucuresti"
@@ -129,7 +129,7 @@ export function SiteLayout({
             <Editable as="div" id="footer.email" className="block">andrei@pointstudio.ro</Editable>
             <Editable as="div" id="footer.phone" className="block">+40 744 341 286</Editable>
             <Editable as="div" id="footer.address" className="block">Piața Presei Libere 1, Bucharest</Editable>
-            <FotografieCulinaraFooterLink />
+            <FotografieCulinaraFooterLink visible={settings.showFotografieCulinara} />
           </div>
           <div className="flex flex-col gap-3 md:items-end">
             <SocialIcons />
@@ -159,6 +159,8 @@ export function SiteLayout({
           onTogglePatterns={() => update({ showPatterns: !settings.showPatterns })}
           showTestimonials={settings.showTestimonials}
           onToggleTestimonials={() => update({ showTestimonials: !settings.showTestimonials })}
+          showFotografieCulinara={settings.showFotografieCulinara}
+          onToggleFotografieCulinara={() => update({ showFotografieCulinara: !settings.showFotografieCulinara })}
         />
       )}
     </div>
@@ -192,6 +194,8 @@ function SettingsPanel({
   onTogglePatterns,
   showTestimonials,
   onToggleTestimonials,
+  showFotografieCulinara,
+  onToggleFotografieCulinara,
 }: {
   showVideo: boolean;
   onToggleVideo: () => void;
@@ -199,6 +203,8 @@ function SettingsPanel({
   onTogglePatterns: () => void;
   showTestimonials: boolean;
   onToggleTestimonials: () => void;
+  showFotografieCulinara: boolean;
+  onToggleFotografieCulinara: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -233,6 +239,15 @@ function SettingsPanel({
               type="checkbox"
               checked={showTestimonials}
               onChange={onToggleTestimonials}
+              className="h-4 w-4 accent-foreground"
+            />
+          </label>
+          <label className="flex items-center justify-between text-sm cursor-pointer">
+            <span>Show „Fotografie culinară” (RO)</span>
+            <input
+              type="checkbox"
+              checked={showFotografieCulinara}
+              onChange={onToggleFotografieCulinara}
               className="h-4 w-4 accent-foreground"
             />
           </label>
