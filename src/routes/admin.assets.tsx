@@ -6,8 +6,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
 import { replaceMediaObject, deleteMediaObject } from "@/lib/media-admin.functions";
+import { uploadToR2, deleteR2Object } from "@/lib/r2.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2, Upload } from "lucide-react";
+import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2, Upload, Cloud } from "lucide-react";
 import { useRef } from "react";
 
 
