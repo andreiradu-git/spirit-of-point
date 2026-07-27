@@ -8,7 +8,8 @@ import { generateSiteText } from "@/lib/text-ai.functions";
 type Props = {
   id: string;
   fallback: string[];
-  renderItem: (text: string, index: number) => ReactNode;
+  /** Optional custom renderer for read-only mode. Defaults to <editableTag>{text}</editableTag>. */
+  renderItem?: (text: string, index: number) => ReactNode;
   /** Text used as button label & AI context, e.g. "paragraf", "punct", "întrebare" */
   itemLabel?: string;
   lang?: "en" | "ro";
@@ -16,7 +17,7 @@ type Props = {
   as?: "div" | "ul" | "ol" | "dl";
   className?: string;
   itemClassName?: string;
-  /** If provided, replaces default single-line item renderer with an editable block. */
+  /** Tag used to render each item in read-only mode. */
   editableTag?: "p" | "li" | "span" | "div";
   multiline?: boolean;
 };
@@ -47,9 +48,14 @@ export function EditableTextList({
   const [busy, setBusy] = useState<number | "add" | null>(null);
 
   if (!editable) {
+    const ItemTag = editableTag;
     return (
       <Tag className={className}>
-        {items.map((t, i) => renderItem(t, i))}
+        {items.map((t, i) =>
+          renderItem ? renderItem(t, i) : (
+            <ItemTag key={i} className={itemClassName}>{t}</ItemTag>
+          ),
+        )}
       </Tag>
     );
   }
