@@ -20,10 +20,6 @@ declare global {
   var __env__: Record<string, unknown> | undefined;
 }
 
-type CloudflareRuntimeRequest = Request & {
-  runtime?: { cloudflare?: { env?: Record<string, unknown> } };
-};
-
 type ImportMetaWithEnv = ImportMeta & {
   env?: Record<string, string | undefined>;
 };
