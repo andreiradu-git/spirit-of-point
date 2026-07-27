@@ -945,7 +945,7 @@ function DropZoneUploader() {
               <div className="flex justify-between gap-2">
                 <span className="truncate">{it.name}</span>
                 <span className="shrink-0 text-neutral-500 font-mono">
-                  {humanSize(it.size)} · {it.error ? "failed" : it.done ? "done" : `${it.progress}%`}
+                  {humanSize(it.size)} · {it.error ? "failed" : it.status || (it.done ? "done" : `${it.progress}%`)}
                 </span>
               </div>
               <div className="h-1 bg-neutral-200 rounded overflow-hidden">
