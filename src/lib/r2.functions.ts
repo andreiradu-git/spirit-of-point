@@ -266,7 +266,7 @@ export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
     for (const row of settings ?? []) {
       const next = walkVal(row.value);
       if (JSON.stringify(next) !== JSON.stringify(row.value)) {
-        await supabaseAdmin.from("site_settings").update({ value: next }).eq("key", row.key);
+        await supabaseAdmin.from("site_settings").update({ value: next as never }).eq("key", row.key);
         rewrites++;
       }
     }
