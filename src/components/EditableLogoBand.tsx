@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { uploadToR2 } from "@/lib/r2.functions";
 import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X, Image as ImageIcon } from "lucide-react";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
 
@@ -11,6 +12,14 @@ type Logo = { id: string; src: string; alt?: string };
 
 const MAX_SIZE = 10 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"];
+
+async function fileToBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(bin);
+}
 
 export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[] }) {
   const { isAdmin } = useAdmin();
@@ -23,6 +32,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const upload = useServerFn(uploadToR2);
 
 
 
@@ -64,18 +74,12 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
     }
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "png";
       const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
-      const path = `logos/${base}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("media").upload(path, file, {
-        contentType: file.type,
-        upsert: false,
+      const dataBase64 = await fileToBase64(file);
+      const res = await upload({
+        data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
       });
-      if (error) throw error;
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("media").getPublicUrl(path);
-      await save([...items, { id: crypto.randomUUID(), src: publicUrl, alt: base }]);
+      await save([...items, { id: crypto.randomUUID(), src: res.url, alt: base }]);
     } catch (e) {
       console.error(e);
       alert("Upload failed");
