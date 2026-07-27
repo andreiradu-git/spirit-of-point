@@ -19,7 +19,6 @@ export type { R2Object } from "@/lib/r2.server";
 const PUBLIC_URL = "https://images.pointstudio.ro";
 
 export const readR2Object = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ key: z.string().min(1).max(600) }).parse(input))
   .handler(async ({ data }) => readR2ObjectDirect(data.key));
 
@@ -30,7 +29,6 @@ const variantSchema = z.object({
 });
 
 export const writeR2Variants = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -41,7 +39,6 @@ export const writeR2Variants = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    // Backup first (never overwrite an existing backup — keep the true original).
     const results: Array<{ key: string; size: number; url: string }> = [];
     if (data.backup) {
       const body = b64ToBytes(data.backup.dataBase64);
@@ -58,6 +55,7 @@ export const writeR2Variants = createServerFn({ method: "POST" })
     }
     return { ok: true, results };
   });
+
 
 
 export const renameR2Object = createServerFn({ method: "POST" })
