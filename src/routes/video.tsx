@@ -582,7 +582,7 @@ function VideoFieldsEditor({
       >
         {dirty ? "Save changes" : "Saved"}
       </button>
-      <VideoMetaEditor url={v.poster} initialLabel={v.title} initialAlt={v.title} />
+      <VideoMetaEditor url={v.posterUrl || v.poster} initialLabel={v.title} initialAlt={v.title} />
     </div>
   );
 }
