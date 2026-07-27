@@ -16,7 +16,7 @@ type R2ClientBundle = {
   publicUrl: string;
 };
 
-type RuntimeSource = "env" | "globalThis.__POINTSTUDIO_WORKER_ENV__" | "globalThis.__env__" | "process.env";
+type RuntimeSource = "env" | "globalThis.__POINTSTUDIO_WORKER_ENV__" | "globalThis.__env__";
 
 type RuntimeValue = {
   value?: string;
@@ -55,15 +55,6 @@ function normalizeEnvValue(value: unknown): string | undefined {
   return undefined;
 }
 
-function readRequestEnv(name: string): string | undefined {
-  try {
-    const request = getRequest() as CloudflareRuntimeRequest;
-    return normalizeEnvValue(request.runtime?.cloudflare?.env?.[name]);
-  } catch {
-    return undefined;
-  }
-}
-
 function readRequestRuntimeValue(name: string): RuntimeValue {
   try {
     const request = getRequest() as CloudflareRuntimeRequest;
@@ -83,10 +74,6 @@ function readRuntimeEnv(name: string): RuntimeValue {
 
   const nitroValue = normalizeEnvValue(globalThis.__env__?.[name]);
   if (nitroValue) return { value: nitroValue, source: "globalThis.__env__", name };
-
-  const processEnv = typeof process !== "undefined" ? process.env?.[name] : undefined;
-  const processValue = normalizeEnvValue(processEnv);
-  if (processValue) return { value: processValue, source: "process.env", name };
 
   return {};
 }
