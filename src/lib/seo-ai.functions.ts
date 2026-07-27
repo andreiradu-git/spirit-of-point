@@ -34,16 +34,19 @@ export const generateSeoContent = createServerFn({ method: "POST" })
     const svc = await import("./ai-service.server");
 
     if (data.kind === "seo") {
-      return svc.generateSeoText({
+      const r = await svc.generateSeoText({
         path: data.path,
         label: data.label,
         extraKeywords: data.extraKeywords,
       });
+      return { ...r, alt: "" } as Record<string, string>;
     }
 
     if (!data.imageUrl) throw new Error("imageUrl required for alt generation");
-    return svc.generateAltText({
+    const r = await svc.generateAltText({
       imageUrl: data.imageUrl,
       context: data.context,
     });
+    return { ...r, title: "", description: "", keywords: "" } as Record<string, string>;
   });
+
