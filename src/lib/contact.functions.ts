@@ -14,8 +14,19 @@ const submitSchema = z.object({
 export const submitContactMessage = createServerFn({ method: "POST" })
   .validator((data) => submitSchema.parse(data))
   .handler(async ({ data }) => {
+    const { readServerEnv } = await import("@/lib/server-env");
+    const url = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
+    const key =
+      readServerEnv("SUPABASE_PUBLISHABLE_KEY") ??
+      readServerEnv("SUPABASE_ANON_KEY") ??
+      readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
+    if (!url || !key) {
+      throw new Error(
+        "Contact form is temporarily unavailable — the site backend is not configured. Please email us directly.",
+      );
+    }
     const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+    const supabase = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { error } = await supabase.from("contact_messages").insert({
@@ -29,6 +40,7 @@ export const submitContactMessage = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 export const listContactMessages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
