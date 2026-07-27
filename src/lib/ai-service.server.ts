@@ -30,7 +30,8 @@ type CloudflareRuntimeRequest = Request & {
 async function readEnv(name: string): Promise<string | undefined> {
   // 1) Cloudflare Workers native env
   try {
-    const mod = (await import(/* @vite-ignore */ "cloudflare:workers")) as {
+    const moduleName = "cloudflare:workers";
+    const mod = (await import(/* @vite-ignore */ moduleName)) as {
       env?: Record<string, unknown>;
     };
     const v = mod.env?.[name];
