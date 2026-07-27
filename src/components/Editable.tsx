@@ -12,6 +12,7 @@ type Props = {
   className?: string;
   multiline?: boolean;
   placeholder?: string;
+  lang?: "en" | "ro";
 };
 
 /**
@@ -25,6 +26,7 @@ export function Editable({
   className,
   multiline = false,
   placeholder,
+  lang,
 }: Props): ReactNode {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
@@ -61,10 +63,10 @@ export function Editable({
   };
 
   const aiRewrite = async () => {
-    const instruction = window.prompt(
-      "How should the AI rewrite this? (Leave blank for a general improvement.)",
-      "",
-    );
+    const promptLabel = lang === "ro"
+      ? "Cum vrei ca AI-ul să rescrie textul? (Lasă gol pentru îmbunătățire generală în română.)"
+      : "How should the AI rewrite this? (Leave blank for a general improvement.)";
+    const instruction = window.prompt(promptLabel, "");
     if (instruction === null) return;
     setAiBusy(true);
     try {
@@ -74,6 +76,7 @@ export function Editable({
           instruction: instruction || undefined,
           current: value,
           maxChars: multiline ? 1200 : 240,
+          language: lang,
         },
       });
       if (out.text) {
