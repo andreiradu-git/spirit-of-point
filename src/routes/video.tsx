@@ -268,7 +268,8 @@ function VideoPage() {
                   v={v}
                   index={i}
                   editable={editable}
-                  meta={metaMap[v.poster]}
+                  meta={metaMap[posterOf(v)]}
+                  onRegeneratePoster={() => regeneratePoster(i)}
                   uploading={uploadingFor === i}
                   onOpen={() => v.src && setActive(i)}
                   onDelete={() => removeVideo(i)}
@@ -350,6 +351,7 @@ function VideoCard({
   onPickPoster,
   onPickVideo,
   onUploadFile,
+  onRegeneratePoster,
 }: {
   id: string;
   v: VideoItem;
@@ -363,6 +365,7 @@ function VideoCard({
   onPickPoster: () => void;
   onPickVideo: () => void;
   onUploadFile: (f: File) => void;
+  onRegeneratePoster: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -376,6 +379,7 @@ function VideoCard({
   const label = meta?.label || v.title;
   const alt = meta?.alt || v.title;
   const embed = detectEmbed(v.src);
+  const poster = posterOf(v) || DEFAULT_VIDEO_POSTER;
 
   return (
     <div ref={setNodeRef} style={style} className="flex flex-col gap-2">
@@ -384,18 +388,16 @@ function VideoCard({
           onClick={onOpen}
           className="group relative aspect-video overflow-hidden bg-neutral-900 text-left w-full"
         >
-          {v.poster ? (
-            <img
-              src={cdn(v.poster, 1400)}
-              alt={alt}
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-neutral-500 text-sm">
-              No poster
-            </div>
-          )}
+          <img
+            src={cdn(poster, 1400)}
+            alt={alt}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = DEFAULT_VIDEO_POSTER;
+            }}
+          />
+
           <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="h-16 w-16 rounded-full bg-white/90 flex items-center justify-center text-black text-2xl">
