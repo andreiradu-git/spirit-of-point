@@ -7,6 +7,10 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
+declare global {
+  var __POINTSTUDIO_WORKER_ENV__: Record<string, string> | undefined;
+}
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 async function getServerEntry(): Promise<ServerEntry> {
@@ -16,6 +20,28 @@ async function getServerEntry(): Promise<ServerEntry> {
     );
   }
   return serverEntryPromise;
+}
+
+function bindWorkerEnv(env: unknown) {
+  if (!env || typeof env !== "object") return;
+
+  const stringEnv: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env as Record<string, unknown>)) {
+    if (typeof value === "string") stringEnv[key] = value;
+  }
+
+  if (Object.keys(stringEnv).length === 0) return;
+  globalThis.__POINTSTUDIO_WORKER_ENV__ = {
+    ...(globalThis.__POINTSTUDIO_WORKER_ENV__ ?? {}),
+    ...stringEnv,
+  };
+
+  if (typeof process !== "undefined") {
+    process.env = {
+      ...stringEnv,
+      ...process.env,
+    };
+  }
 }
 
 // h3 swallows in-handler throws into a normal 500 Response with body
@@ -47,6 +73,7 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      bindWorkerEnv(env);
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
