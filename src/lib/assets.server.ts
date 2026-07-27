@@ -1,17 +1,25 @@
 import { listR2ObjectsDirect } from "@/lib/r2.server";
 
 export type SiteAsset = {
-  kind: "image" | "video" | "link";
+  kind: "image" | "video" | "link" | "file";
   url: string;
   source: string;
   alt?: string | null;
   name?: string;
   size?: number;
   contentType?: string;
+  lastModified?: string;
   storagePath?: never;
   r2Key?: string;
   usedOnSite: boolean;
 };
+
+function kindFromKey(key: string): SiteAsset["kind"] {
+  const k = key.toLowerCase();
+  if (/\.(mp4|webm|mov|m4v)(\?.*)?$/.test(k)) return "video";
+  if (/\.(jpe?g|png|gif|webp|avif|svg|bmp|tiff?)(\?.*)?$/.test(k)) return "image";
+  return "file";
+}
 
 export async function listAllAssetsDirect(): Promise<SiteAsset[]> {
   const referencedAssets: SiteAsset[] = [];
@@ -35,11 +43,12 @@ export async function listAllAssetsDirect(): Promise<SiteAsset[]> {
   try {
     const objects = await listR2ObjectsDirect();
     r2Assets = objects.map((object) => ({
-      kind: /\.(mp4|webm|mov)(\?.*)?$/i.test(object.key) ? "video" : "image",
+      kind: kindFromKey(object.key),
       url: object.url,
       source: "Cloudflare R2",
       name: object.key.split("/").pop(),
       size: object.size,
+      lastModified: object.lastModified,
       r2Key: object.key,
       usedOnSite: false,
     }));
