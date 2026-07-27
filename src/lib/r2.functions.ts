@@ -9,6 +9,7 @@ import {
   listR2ObjectsDirect,
   makeR2Key,
   putR2Object,
+  readR2ObjectDirect,
   sanitizeFileName,
   type AssetKind,
 } from "@/lib/r2.server";
@@ -16,6 +17,48 @@ import {
 export type { R2Object } from "@/lib/r2.server";
 
 const PUBLIC_URL = "https://images.pointstudio.ro";
+
+export const readR2Object = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ key: z.string().min(1).max(600) }).parse(input))
+  .handler(async ({ data }) => readR2ObjectDirect(data.key));
+
+const variantSchema = z.object({
+  key: z.string().min(1).max(700),
+  contentType: z.string().min(1).max(160),
+  dataBase64: z.string().min(1),
+});
+
+export const writeR2Variants = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        main: variantSchema,
+        siblings: z.array(variantSchema).max(6).optional().default([]),
+        backup: variantSchema.optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    // Backup first (never overwrite an existing backup — keep the true original).
+    const results: Array<{ key: string; size: number; url: string }> = [];
+    if (data.backup) {
+      const body = b64ToBytes(data.backup.dataBase64);
+      const url = await putR2Object(data.backup.key, body, data.backup.contentType);
+      results.push({ key: data.backup.key, size: body.byteLength, url });
+    }
+    const main = b64ToBytes(data.main.dataBase64);
+    const mainUrl = await putR2Object(data.main.key, main, data.main.contentType);
+    results.push({ key: data.main.key, size: main.byteLength, url: mainUrl });
+    for (const s of data.siblings) {
+      const body = b64ToBytes(s.dataBase64);
+      const url = await putR2Object(s.key, body, s.contentType);
+      results.push({ key: s.key, size: body.byteLength, url });
+    }
+    return { ok: true, results };
+  });
+
 
 export const renameR2Object = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
