@@ -8,7 +8,7 @@ type ServerEntry = {
 };
 
 declare global {
-  var __POINTSTUDIO_WORKER_ENV__: Record<string, string> | undefined;
+  var __POINTSTUDIO_WORKER_ENV__: Record<string, unknown> | undefined;
 }
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
@@ -38,8 +38,8 @@ function bindWorkerEnv(env: unknown) {
 
   if (typeof process !== "undefined") {
     process.env = {
-      ...stringEnv,
       ...process.env,
+      ...stringEnv,
     };
   }
 }
