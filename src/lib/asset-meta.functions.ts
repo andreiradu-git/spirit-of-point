@@ -6,8 +6,9 @@ export type AssetMeta = { url: string; label: string | null; alt: string | null 
 
 export const listAssetMeta = createServerFn({ method: "GET" }).handler(async () => {
   const { createClient } = await import("@supabase/supabase-js");
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-  const url = process.env.SUPABASE_URL!;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  if (!key || !url) return [] as AssetMeta[];
   const supabase = createClient(url, key, {
     auth: { persistSession: false },
     global: {
