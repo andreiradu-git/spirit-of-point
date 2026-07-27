@@ -83,7 +83,10 @@ function AdminAssetsPage() {
               Every image, video and link ever uploaded or referenced on the site. Edit label & alt text — or let AI write them.
             </p>
           </div>
-          <DirectUpload />
+          <div className="flex flex-col items-end gap-2">
+            <DirectUpload />
+            <MigrateToR2Button />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
