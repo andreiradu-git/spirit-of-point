@@ -2,8 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
 import { fotografieCulinaraContent as C } from "@/data/fotografie-culinara";
 import { useSiteSettings } from "@/hooks/use-site-settings";
+import { Editable } from "@/components/Editable";
+import { EditableTextList } from "@/components/EditableTextList";
+import { EditableFaqList } from "@/components/EditableFaqList";
 
-const URL = "https://www.pointstudio.ro/fotografie-culinara-bucuresti";
+const URL_CANON = "https://www.pointstudio.ro/fotografie-culinara-bucuresti";
+const NS = "foto-culinara";
 
 export const Route = createFileRoute("/fotografie-culinara-bucuresti")({
   component: FotografieCulinaraPage,
@@ -15,12 +19,12 @@ export const Route = createFileRoute("/fotografie-culinara-bucuresti")({
       { property: "og:title", content: C.seo.title },
       { property: "og:description", content: C.seo.description },
       { property: "og:type", content: "article" },
-      { property: "og:url", content: URL },
+      { property: "og:url", content: URL_CANON },
       { property: "og:image", content: C.seo.ogImage },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:image", content: C.seo.ogImage },
     ],
-    links: [{ rel: "canonical", href: URL }],
+    links: [{ rel: "canonical", href: URL_CANON }],
     scripts: [
       {
         type: "application/ld+json",
@@ -29,7 +33,7 @@ export const Route = createFileRoute("/fotografie-culinara-bucuresti")({
           "@type": "LocalBusiness",
           name: "Point Studio — Fotografie Culinară București",
           description: C.seo.description,
-          url: URL,
+          url: URL_CANON,
           telephone: C.cta.phone,
           email: C.cta.email,
           address: {
@@ -74,75 +78,121 @@ function FotografieCulinaraPage() {
       </SiteLayout>
     );
   }
+
   return (
     <SiteLayout>
       <article className="mx-auto max-w-3xl px-6 py-12 md:py-20 space-y-10">
         <header className="space-y-6">
-          <h1 className="font-serif text-3xl md:text-5xl leading-tight">
+          <Editable
+            id={`${NS}.h1`}
+            as="h1"
+            lang="ro"
+            className="font-serif text-3xl md:text-5xl leading-tight block"
+          >
             {C.h1}
-          </h1>
-          {C.intro.map((p, i) => (
-            <p key={i} className="text-base md:text-lg leading-relaxed text-foreground/90">
-              {p}
-            </p>
-          ))}
+          </Editable>
+
+          <EditableTextList
+            id={`${NS}.intro`}
+            fallback={C.intro}
+            itemLabel="paragraf"
+            lang="ro"
+            editableTag="p"
+            itemClassName="text-base md:text-lg leading-relaxed text-foreground/90"
+          />
         </header>
 
-        {C.sections.map((s) => (
-          <section key={s.h2} className="space-y-4">
-            <h2 className="font-serif text-2xl md:text-3xl">{s.h2}</h2>
-            {s.paragraphs?.map((p, i) => (
-              <p key={i} className="leading-relaxed text-foreground/90">
-                {p}
-              </p>
-            ))}
+        {C.sections.map((s, sIdx) => (
+          <section key={sIdx} className="space-y-4">
+            <Editable
+              id={`${NS}.sections.${sIdx}.h2`}
+              as="h2"
+              lang="ro"
+              className="font-serif text-2xl md:text-3xl block"
+            >
+              {s.h2}
+            </Editable>
+
+            {s.paragraphs && (
+              <EditableTextList
+                id={`${NS}.sections.${sIdx}.paragraphs`}
+                fallback={s.paragraphs}
+                itemLabel="paragraf"
+                lang="ro"
+                editableTag="p"
+                itemClassName="leading-relaxed text-foreground/90"
+              />
+            )}
             {s.bullets && (
-              <ul className="list-disc pl-6 space-y-2 text-foreground/90">
-                {s.bullets.map((b, i) => (
-                  <li key={i}>{b}</li>
-                ))}
-              </ul>
+              <EditableTextList
+                id={`${NS}.sections.${sIdx}.bullets`}
+                fallback={s.bullets}
+                itemLabel="punct"
+                lang="ro"
+                as="ul"
+                editableTag="li"
+                className="list-disc pl-6 space-y-2 text-foreground/90"
+              />
             )}
             {s.steps && (
-              <ol className="list-decimal pl-6 space-y-2 text-foreground/90">
-                {s.steps.map((b, i) => (
-                  <li key={i}>{b}</li>
-                ))}
-              </ol>
+              <EditableTextList
+                id={`${NS}.sections.${sIdx}.steps`}
+                fallback={s.steps}
+                itemLabel="pas"
+                lang="ro"
+                as="ol"
+                editableTag="li"
+                className="list-decimal pl-6 space-y-2 text-foreground/90"
+              />
             )}
           </section>
         ))}
 
+        {/* Secțiuni extra adăugate din CMS */}
+        <EditableTextList
+          id={`${NS}.extraSections`}
+          fallback={[]}
+          itemLabel="paragraf suplimentar"
+          lang="ro"
+          editableTag="p"
+          itemClassName="leading-relaxed text-foreground/90"
+        />
+
         <section className="space-y-4">
-          <h2 className="font-serif text-2xl md:text-3xl">Prețuri</h2>
+          <Editable id={`${NS}.pret.h2`} as="h2" lang="ro" className="font-serif text-2xl md:text-3xl block">
+            Prețuri
+          </Editable>
           <p className="leading-relaxed text-foreground/90">
             Tariful pentru o ședință de fotografie culinară pornește de la{" "}
-            <strong>{C.pretPornireDeLa}</strong>. {C.pretDetalii}
+            <Editable id={`${NS}.pret.pornireDeLa`} as="strong" lang="ro">
+              {C.pretPornireDeLa}
+            </Editable>
+            .{" "}
+            <Editable id={`${NS}.pret.detalii`} multiline lang="ro">
+              {C.pretDetalii}
+            </Editable>
           </p>
         </section>
 
         <section className="space-y-4">
-          <h2 className="font-serif text-2xl md:text-3xl">Întrebări frecvente</h2>
-          <dl className="space-y-4">
-            {C.faq.map((f) => (
-              <div key={f.q}>
-                <dt className="font-semibold text-foreground">Q: {f.q}</dt>
-                <dd className="mt-1 text-foreground/80">A: {f.a}</dd>
-              </div>
-            ))}
-          </dl>
+          <Editable id={`${NS}.faq.h2`} as="h2" lang="ro" className="font-serif text-2xl md:text-3xl block">
+            Întrebări frecvente
+          </Editable>
+          <EditableFaqList id={`${NS}.faq`} fallback={C.faq} lang="ro" />
         </section>
 
         <section className="space-y-3 border-t border-border pt-8">
-          <h2 className="font-serif text-2xl md:text-3xl">{C.cta.h2}</h2>
+          <Editable id={`${NS}.cta.h2`} as="h2" lang="ro" className="font-serif text-2xl md:text-3xl block">
+            {C.cta.h2}
+          </Editable>
           <p className="text-foreground/90">
             Scrie-ne la{" "}
             <a className="underline" href={`mailto:${C.cta.email}`}>
-              {C.cta.email}
+              <Editable id={`${NS}.cta.email`} lang="ro">{C.cta.email}</Editable>
             </a>{" "}
             sau sună la{" "}
             <a className="underline" href={`tel:${C.cta.phone.replace(/\s/g, "")}`}>
-              {C.cta.phone}
+              <Editable id={`${NS}.cta.phone`} lang="ro">{C.cta.phone}</Editable>
             </a>
             .
           </p>
