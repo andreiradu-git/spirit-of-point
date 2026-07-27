@@ -324,6 +324,8 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const removeR2 = useServerFn(deleteR2Object);
   const replaceR2 = useServerFn(replaceR2Object);
   const rename = useServerFn(renameR2Object);
+  const readSource = useServerFn(readR2Object);
+  const writeVariants = useServerFn(writeR2Variants);
   const qc = useQueryClient();
 
   const [label, setLabel] = useState(meta?.label ?? "");
