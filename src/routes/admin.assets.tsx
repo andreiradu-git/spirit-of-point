@@ -16,7 +16,15 @@ import {
   migrateSupabaseToR2,
   replaceR2Object,
   renameR2Object,
+  readR2Object,
+  writeR2Variants,
 } from "@/lib/r2.functions";
+import {
+  optimizeImageBlob,
+  blobToBase64 as optBlobToBase64,
+  withExt,
+  withSuffix,
+} from "@/lib/optimize-image";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sparkles,
