@@ -11,6 +11,11 @@ export type AssetMeta = {
   tags: string[];
 };
 
+/**
+ * Storage helpers (list/save) still use Supabase — that's the current storage
+ * layer and will be replaced during the D1 migration phase.
+ * The AI generator below delegates to the pure AI service (no Supabase).
+ */
 export const listAssetMeta = createServerFn({ method: "GET" }).handler(async () => {
   const { createClient } = await import("@supabase/supabase-js");
   const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -88,39 +93,30 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
       .from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
     if (!role) throw new Error("Forbidden");
 
-    const { openaiChat, parseJsonLoose } = await import("./openai.server");
+    const svc = await import("./ai-service.server");
 
-    const system =
-      'You write metadata for a professional photography studio (Point Studio, Bucharest). Return STRICT JSON only with keys: {"label": string, "alt": string, "caption": string, "description": string, "tags": string[]}. label: 2-6 word title. alt: 8-16 word descriptive alt (no "image of" prefix). caption: 1 short sentence for display under the image. description: 2-3 sentences describing subject, mood, lighting, styling. tags: 4-8 lowercase single-word or short-phrase tags. No markdown.';
-    const user = `Context: ${data.context ?? "portfolio asset"}. Asset kind: ${data.kind ?? "image"}. URL: ${data.imageUrl}. Write all metadata fields.`;
-
-    const messages: import("./openai.server").ChatMessage[] = [
-      { role: "system", content: system },
-    ];
-    if (data.kind !== "video" && data.kind !== "link") {
-      messages.push({
-        role: "user",
-        content: [
-          { type: "text", text: user },
-          { type: "image_url", image_url: { url: data.imageUrl } },
-        ],
+    if (data.kind === "video") {
+      const m = await svc.generateVideoMetadata({
+        videoUrl: data.imageUrl,
+        context: data.context,
       });
-    } else {
-      messages.push({ role: "user", content: user });
+      return m;
     }
-
-    const raw = await openaiChat({ messages, jsonMode: true });
-    const parsed = parseJsonLoose<{
-      label?: string; alt?: string; caption?: string; description?: string; tags?: unknown;
-    }>(raw);
-    const tags = Array.isArray(parsed.tags)
-      ? parsed.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 12)
-      : [];
-    return {
-      label: (parsed.label ?? "").trim(),
-      alt: (parsed.alt ?? "").trim(),
-      caption: (parsed.caption ?? "").trim(),
-      description: (parsed.description ?? "").trim(),
-      tags,
-    };
+    if (data.kind === "link") {
+      const l = await svc.generateLinkMetadata({
+        url: data.imageUrl,
+        context: data.context,
+      });
+      return {
+        label: l.title,
+        alt: l.description,
+        caption: l.description,
+        description: l.description,
+        tags: [l.category].filter(Boolean),
+      };
+    }
+    return svc.generateImageMetadata({
+      imageUrl: data.imageUrl,
+      context: data.context,
+    });
   });
