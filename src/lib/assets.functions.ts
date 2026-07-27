@@ -135,8 +135,58 @@ export const listAllAssets = createServerFn({ method: "GET" })
       // ignore
     }
 
+    // 5) Cloudflare R2 bucket (if configured)
+    let r2Assets: SiteAsset[] = [];
+    try {
+      if (process.env.R2_ACCESS_KEY_ID && process.env.R2_ENDPOINT) {
+        const { listR2Objects } = await import("@/lib/r2.functions");
+        // Call underlying handler directly (server-to-server) — reuse admin check by passing context.
+        const { AwsClient } = await import("aws4fetch");
+        const client = new AwsClient({
+          accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+          service: "s3",
+          region: "auto",
+        });
+        const endpoint = process.env.R2_ENDPOINT!.replace(/\/+$/, "");
+        const bucket = process.env.R2_BUCKET!;
+        const publicUrl = process.env.R2_PUBLIC_URL!.replace(/\/+$/, "");
+        let token: string | undefined;
+        do {
+          const params = new URLSearchParams({ "list-type": "2", "max-keys": "1000" });
+          if (token) params.set("continuation-token", token);
+          const res = await client.fetch(`${endpoint}/${bucket}/?${params}`, { method: "GET" });
+          if (!res.ok) break;
+          const xml = await res.text();
+          const items = xml.match(/<Contents>[\s\S]*?<\/Contents>/g) ?? [];
+          for (const c of items) {
+            const key = c.match(/<Key>([^<]+)<\/Key>/)?.[1];
+            const size = Number(c.match(/<Size>(\d+)<\/Size>/)?.[1] ?? 0);
+            if (!key) continue;
+            const url = `${publicUrl}/${key}`;
+            const isVideo = /\.(mp4|webm|mov)$/i.test(key);
+            r2Assets.push({
+              kind: isVideo ? "video" : "image",
+              url,
+              source: "Cloudflare R2",
+              name: key.split("/").pop(),
+              size,
+              r2Key: key,
+              usedOnSite: usedUrls.has(url),
+            });
+          }
+          token = /<IsTruncated>true<\/IsTruncated>/.test(xml)
+            ? xml.match(/<NextContinuationToken>([^<]+)<\/NextContinuationToken>/)?.[1]
+            : undefined;
+        } while (token);
+        void listR2Objects; // keep import used
+      }
+    } catch (e) {
+      console.error("R2 listing failed", e);
+    }
+
     // Mark bucket assets used on site if their URL appears elsewhere
     for (const b of bucketAssets) if (usedUrls.has(b.url)) b.usedOnSite = true;
 
-    return [...bucketAssets, ...galleryAssets, ...settingAssets, ...videoAssets];
+    return [...bucketAssets, ...r2Assets, ...galleryAssets, ...settingAssets, ...videoAssets];
   });
