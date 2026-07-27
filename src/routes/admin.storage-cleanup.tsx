@@ -216,7 +216,7 @@ function StorageCleanupPage() {
                   </td>
                   <td className="px-3 py-2 align-top whitespace-nowrap">{fmtBytes(r.size)}</td>
                   <td className="px-3 py-2 align-top whitespace-nowrap text-xs text-neutral-600">
-                    {new Date(r.uploaded).toLocaleString()}
+                    {new Date(r.uploaded ?? Date.now()).toLocaleString()}
                   </td>
                   <td className="px-3 py-2 align-top">
                     {r.referenced ? (
