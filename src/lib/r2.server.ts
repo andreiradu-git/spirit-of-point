@@ -19,12 +19,14 @@ type R2BucketBinding = {
     value: ArrayBuffer | ArrayBufferView | ReadableStream | string | null,
     options?: {
       httpMetadata?: { contentType?: string; cacheControl?: string };
+      customMetadata?: Record<string, string>;
     },
   ) => Promise<unknown>;
   get: (key: string) => Promise<{
     body: ReadableStream;
     arrayBuffer: () => Promise<ArrayBuffer>;
     httpMetadata?: { contentType?: string };
+    customMetadata?: Record<string, string>;
     size: number;
   } | null>;
   delete: (key: string) => Promise<void>;
@@ -32,12 +34,14 @@ type R2BucketBinding = {
     limit?: number;
     cursor?: string;
     prefix?: string;
+    include?: Array<"httpMetadata" | "customMetadata">;
   }) => Promise<{
     objects: Array<{
       key: string;
       size: number;
       uploaded: Date;
       httpMetadata?: { contentType?: string };
+      customMetadata?: Record<string, string>;
     }>;
     truncated: boolean;
     cursor?: string;
