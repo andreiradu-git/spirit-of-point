@@ -2,9 +2,9 @@ import { useState, useRef, type ReactNode } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useGallery, useInvalidateGallery, type GalleryImage } from "@/hooks/use-gallery";
-import { supabase } from "@/integrations/supabase/client";
 import { cdn, cdnSrcSet } from "@/components/SiteLayout";
 import { useServerFn } from "@tanstack/react-start";
+import { uploadToR2 } from "@/lib/r2.functions";
 import {
   DndContext,
   closestCenter,
@@ -32,6 +32,14 @@ import { MediaLibraryPicker } from "./MediaLibraryPicker";
 
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+async function fileToBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  return btoa(bin);
+}
 
 type Props = {
   slug: string;
