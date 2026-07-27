@@ -437,68 +437,64 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     ? `${asset.url.slice(0, -asset.r2Key.length)}${backupKey}`
     : null;
 
-  const doOptimize = async (maxW = 1600, quality = 0.8) => {
+  const doOptimize = async () => {
     if (!asset.r2Key || !backupKey || asset.kind !== "image") return;
     setOptBusy(true);
     setOptInfo("Reading original from R2…");
     try {
-      // 1. Read the original bytes directly from the R2 bucket binding —
-      //    never via the public CDN URL (CORS/edge caching would cause
-      //    "Load failed").
+      // 1. Read the original bytes directly from the R2 binding — no CDN,
+      //    no Supabase, no CORS surprises.
       const source = await readSource({ data: { key: asset.r2Key } });
       const origSize = source.size;
       const origContentType = source.contentType;
-      const origBlob = new Blob([Uint8Array.from(atob(source.dataBase64), (c) => c.charCodeAt(0))], {
-        type: origContentType,
-      });
+      const origBlob = new Blob(
+        [Uint8Array.from(atob(source.dataBase64), (c) => c.charCodeAt(0))],
+        { type: origContentType },
+      );
 
-      setOptInfo(`Encoding variants (${Math.round(origSize / 1024)} KB original)…`);
-      const variants = await optimizeImageBlob(origBlob, { maxW, quality });
+      setOptInfo(`Encoding WebP (${Math.round(origSize / 1024)} KB original)…`);
+      const optimized = await optimizeImageBlob(origBlob);
 
       const mainKey = withExt(asset.r2Key, "webp");
-      const jpegKey = withExt(asset.r2Key, "jpg");
-      const thumbKey = withSuffix(mainKey, "thumb", "webp");
-      const avifKey = withExt(asset.r2Key, "avif");
 
-      setOptInfo("Uploading optimized variants…");
-      const [mainB64, jpegB64, thumbB64, origB64, avifB64] = await Promise.all([
-        optBlobToBase64(variants.webp),
-        optBlobToBase64(variants.jpeg),
-        optBlobToBase64(variants.thumb),
+      setOptInfo("Uploading optimized display file…");
+      const [mainB64, origB64] = await Promise.all([
+        optBlobToBase64(optimized.webp),
         optBlobToBase64(origBlob),
-        variants.avif ? optBlobToBase64(variants.avif) : Promise.resolve<string | null>(null),
       ]);
-
-      const siblings = [
-        { key: jpegKey, contentType: "image/jpeg", dataBase64: jpegB64 },
-        { key: thumbKey, contentType: "image/webp", dataBase64: thumbB64 },
-      ];
-      if (avifB64) siblings.push({ key: avifKey, contentType: "image/avif", dataBase64: avifB64 });
 
       await writeVariants({
         data: {
           main: { key: mainKey, contentType: "image/webp", dataBase64: mainB64 },
-          siblings,
-          // Only write the backup the first time — the "true original" must
-          // survive re-optimizations. If the key is unchanged (already .webp),
-          // still keep the pre-optimization bytes as backup for Revert.
+          // Keep the untouched original as backup for Revert.
           backup: { key: backupKey, contentType: origContentType, dataBase64: origB64 },
         },
       });
 
-      // If the optimized main uses a new extension (jpg → webp), remove the old key.
-      if (mainKey !== asset.r2Key) {
+      // Clean up leftover generated files from previous multi-variant runs
+      // and the pre-optimized key if the extension changed.
+      const cleanupTargets = new Set<string>();
+      if (mainKey !== asset.r2Key) cleanupTargets.add(asset.r2Key);
+      const dot = asset.r2Key.lastIndexOf(".");
+      const base = dot > 0 ? asset.r2Key.slice(0, dot) : asset.r2Key;
+      for (const ext of ["jpg", "jpeg", "avif", "png"]) {
+        cleanupTargets.add(`${base}.${ext}`);
+        cleanupTargets.add(`${base}.thumb.${ext}`);
+      }
+      cleanupTargets.add(`${base}.thumb.webp`);
+      cleanupTargets.delete(mainKey);
+      for (const k of cleanupTargets) {
         try {
-          await removeR2({ data: { key: asset.r2Key } });
-        } catch (e) {
-          console.warn("Could not remove pre-optimized key", asset.r2Key, e);
+          await removeR2({ data: { key: k, includeRelated: false } });
+        } catch {
+          /* sibling may not exist — ignore */
         }
       }
 
-      const newSize = variants.webp.size;
+      const newSize = optimized.webp.size;
       const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
       setOptInfo(
-        `${Math.round(origSize / 1024)} → ${Math.round(newSize / 1024)} KB (−${pct}%) · ${variants.width}×${variants.height} · webp + jpg${variants.avif ? " + avif" : ""} + thumb`,
+        `${Math.round(origSize / 1024)} → ${Math.round(newSize / 1024)} KB (−${pct}%) · ${optimized.width}×${optimized.height} webp`,
       );
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
     } catch (e) {
@@ -509,6 +505,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       setOptBusy(false);
     }
   };
+
 
 
   const doRevert = async () => {
