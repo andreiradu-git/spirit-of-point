@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   b64ToBytes,
-  copyR2ObjectDirect,
   deleteR2ObjectDirect,
   getR2Client,
   inferKindFromContentType,
