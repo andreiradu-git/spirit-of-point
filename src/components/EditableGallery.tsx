@@ -173,6 +173,7 @@ export function EditableGallery({
   const removeImage = useServerFn(removeGalleryImage);
   const reorder = useServerFn(reorderGalleryImages);
   const updateMeta = useServerFn(updateImageMeta);
+  const upload = useServerFn(uploadToR2);
 
   const [uploading, setUploading] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
