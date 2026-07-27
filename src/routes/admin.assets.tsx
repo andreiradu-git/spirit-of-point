@@ -14,7 +14,6 @@ import {
   uploadToR2,
   deleteR2Object,
   migrateSupabaseToR2,
-  replaceR2Object,
   renameR2Object,
   readR2Object,
   writeR2Variants,
@@ -22,7 +21,6 @@ import {
 import {
   optimizeImageBlob,
   blobToBase64 as optBlobToBase64,
-  withExt,
 } from "@/lib/optimize-image";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +28,6 @@ import {
   Sparkles,
   Loader2,
   Zap,
-  Undo2,
   ExternalLink,
   Trash2,
   Cloud,
@@ -39,6 +36,7 @@ import {
   Pencil,
   UploadCloud,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/admin/assets")({
   head: () => ({ meta: [{ title: "Assets — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -322,8 +320,8 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
   const removeR2 = useServerFn(deleteR2Object);
-  const replaceR2 = useServerFn(replaceR2Object);
   const rename = useServerFn(renameR2Object);
+
   const readSource = useServerFn(readR2Object);
   const writeVariants = useServerFn(writeR2Variants);
   const qc = useQueryClient();
@@ -432,64 +430,36 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
-  const backupKey = asset.r2Key ? `_originals/${asset.r2Key}` : null;
-  const backupUrl = asset.r2Key && asset.url.endsWith(asset.r2Key)
-    ? `${asset.url.slice(0, -asset.r2Key.length)}${backupKey}`
-    : null;
+  const optimizedKeyFor = (originalKey: string) => {
+    const base = originalKey.split("/").pop() || originalKey;
+    const dot = base.lastIndexOf(".");
+    const stem = dot > 0 ? base.slice(0, dot) : base;
+    return `optimized/${stem}.webp`;
+  };
 
   const doOptimize = async () => {
-    if (!asset.r2Key || !backupKey || asset.kind !== "image") return;
+    if (!asset.r2Key || asset.kind !== "image") return;
     setOptBusy(true);
     setOptInfo("Reading original from R2…");
     try {
-      // 1. Read the original bytes directly from the R2 binding — no CDN,
-      //    no Supabase, no CORS surprises.
       const source = await readSource({ data: { key: asset.r2Key } });
       const origSize = source.size;
-      const origContentType = source.contentType;
       const origBlob = new Blob(
         [Uint8Array.from(atob(source.dataBase64), (c) => c.charCodeAt(0))],
-        { type: origContentType },
+        { type: source.contentType },
       );
 
       setOptInfo(`Encoding WebP (${Math.round(origSize / 1024)} KB original)…`);
       const optimized = await optimizeImageBlob(origBlob);
+      const optKey = optimizedKeyFor(asset.r2Key);
 
-      const mainKey = withExt(asset.r2Key, "webp");
-
-      setOptInfo("Uploading optimized display file…");
-      const [mainB64, origB64] = await Promise.all([
-        optBlobToBase64(optimized.webp),
-        optBlobToBase64(origBlob),
-      ]);
-
+      setOptInfo("Uploading optimized WebP…");
+      const optB64 = await optBlobToBase64(optimized.webp);
       await writeVariants({
         data: {
-          main: { key: mainKey, contentType: "image/webp", dataBase64: mainB64 },
-          // Keep the untouched original as backup for Revert.
-          backup: { key: backupKey, contentType: origContentType, dataBase64: origB64 },
+          main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
         },
       });
-
-      // Clean up leftover generated files from previous multi-variant runs
-      // and the pre-optimized key if the extension changed.
-      const cleanupTargets = new Set<string>();
-      if (mainKey !== asset.r2Key) cleanupTargets.add(asset.r2Key);
-      const dot = asset.r2Key.lastIndexOf(".");
-      const base = dot > 0 ? asset.r2Key.slice(0, dot) : asset.r2Key;
-      for (const ext of ["jpg", "jpeg", "avif", "png"]) {
-        cleanupTargets.add(`${base}.${ext}`);
-        cleanupTargets.add(`${base}.thumb.${ext}`);
-      }
-      cleanupTargets.add(`${base}.thumb.webp`);
-      cleanupTargets.delete(mainKey);
-      for (const k of cleanupTargets) {
-        try {
-          await removeR2({ data: { key: k, includeRelated: false } });
-        } catch {
-          /* sibling may not exist — ignore */
-        }
-      }
 
       const newSize = optimized.webp.size;
       const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
@@ -506,42 +476,14 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
-
-
-  const doRevert = async () => {
-    if (!asset.r2Key || !backupUrl) return;
-    setOptBusy(true);
-    setOptInfo(null);
-    try {
-      const res = await fetch(backupUrl, { cache: "no-store" });
-      if (!res.ok) throw new Error("Backup fetch failed");
-      const blob = await res.blob();
-      const ct = res.headers.get("content-type") || "application/octet-stream";
-      const b64 = await blobToBase64(blob);
-      await replaceR2({ data: { key: asset.r2Key, contentType: ct, dataBase64: b64 } });
-      setOptInfo(`Reverted (${Math.round(blob.size / 1024)} KB)`);
-      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
-    } catch (e) {
-      alert("Revert failed: " + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setOptBusy(false);
-    }
-  };
-
-  const doDelete = async () => {
-    if (!asset.r2Key) {
-      alert("This asset is referenced from site content but is not an R2 object. Remove it from its gallery, setting, or video list.");
-      return;
-    }
-    const msg =
-      `Delete this file permanently?\n\n${asset.name ?? asset.r2Key}\n\n` +
-      (asset.usedOnSite ? "⚠️ This file is used on the site — it will disappear from any gallery that references it.\n\n" : "") +
-      "This cannot be undone.";
-    if (!window.confirm(msg)) return;
+  const doDeleteKey = async (key: string, kind: "original" | "optimized" | "asset") => {
+    if (!window.confirm(`Delete this ${kind} file permanently?\n\n${key}\n\nThis cannot be undone.`)) return;
     setDeleting(true);
     try {
-      await removeR2({ data: { key: asset.r2Key } });
-      setDeleted(true);
+      await removeR2({ data: { key } });
+      if (kind === "asset" || (kind === "original" && !asset.optimizedKey)) {
+        setDeleted(true);
+      }
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
       qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
     } catch (e) {
@@ -550,6 +492,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       setDeleting(false);
     }
   };
+
 
   if (deleted) return null;
 
@@ -708,44 +651,88 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
           </button>
         </div>
 
-        {asset.kind === "image" && (
-          <>
-            <div className="flex gap-2 items-stretch">
+        {asset.kind === "image" && asset.r2Key && (
+          <div className="mt-1 border rounded divide-y text-[11px]">
+            {/* Original */}
+            <div className="p-2 flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500">Original</div>
+                <div className="truncate font-mono" title={asset.r2Key}>{asset.r2Key.split("/").pop()}</div>
+                <div className="text-neutral-500">{humanSize(asset.size)}</div>
+              </div>
               <button
                 type="button"
-                onClick={() => doOptimize()}
-                disabled={optBusy || !asset.r2Key}
-                title={asset.r2Key ? "Resize max 1600px → WebP. Keeps a backup." : "Upload to R2 first"}
-                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={() => doDeleteKey(asset.r2Key!, "original")}
+                disabled={deleting}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
               >
-                {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                Optimize
-              </button>
-              <button
-                type="button"
-                onClick={doRevert}
-                disabled={optBusy || !asset.r2Key}
-                title="Restore from the last Optimize backup"
-                className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Undo2 className="w-3 h-3" />
-                Revert
+                <Trash2 className="w-3 h-3" /> Delete original
               </button>
             </div>
-            {optInfo && <div className="text-[10px] text-emerald-700 truncate">{optInfo}</div>}
-          </>
+            {/* Optimized */}
+            <div className="p-2 flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500">Optimized (WebP)</div>
+                {asset.optimizedKey ? (
+                  <>
+                    <div className="truncate font-mono" title={asset.optimizedKey}>
+                      {asset.optimizedKey.split("/").pop()}
+                    </div>
+                    <div className="text-neutral-500">
+                      {humanSize(asset.optimizedSize)}
+                      {asset.size && asset.optimizedSize
+                        ? ` · −${Math.max(0, Math.round((1 - asset.optimizedSize / asset.size) * 100))}%`
+                        : ""}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-neutral-500 italic">Not generated yet</div>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={() => doOptimize()}
+                  disabled={optBusy}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
+                  title="Regenerate optimized WebP from original"
+                >
+                  {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                  {asset.optimizedKey ? "Regenerate" : "Optimize"}
+                </button>
+                {asset.optimizedKey && (
+                  <button
+                    type="button"
+                    onClick={() => doDeleteKey(asset.optimizedKey!, "optimized")}
+                    disabled={deleting}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
+                  >
+                    <Trash2 className="w-3 h-3" /> Delete optimized
+                  </button>
+                )}
+              </div>
+            </div>
+            {optInfo && <div className="p-2 text-[10px] text-emerald-700 truncate">{optInfo}</div>}
+          </div>
         )}
 
-        <button
-          type="button"
-          onClick={doDelete}
-          disabled={deleting || !asset.r2Key}
-          title={asset.r2Key ? "Permanently delete this R2 file" : "Referenced asset — remove it from its source"}
-          className="mt-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-          Delete
-        </button>
+        {asset.kind !== "image" && asset.r2Key && (
+          <button
+            type="button"
+            onClick={() => doDeleteKey(asset.r2Key!, "asset")}
+            disabled={deleting}
+            className="mt-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
+          >
+            {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            Delete
+          </button>
+        )}
+        {!asset.r2Key && (
+          <div className="mt-1 text-[10px] text-neutral-500 text-center py-1">
+            Referenced asset — remove it from its source (gallery / setting).
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -809,9 +796,8 @@ function DropZoneUploader() {
         const isImage = (file.type || "").startsWith("image/");
         try {
           if (isImage) {
-            // Upload the untouched original first (kept as backup), then run
-            // the shared optimize pipeline and publish the single WebP display
-            // file the site actually serves.
+            // 1. Upload the untouched original — server places it under
+            //    `originals/<uuid>.<ext>` and returns that key.
             patch(id, { progress: 10, status: "uploading original" });
             const origB64 = await optBlobToBase64(file);
             const uploaded = await doUploadR2({
@@ -819,24 +805,24 @@ function DropZoneUploader() {
                 filename: file.name,
                 contentType: file.type || "application/octet-stream",
                 dataBase64: origB64,
-                folder,
+                kind: "image",
               },
             });
+
+            // 2. Optimize in the browser to a single WebP display file and
+            //    upload it under the paired `optimized/<uuid>.webp` key.
             patch(id, { progress: 45, status: "optimizing" });
             const optimized = await optimizeImageBlob(file);
-            const mainKey = withExt(uploaded.key, "webp");
-            const backupKey = `_originals/${uploaded.key}`;
+            const base = uploaded.key.split("/").pop() || uploaded.key;
+            const dot = base.lastIndexOf(".");
+            const stem = dot > 0 ? base.slice(0, dot) : base;
+            const optKey = `optimized/${stem}.webp`;
 
-            patch(id, { progress: 75, status: "publishing" });
-            const mainB64 = await optBlobToBase64(optimized.webp);
+            patch(id, { progress: 75, status: "publishing optimized" });
+            const optB64 = await optBlobToBase64(optimized.webp);
             await writeVariants({
               data: {
-                main: { key: mainKey, contentType: "image/webp", dataBase64: mainB64 },
-                backup: {
-                  key: backupKey,
-                  contentType: file.type || "application/octet-stream",
-                  dataBase64: origB64,
-                },
+                main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
               },
             });
             const pct = file.size > 0 ? Math.round((1 - optimized.webp.size / file.size) * 100) : 0;
@@ -863,6 +849,7 @@ function DropZoneUploader() {
             patch(id, { progress: 100, done: true, status: "done" });
           }
         } catch (e) {
+
           patch(id, {
             error: e instanceof Error ? e.message : String(e),
             progress: 100,
