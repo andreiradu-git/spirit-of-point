@@ -10,7 +10,6 @@ export const generateSeoContent = createServerFn({ method: "POST" })
     z
       .object({
         kind: KIND,
-        // For "seo": path + optional label. For "alt": imageUrl + optional context.
         path: z.string().optional(),
         label: z.string().optional(),
         imageUrl: z.string().url().optional(),
@@ -20,7 +19,6 @@ export const generateSeoContent = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    // Verify admin
     const { data: role } = await context.supabase
       .from("user_roles")
       .select("role")
@@ -29,8 +27,7 @@ export const generateSeoContent = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!role) throw new Error("Forbidden");
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const { openaiChat, parseJsonLoose } = await import("./openai.server");
 
     let systemPrompt = "";
     let userPrompt = "";
@@ -45,7 +42,7 @@ export const generateSeoContent = createServerFn({ method: "POST" })
       userPrompt = `Category / context: ${data.context ?? "photography"}. Image URL: ${data.imageUrl}. Write the alt text.`;
     }
 
-    const messages: Array<{ role: string; content: unknown }> = [
+    const messages: import("./openai.server").ChatMessage[] = [
       { role: "system", content: systemPrompt },
     ];
     if (data.kind === "alt" && data.imageUrl) {
@@ -60,35 +57,6 @@ export const generateSeoContent = createServerFn({ method: "POST" })
       messages.push({ role: "user", content: userPrompt });
     }
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages,
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      if (res.status === 429) throw new Error("Rate limit — try again in a moment.");
-      if (res.status === 402) throw new Error("AI credits exhausted. Add credits in Settings → Plans & credits.");
-      throw new Error(`AI error (${res.status}): ${text.slice(0, 200)}`);
-    }
-
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const raw = json.choices?.[0]?.message?.content ?? "{}";
-    try {
-      return JSON.parse(raw) as Record<string, string>;
-    } catch {
-      // Try to extract JSON substring
-      const match = raw.match(/\{[\s\S]*\}/);
-      return match ? (JSON.parse(match[0]) as Record<string, string>) : {};
-    }
+    const raw = await openaiChat({ messages, jsonMode: true });
+    return parseJsonLoose<Record<string, string>>(raw);
   });
