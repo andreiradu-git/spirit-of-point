@@ -809,9 +809,9 @@ function DropZoneUploader() {
         const isImage = (file.type || "").startsWith("image/");
         try {
           if (isImage) {
-            // Upload the original first so it can be re-optimized later, then
-            // run the shared optimize pipeline and publish the variants that
-            // the site actually serves.
+            // Upload the untouched original first (kept as backup), then run
+            // the shared optimize pipeline and publish the single WebP display
+            // file the site actually serves.
             patch(id, { progress: 10, status: "uploading original" });
             const origB64 = await optBlobToBase64(file);
             const uploaded = await doUploadR2({
@@ -823,38 +823,31 @@ function DropZoneUploader() {
               },
             });
             patch(id, { progress: 45, status: "optimizing" });
-            const variants = await optimizeImageBlob(file);
+            const optimized = await optimizeImageBlob(file);
             const mainKey = withExt(uploaded.key, "webp");
-            const jpegKey = withExt(uploaded.key, "jpg");
-            const thumbKey = withSuffix(mainKey, "thumb", "webp");
-            const avifKey = withExt(uploaded.key, "avif");
+            const backupKey = `_originals/${uploaded.key}`;
 
-            patch(id, { progress: 70, status: "publishing variants" });
-            const [mainB64, jpegB64, thumbB64, avifB64] = await Promise.all([
-              optBlobToBase64(variants.webp),
-              optBlobToBase64(variants.jpeg),
-              optBlobToBase64(variants.thumb),
-              variants.avif ? optBlobToBase64(variants.avif) : Promise.resolve<string | null>(null),
-            ]);
-            const siblings = [
-              { key: jpegKey, contentType: "image/jpeg", dataBase64: jpegB64 },
-              { key: thumbKey, contentType: "image/webp", dataBase64: thumbB64 },
-            ];
-            if (avifB64) siblings.push({ key: avifKey, contentType: "image/avif", dataBase64: avifB64 });
+            patch(id, { progress: 75, status: "publishing" });
+            const mainB64 = await optBlobToBase64(optimized.webp);
             await writeVariants({
               data: {
                 main: { key: mainKey, contentType: "image/webp", dataBase64: mainB64 },
-                siblings,
+                backup: {
+                  key: backupKey,
+                  contentType: file.type || "application/octet-stream",
+                  dataBase64: origB64,
+                },
               },
             });
-            const pct = file.size > 0 ? Math.round((1 - variants.webp.size / file.size) * 100) : 0;
+            const pct = file.size > 0 ? Math.round((1 - optimized.webp.size / file.size) * 100) : 0;
             patch(id, {
               progress: 100,
               done: true,
-              status: `${Math.round(file.size / 1024)} → ${Math.round(variants.webp.size / 1024)} KB (−${pct}%)`,
-              optimizedSize: variants.webp.size,
+              status: `${Math.round(file.size / 1024)} → ${Math.round(optimized.webp.size / 1024)} KB (−${pct}%)`,
+              optimizedSize: optimized.webp.size,
               reductionPct: pct,
             });
+
           } else {
             patch(id, { progress: 20, status: "uploading" });
             const b64 = await optBlobToBase64(file);
