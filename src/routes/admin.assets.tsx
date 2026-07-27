@@ -14,7 +14,6 @@ import {
   uploadToR2,
   deleteR2Object,
   migrateSupabaseToR2,
-  replaceR2Object,
   renameR2Object,
   readR2Object,
   writeR2Variants,
@@ -22,7 +21,6 @@ import {
 import {
   optimizeImageBlob,
   blobToBase64 as optBlobToBase64,
-  withExt,
 } from "@/lib/optimize-image";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +28,6 @@ import {
   Sparkles,
   Loader2,
   Zap,
-  Undo2,
   ExternalLink,
   Trash2,
   Cloud,
@@ -39,6 +36,7 @@ import {
   Pencil,
   UploadCloud,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/admin/assets")({
   head: () => ({ meta: [{ title: "Assets — Admin" }, { name: "robots", content: "noindex" }] }),
