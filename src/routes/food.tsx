@@ -3,6 +3,7 @@ import { cdn } from "@/components/SiteLayout";
 import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/food.json";
 import { fotografieCulinaraContent } from "@/data/fotografie-culinara";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 export const Route = createFileRoute("/food")({
   component: FoodPage,
@@ -28,10 +29,12 @@ export const Route = createFileRoute("/food")({
 });
 
 function FoodPage() {
+  const { settings, ready } = useSiteSettings();
+  const showLink = ready && settings.showFotografieCulinara && fotografieCulinaraContent.isVisibleInNav;
   return (
     <>
       <PortfolioPage slug="food" tagline="Food, Product & Tabletop Photography" fallbackImages={data} />
-      {fotografieCulinaraContent.isVisibleInNav && (
+      {showLink && (
         <div className="mx-auto max-w-3xl px-6 pb-10 text-center">
           <Link
             to="/fotografie-culinara-bucuresti"
