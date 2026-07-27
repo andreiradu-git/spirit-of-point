@@ -1,14 +1,25 @@
 // Shared browser-side image optimization pipeline.
-// Used by both the automatic post-upload step and the manual "Optimize" button.
+// Produces a single optimized WebP display file. The original stays untouched
+// as backup (handled by the caller). No JPEG / AVIF / thumbnail variants.
+//
+// Rules:
+//  - Never resize the longest edge below 2400px (MIN_LONG_EDGE).
+//  - Never upscale.
+//  - Downscale to MIN_LONG_EDGE only when the original is larger.
+//  - Iterate WebP quality to fit under TARGET_BYTES (1 MB) when possible.
+//  - Aspect ratio is always preserved.
+//  - Canvas re-encoding strips EXIF and other metadata automatically.
 
-export type OptimizedVariants = {
+export type OptimizedImage = {
   width: number;
   height: number;
   webp: Blob;
-  jpeg: Blob;
-  thumb: Blob;
-  avif?: Blob;
+  originalSize: number;
+  quality: number;
 };
+
+const MIN_LONG_EDGE = 2400;
+const TARGET_BYTES = 1024 * 1024; // 1 MB
 
 async function encode(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
   return new Promise((resolve) => {
@@ -30,15 +41,7 @@ function drawTo(bmp: ImageBitmap, w: number, h: number): HTMLCanvasElement {
   return canvas;
 }
 
-export async function optimizeImageBlob(
-  input: Blob,
-  opts: { maxW?: number; quality?: number; thumbMaxW?: number; thumbQuality?: number } = {},
-): Promise<OptimizedVariants> {
-  const maxW = opts.maxW ?? 1600;
-  const quality = opts.quality ?? 0.8;
-  const thumbMaxW = opts.thumbMaxW ?? 480;
-  const thumbQuality = opts.thumbQuality ?? 0.7;
-
+export async function optimizeImageBlob(input: Blob): Promise<OptimizedImage> {
   let bmp: ImageBitmap;
   try {
     bmp = await createImageBitmap(input);
@@ -50,29 +53,26 @@ export async function optimizeImageBlob(
     );
   }
 
-  const scale = Math.min(1, maxW / Math.max(bmp.width, bmp.height));
+  const longest = Math.max(bmp.width, bmp.height);
+  const scale = longest > MIN_LONG_EDGE ? MIN_LONG_EDGE / longest : 1;
   const w = Math.max(1, Math.round(bmp.width * scale));
   const h = Math.max(1, Math.round(bmp.height * scale));
-  const main = drawTo(bmp, w, h);
+  const canvas = drawTo(bmp, w, h);
 
-  const [webp, jpeg, avif] = await Promise.all([
-    encode(main, "image/webp", quality),
-    encode(main, "image/jpeg", quality),
-    encode(main, "image/avif", quality),
-  ]);
-  if (!webp) throw new Error("Browser could not encode WebP");
-  if (!jpeg) throw new Error("Browser could not encode JPEG");
-
-  const tScale = Math.min(1, thumbMaxW / Math.max(bmp.width, bmp.height));
-  const tw = Math.max(1, Math.round(bmp.width * tScale));
-  const th = Math.max(1, Math.round(bmp.height * tScale));
-  const thumbCanvas = drawTo(bmp, tw, th);
-  const thumb = await encode(thumbCanvas, "image/webp", thumbQuality);
-  if (!thumb) throw new Error("Browser could not encode thumbnail");
-
+  const qualities = [0.85, 0.78, 0.7, 0.62, 0.55, 0.48, 0.4];
+  let webp: Blob | null = null;
+  let usedQuality = qualities[0];
+  for (const q of qualities) {
+    const attempt = await encode(canvas, "image/webp", q);
+    if (!attempt) continue;
+    webp = attempt;
+    usedQuality = q;
+    if (attempt.size <= TARGET_BYTES) break;
+  }
   bmp.close?.();
+  if (!webp) throw new Error("Browser could not encode WebP");
 
-  return { width: w, height: h, webp, jpeg, thumb, avif: avif ?? undefined };
+  return { width: w, height: h, webp, originalSize: input.size, quality: usedQuality };
 }
 
 export async function blobToBase64(blob: Blob): Promise<string> {
@@ -90,12 +90,4 @@ export function withExt(key: string, ext: string): string {
   const dot = key.lastIndexOf(".");
   const base = dot > 0 ? key.slice(0, dot) : key;
   return `${base}.${ext}`;
-}
-
-/** Adds a suffix before the extension: foo.webp + ".thumb" → foo.thumb.webp */
-export function withSuffix(key: string, suffix: string, ext?: string): string {
-  const dot = key.lastIndexOf(".");
-  const base = dot > 0 ? key.slice(0, dot) : key;
-  const currentExt = dot > 0 ? key.slice(dot + 1) : "";
-  return `${base}.${suffix}.${ext ?? currentExt}`;
 }

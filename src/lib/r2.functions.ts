@@ -18,6 +18,11 @@ export type { R2Object } from "@/lib/r2.server";
 
 const PUBLIC_URL = "https://images.pointstudio.ro";
 
+// -----------------------------------------------------------------------------
+// R2-only image pipeline (no Supabase). Image upload / optimize / delete only
+// depend on the Cloudflare R2 binding.
+// -----------------------------------------------------------------------------
+
 export const readR2Object = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ key: z.string().min(1).max(600) }).parse(input))
   .handler(async ({ data }) => readR2ObjectDirect(data.key));
@@ -28,6 +33,9 @@ const variantSchema = z.object({
   dataBase64: z.string().min(1),
 });
 
+// Writes the single optimized display file, plus an optional backup of the
+// untouched original. `siblings` is kept for backward compatibility but the
+// current pipeline never sends any.
 export const writeR2Variants = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -56,10 +64,7 @@ export const writeR2Variants = createServerFn({ method: "POST" })
     return { ok: true, results };
   });
 
-
-
 export const renameR2Object = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -71,14 +76,10 @@ export const renameR2Object = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     // Object keys use UUIDs; "rename" only updates the displayed original
     // filename stored in R2 customMetadata. The key and public URL never change.
-    const { publicUrl } = await getR2Client();
-    const res = await fetch(`${publicUrl}/${data.fromKey}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Cannot read object ${data.fromKey}`);
-    const buf = new Uint8Array(await res.arrayBuffer());
-    const ct = res.headers.get("content-type") || undefined;
+    const source = await readR2ObjectDirect(data.fromKey);
     const clean = sanitizeFileName(data.toName) || "file";
-    await putR2Object(data.fromKey, buf, ct, clean);
-    return { ok: true, key: data.fromKey, url: `${publicUrl}/${data.fromKey}`, displayName: clean };
+    await putR2Object(data.fromKey, b64ToBytes(source.dataBase64), source.contentType, clean);
+    return { ok: true, key: data.fromKey, url: `${PUBLIC_URL}/${data.fromKey}`, displayName: clean };
   });
 
 const uploadSchema = z.object({
@@ -91,7 +92,6 @@ const uploadSchema = z.object({
 });
 
 export const uploadToR2 = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input) => uploadSchema.parse(input))
   .handler(async ({ data }) => {
     const kind: AssetKind = data.kind ?? inferKindFromContentType(data.contentType, data.filename);
@@ -105,16 +105,60 @@ export const listR2Objects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => listR2ObjectsDirect());
 
+// Deletes the primary R2 object and any related generated files from previous
+// optimization runs (webp/jpg/jpeg/avif/png variants, thumbnails, and the
+// `_originals/` backup). Missing siblings are silently ignored — only the
+// primary key must exist. R2-only; no Supabase dependency.
 export const deleteR2Object = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ key: z.string().min(1).max(600) }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        key: z.string().min(1).max(600),
+        includeRelated: z.boolean().optional().default(true),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
-    await deleteR2ObjectDirect(data.key);
-    return { ok: true };
+    const deleted: string[] = [];
+    const failed: Array<{ key: string; error: string }> = [];
+
+    const tryDelete = async (key: string, required: boolean) => {
+      try {
+        await deleteR2ObjectDirect(key);
+        deleted.push(key);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (required) failed.push({ key, error: msg });
+        // sibling misses are expected and swallowed
+      }
+    };
+
+    await tryDelete(data.key, true);
+
+    if (data.includeRelated) {
+      const exts = ["webp", "jpg", "jpeg", "avif", "png", "gif"];
+      const dot = data.key.lastIndexOf(".");
+      const base = dot > 0 ? data.key.slice(0, dot) : data.key;
+      const candidates = new Set<string>();
+      for (const ext of exts) {
+        candidates.add(`${base}.${ext}`);
+        candidates.add(`${base}.thumb.${ext}`);
+        candidates.add(`_originals/${base}.${ext}`);
+      }
+      candidates.add(`_originals/${data.key}`);
+      candidates.delete(data.key);
+      for (const k of candidates) await tryDelete(k, false);
+    }
+
+    if (failed.length) {
+      throw new Error(
+        `Delete failed for: ${failed.map((f) => `${f.key} (${f.error})`).join("; ")}`,
+      );
+    }
+    return { ok: true, deleted };
   });
 
 export const replaceR2Object = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -135,6 +179,7 @@ export const replaceR2Object = createServerFn({ method: "POST" })
     const url = await putR2Object(data.key, body, data.contentType);
     return { ok: true, url, size: body.byteLength };
   });
+
 
 /**
  * Orphan scanner — lists every object in R2 and marks whether the object URL
