@@ -17,6 +17,65 @@ export const Route = createFileRoute("/admin/assets")({
   component: AdminAssetsPage,
 });
 
+function collectSettingUrls(value: unknown, key: string, out: SiteAsset[]) {
+  if (typeof value === "string") {
+    if (/^https?:\/\//.test(value)) {
+      out.push({ kind: /\.(mp4|webm|mov)(\?.*)?$/i.test(value) ? "video" : "image", url: value, source: `Setting: ${key}`, usedOnSite: true });
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) collectSettingUrls(item, key, out);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+
+  const obj = value as Record<string, unknown>;
+  const url = typeof obj.src === "string" ? obj.src : typeof obj.url === "string" ? obj.url : null;
+  const alt = typeof obj.alt === "string" ? obj.alt : null;
+  if (url && /^https?:\/\//.test(url)) {
+    out.push({
+      kind: /\.(mp4|webm|mov)(\?.*)?$/i.test(url) || key.toLowerCase().includes("video") ? "video" : "image",
+      url,
+      source: `Setting: ${key}`,
+      alt,
+      usedOnSite: true,
+    });
+  }
+  for (const nested of Object.values(obj)) {
+    if (nested && typeof nested === "object") collectSettingUrls(nested, key, out);
+  }
+}
+
+async function mergeAssets(r2Assets: SiteAsset[]): Promise<SiteAsset[]> {
+  const referenced: SiteAsset[] = [];
+  const usedUrls = new Set<string>();
+
+  const { data: galleries } = await supabase
+    .from("galleries")
+    .select("slug, gallery_images(src, alt)");
+  for (const gallery of galleries ?? []) {
+    for (const image of (gallery.gallery_images ?? []) as Array<{ src: string; alt: string | null }>) {
+      usedUrls.add(image.src);
+      referenced.push({ kind: "image", url: image.src, source: `Gallery: ${gallery.slug}`, alt: image.alt, usedOnSite: true });
+    }
+  }
+
+  const { data: settings } = await supabase.from("site_settings").select("key, value");
+  for (const row of settings ?? []) collectSettingUrls(row.value, row.key, referenced);
+  for (const asset of referenced) usedUrls.add(asset.url);
+
+  const merged = r2Assets.map((asset) => ({ ...asset, usedOnSite: usedUrls.has(asset.url) || asset.usedOnSite }));
+  const seen = new Set(merged.map((asset) => asset.url));
+  for (const asset of referenced) {
+    if (!seen.has(asset.url)) {
+      merged.push(asset);
+      seen.add(asset.url);
+    }
+  }
+  return merged;
+}
+
 function AdminAssetsPage() {
   const { user, isAdmin, loading } = useAdmin();
   const navigate = useNavigate();
@@ -30,7 +89,7 @@ function AdminAssetsPage() {
     if (!loading && (!user || !isAdmin)) navigate({ to: "/auth" });
   }, [loading, user, isAdmin, navigate]);
 
-  const { data: assets = [], isLoading } = useQuery({
+  const { data: assets = [], isLoading } = useQuery<SiteAsset[]>({
     queryKey: ["admin", "assets"],
     queryFn: async () => mergeAssets(await list() as SiteAsset[]),
     enabled: !!isAdmin,
