@@ -767,7 +767,17 @@ function Stat({ label, value, highlight }: { label: string; value: number; highl
   );
 }
 
-type UploadItem = { id: string; name: string; size: number; progress: number; error?: string; done?: boolean };
+type UploadItem = {
+  id: string;
+  name: string;
+  size: number;
+  progress: number;
+  status: string;
+  error?: string;
+  done?: boolean;
+  reductionPct?: number;
+  optimizedSize?: number;
+};
 
 function DropZoneUploader() {
   const qc = useQueryClient();
@@ -777,51 +787,106 @@ function DropZoneUploader() {
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const doUploadR2 = useServerFn(uploadToR2);
+  const writeVariants = useServerFn(writeR2Variants);
 
-  const fileToBase64 = async (file: File): Promise<string> => {
-    const buf = await file.arrayBuffer();
-    const bytes = new Uint8Array(buf);
-    let bin = "";
-    const chunk = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunk) {
-      bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-    }
-    return btoa(bin);
-  };
+  const patch = (id: string, changes: Partial<UploadItem>) =>
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...changes } : it)));
 
-  const onFiles = useCallback(async (files: File[]) => {
-    if (!files.length) return;
-    setBusy(true);
-    const startId = Date.now();
-    const initial: UploadItem[] = files.map((f, i) => ({
-      id: `${startId}-${i}`, name: f.name, size: f.size, progress: 0,
-    }));
-    setItems((prev) => [...initial, ...prev].slice(0, 30));
+  const onFiles = useCallback(
+    async (files: File[]) => {
+      if (!files.length) return;
+      setBusy(true);
+      const startId = Date.now();
+      const initial: UploadItem[] = files.map((f, i) => ({
+        id: `${startId}-${i}`,
+        name: f.name,
+        size: f.size,
+        progress: 0,
+        status: "queued",
+      }));
+      setItems((prev) => [...initial, ...prev].slice(0, 30));
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const id = initial[i].id;
-      try {
-        setItems((prev) => prev.map((it) => it.id === id ? { ...it, progress: 20 } : it));
-        const b64 = await fileToBase64(file);
-        setItems((prev) => prev.map((it) => it.id === id ? { ...it, progress: 60 } : it));
-        await doUploadR2({
-          data: {
-            filename: file.name,
-            contentType: file.type || "application/octet-stream",
-            dataBase64: b64,
-            folder,
-          },
-        });
-        setItems((prev) => prev.map((it) => it.id === id ? { ...it, progress: 100, done: true } : it));
-      } catch (e) {
-        setItems((prev) => prev.map((it) => it.id === id ? { ...it, error: e instanceof Error ? e.message : String(e), progress: 100 } : it));
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const id = initial[i].id;
+        const isImage = (file.type || "").startsWith("image/");
+        try {
+          if (isImage) {
+            // Upload the original first so it can be re-optimized later, then
+            // run the shared optimize pipeline and publish the variants that
+            // the site actually serves.
+            patch(id, { progress: 10, status: "uploading original" });
+            const origB64 = await optBlobToBase64(file);
+            const uploaded = await doUploadR2({
+              data: {
+                filename: file.name,
+                contentType: file.type || "application/octet-stream",
+                dataBase64: origB64,
+                folder,
+              },
+            });
+            patch(id, { progress: 45, status: "optimizing" });
+            const variants = await optimizeImageBlob(file);
+            const mainKey = withExt(uploaded.key, "webp");
+            const jpegKey = withExt(uploaded.key, "jpg");
+            const thumbKey = withSuffix(mainKey, "thumb", "webp");
+            const avifKey = withExt(uploaded.key, "avif");
+
+            patch(id, { progress: 70, status: "publishing variants" });
+            const [mainB64, jpegB64, thumbB64, avifB64] = await Promise.all([
+              optBlobToBase64(variants.webp),
+              optBlobToBase64(variants.jpeg),
+              optBlobToBase64(variants.thumb),
+              variants.avif ? optBlobToBase64(variants.avif) : Promise.resolve<string | null>(null),
+            ]);
+            const siblings = [
+              { key: jpegKey, contentType: "image/jpeg", dataBase64: jpegB64 },
+              { key: thumbKey, contentType: "image/webp", dataBase64: thumbB64 },
+            ];
+            if (avifB64) siblings.push({ key: avifKey, contentType: "image/avif", dataBase64: avifB64 });
+            await writeVariants({
+              data: {
+                main: { key: mainKey, contentType: "image/webp", dataBase64: mainB64 },
+                siblings,
+              },
+            });
+            const pct = file.size > 0 ? Math.round((1 - variants.webp.size / file.size) * 100) : 0;
+            patch(id, {
+              progress: 100,
+              done: true,
+              status: `${Math.round(file.size / 1024)} → ${Math.round(variants.webp.size / 1024)} KB (−${pct}%)`,
+              optimizedSize: variants.webp.size,
+              reductionPct: pct,
+            });
+          } else {
+            patch(id, { progress: 20, status: "uploading" });
+            const b64 = await optBlobToBase64(file);
+            patch(id, { progress: 60, status: "uploading" });
+            await doUploadR2({
+              data: {
+                filename: file.name,
+                contentType: file.type || "application/octet-stream",
+                dataBase64: b64,
+                folder,
+              },
+            });
+            patch(id, { progress: 100, done: true, status: "done" });
+          }
+        } catch (e) {
+          patch(id, {
+            error: e instanceof Error ? e.message : String(e),
+            progress: 100,
+            status: "failed",
+          });
+        }
       }
-    }
-    qc.invalidateQueries({ queryKey: ["admin", "assets"] });
-    qc.invalidateQueries({ queryKey: ["media-picker", "assets"] });
-    setBusy(false);
-  }, [doUploadR2, folder, qc]);
+      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
+      qc.invalidateQueries({ queryKey: ["media-picker", "assets"] });
+      setBusy(false);
+    },
+    [doUploadR2, folder, qc, writeVariants],
+  );
+
 
   return (
     <div
