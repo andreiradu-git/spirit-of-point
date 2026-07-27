@@ -22,7 +22,7 @@ export const renameR2Object = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { publicUrl } = getR2Client();
+    const { publicUrl } = await getR2Client();
     const folder = data.fromKey.includes("/")
       ? data.fromKey.slice(0, data.fromKey.lastIndexOf("/"))
       : "";
@@ -106,7 +106,7 @@ export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data }) => {
-    const { publicUrl } = getR2Client();
+    const { publicUrl } = await getR2Client();
     const existing = new Set((await listR2ObjectsDirect()).map((object) => object.key));
     const seenUrls = new Set<string>();
     let copied = 0;
