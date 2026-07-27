@@ -124,8 +124,20 @@ function VideoPage() {
 
   const updateVideo = async (i: number, patch: Partial<VideoItem>) => {
     const next = [...videos];
-    next[i] = { ...next[i], ...patch };
-    await save(next);
+    const merged = { ...next[i], ...patch };
+    // Auto-fill poster from YouTube thumbnail if src is a YouTube URL and poster is empty
+    if (patch.src && !merged.poster) {
+      const d = detectEmbed(patch.src);
+      if (d.kind === "youtube" && d.id) {
+        merged.poster = `https://i.ytimg.com/vi/${d.id}/hqdefault.jpg`;
+      }
+    }
+    next[i] = merged;
+    try {
+      await save(next);
+    } catch (e) {
+      alert("Save failed: " + (e instanceof Error ? e.message : String(e)));
+    }
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
