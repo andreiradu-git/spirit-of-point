@@ -5,10 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import { listAssetMeta, saveAssetMeta, generateAssetMeta, type AssetMeta } from "@/lib/asset-meta.functions";
-import { replaceMediaObject, deleteMediaObject } from "@/lib/media-admin.functions";
-import { uploadToR2, deleteR2Object, migrateSupabaseToR2 } from "@/lib/r2.functions";
-import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2, Upload, Cloud } from "lucide-react";
+import { uploadToR2, deleteR2Object, migrateSupabaseToR2, replaceR2Object } from "@/lib/r2.functions";
+import { Sparkles, Loader2, Zap, Undo2, ExternalLink, Trash2, Cloud } from "lucide-react";
 import { useRef } from "react";
 
 
@@ -162,8 +160,8 @@ async function blobToBase64(blob: Blob): Promise<string> {
 function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
-  const removeObject = useServerFn(deleteMediaObject);
   const removeR2 = useServerFn(deleteR2Object);
+  const replaceR2 = useServerFn(replaceR2Object);
   const qc = useQueryClient();
   const [label, setLabel] = useState(meta?.label ?? "");
   const [alt, setAlt] = useState(meta?.alt ?? asset.alt ?? "");
@@ -219,10 +217,13 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
-  const backupPath = asset.storagePath ? `_originals/${asset.storagePath}` : null;
+  const backupKey = asset.r2Key ? `_originals/${asset.r2Key}` : null;
+  const backupUrl = asset.r2Key && asset.url.endsWith(asset.r2Key)
+    ? `${asset.url.slice(0, -asset.r2Key.length)}${backupKey}`
+    : null;
 
   const doOptimize = async (maxW = 1600, quality = 0.75) => {
-    if (!asset.storagePath || !backupPath || asset.kind !== "image") return;
+    if (!asset.r2Key || !backupKey || asset.kind !== "image") return;
     setOptBusy(true);
     setOptInfo(null);
     try {
@@ -247,12 +248,12 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
         return;
       }
       const [origB64, outB64] = await Promise.all([blobToBase64(origBlob), blobToBase64(outBlob)]);
-      await replaceMediaObject({
+      await replaceR2({
         data: {
-          path: asset.storagePath,
+          key: asset.r2Key,
           contentType: "image/webp",
           dataBase64: outB64,
-          backupPath,
+          backupKey,
           origBase64: origB64,
           origContentType,
         },
@@ -267,21 +268,17 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   };
 
   const doRevert = async () => {
-    if (!asset.storagePath || !backupPath) return;
+    if (!asset.r2Key || !backupUrl) return;
     setOptBusy(true);
     setOptInfo(null);
     try {
-      const { data: signed, error: signErr } = await supabase.storage
-        .from("media")
-        .createSignedUrl(backupPath, 60);
-      if (signErr || !signed) throw new Error("No backup found for this image.");
-      const res = await fetch(signed.signedUrl, { cache: "no-store" });
+      const res = await fetch(backupUrl, { cache: "no-store" });
       if (!res.ok) throw new Error("Backup fetch failed");
       const blob = await res.blob();
       const ct = res.headers.get("content-type") || "application/octet-stream";
       const b64 = await blobToBase64(blob);
-      await replaceMediaObject({
-        data: { path: asset.storagePath, contentType: ct, dataBase64: b64 },
+      await replaceR2({
+        data: { key: asset.r2Key, contentType: ct, dataBase64: b64 },
       });
       setOptInfo(`Reverted (${Math.round(blob.size / 1024)} KB)`);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
@@ -297,12 +294,12 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   };
 
   const doDelete = async () => {
-    if (!asset.storagePath && !asset.r2Key) {
-      alert("This asset lives outside the Media library and cannot be deleted from here. Remove it from its source (gallery, setting, or videos.json).");
+    if (!asset.r2Key) {
+      alert("This asset is referenced from site content but is not an R2 object. Remove it from its gallery, setting, or video list.");
       return;
     }
     const msg =
-      `Delete this image permanently?\n\n${asset.name ?? asset.storagePath ?? asset.r2Key}\n\n` +
+      `Delete this image permanently?\n\n${asset.name ?? asset.r2Key}\n\n` +
       (asset.usedOnSite
         ? "⚠️ This image is used on the site — it will disappear from any gallery that references it.\n\n"
         : "") +
@@ -310,11 +307,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     if (!window.confirm(msg)) return;
     setDeleting(true);
     try {
-      if (asset.r2Key) {
-        await removeR2({ data: { key: asset.r2Key } });
-      } else if (asset.storagePath) {
-        await removeObject({ data: { path: asset.storagePath } });
-      }
+      await removeR2({ data: { key: asset.r2Key } });
       setDeleted(true);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
       qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
@@ -403,11 +396,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
               <button
                 type="button"
                 onClick={() => doOptimize()}
-                disabled={optBusy || !asset.storagePath}
+                disabled={optBusy || !asset.r2Key}
                 title={
-                  asset.storagePath
-                    ? "Resize to max 1600px and re-encode as WebP, replacing the file in storage. Keeps a backup so you can Revert."
-                    : "External image (not in Media library) — cannot be replaced. Re-upload it to the Media library to enable Optimize."
+                  asset.r2Key
+                    ? "Resize to max 1600px and re-encode as WebP in Cloudflare R2. Keeps a backup so you can Revert."
+                    : "Referenced image outside R2 — upload it to Assets first to enable Optimize."
                 }
                 className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -417,11 +410,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
               <button
                 type="button"
                 onClick={doRevert}
-                disabled={optBusy || !asset.storagePath}
+                disabled={optBusy || !asset.r2Key}
                 title={
-                  asset.storagePath
-                    ? "Restore this image from the backup saved before the last Optimize."
-                    : "Revert only works for images stored in the Media library."
+                  asset.r2Key
+                    ? "Restore this image from the R2 backup saved before the last Optimize."
+                    : "Revert only works for images stored in Cloudflare R2."
                 }
                 className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -444,11 +437,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
         <button
           type="button"
           onClick={doDelete}
-          disabled={deleting || (!asset.storagePath && !asset.r2Key)}
+          disabled={deleting || !asset.r2Key}
           title={
-            asset.storagePath || asset.r2Key
-              ? "Permanently delete this file (asks for confirmation)."
-              : "External asset — delete it from its original source instead."
+            asset.r2Key
+              ? "Permanently delete this R2 file (asks for confirmation)."
+              : "Referenced asset — delete it from its original gallery/setting instead."
           }
           className="mt-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -476,7 +469,6 @@ function DirectUpload() {
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [folder, setFolder] = useState("uploads");
-  const [target, setTarget] = useState<"r2" | "supabase">("r2");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const doUploadR2 = useServerFn(uploadToR2);
@@ -501,29 +493,16 @@ function DirectUpload() {
     try {
       for (const file of files) {
         try {
-          if (target === "r2") {
-            const b64 = await fileToBase64(file);
-            await doUploadR2({
-              data: {
-                filename: file.name,
-                contentType: file.type || "application/octet-stream",
-                dataBase64: b64,
-                folder,
-              },
-            });
-            ok++;
-          } else {
-            const ext = file.name.split(".").pop() || "bin";
-            const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
-            const cleanFolder = folder.replace(/^\/+|\/+$/g, "") || "uploads";
-            const path = `${cleanFolder}/${base}-${Date.now()}.${ext}`;
-            const { error } = await supabase.storage.from("media").upload(path, file, {
-              contentType: file.type || undefined,
-              upsert: false,
-            });
-            if (error) throw error;
-            ok++;
-          }
+          const b64 = await fileToBase64(file);
+          await doUploadR2({
+            data: {
+              filename: file.name,
+              contentType: file.type || "application/octet-stream",
+              dataBase64: b64,
+              folder,
+            },
+          });
+          ok++;
         } catch (e) {
           fail++;
           console.error("upload failed", file.name, e);
@@ -540,15 +519,9 @@ function DirectUpload() {
 
   return (
     <div className="bg-white border rounded-lg p-3 flex items-center gap-2 text-sm flex-wrap">
-      <select
-        value={target}
-        onChange={(e) => setTarget(e.target.value as "r2" | "supabase")}
-        className="border rounded px-2 py-1 text-xs"
-        title="Where to store the uploaded files"
-      >
-        <option value="r2">Cloudflare R2</option>
-        <option value="supabase">Media library</option>
-      </select>
+      <span className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs text-neutral-700">
+        <Cloud className="h-3 w-3" /> Cloudflare R2
+      </span>
       <input
         value={folder}
         onChange={(e) => setFolder(e.target.value)}
@@ -561,7 +534,7 @@ function DirectUpload() {
         disabled={busy}
         className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-black text-white hover:bg-neutral-800 disabled:opacity-50"
       >
-        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : target === "r2" ? <Cloud className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
+        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
         Upload files
       </button>
       {msg && <span className="text-xs text-neutral-600">{msg}</span>}
@@ -593,7 +566,7 @@ function MigrateToR2Button() {
         type="button"
         disabled={busy}
         onClick={async () => {
-          if (!confirm("Copy all Media library files to Cloudflare R2 and rewrite URLs across the site? Originals in Supabase are kept as backup.")) return;
+          if (!confirm("Check the R2 migration status? New uploads already go directly to Cloudflare R2.")) return;
           setBusy(true);
           setMsg("Migrating…");
           try {
