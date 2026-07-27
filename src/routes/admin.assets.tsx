@@ -320,8 +320,8 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
   const removeR2 = useServerFn(deleteR2Object);
-  const replaceR2 = useServerFn(replaceR2Object);
   const rename = useServerFn(renameR2Object);
+
   const readSource = useServerFn(readR2Object);
   const writeVariants = useServerFn(writeR2Variants);
   const qc = useQueryClient();
