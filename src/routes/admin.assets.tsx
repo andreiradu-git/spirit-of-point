@@ -432,64 +432,36 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
-  const backupKey = asset.r2Key ? `_originals/${asset.r2Key}` : null;
-  const backupUrl = asset.r2Key && asset.url.endsWith(asset.r2Key)
-    ? `${asset.url.slice(0, -asset.r2Key.length)}${backupKey}`
-    : null;
+  const optimizedKeyFor = (originalKey: string) => {
+    const base = originalKey.split("/").pop() || originalKey;
+    const dot = base.lastIndexOf(".");
+    const stem = dot > 0 ? base.slice(0, dot) : base;
+    return `optimized/${stem}.webp`;
+  };
 
   const doOptimize = async () => {
-    if (!asset.r2Key || !backupKey || asset.kind !== "image") return;
+    if (!asset.r2Key || asset.kind !== "image") return;
     setOptBusy(true);
     setOptInfo("Reading original from R2…");
     try {
-      // 1. Read the original bytes directly from the R2 binding — no CDN,
-      //    no Supabase, no CORS surprises.
       const source = await readSource({ data: { key: asset.r2Key } });
       const origSize = source.size;
-      const origContentType = source.contentType;
       const origBlob = new Blob(
         [Uint8Array.from(atob(source.dataBase64), (c) => c.charCodeAt(0))],
-        { type: origContentType },
+        { type: source.contentType },
       );
 
       setOptInfo(`Encoding WebP (${Math.round(origSize / 1024)} KB original)…`);
       const optimized = await optimizeImageBlob(origBlob);
+      const optKey = optimizedKeyFor(asset.r2Key);
 
-      const mainKey = withExt(asset.r2Key, "webp");
-
-      setOptInfo("Uploading optimized display file…");
-      const [mainB64, origB64] = await Promise.all([
-        optBlobToBase64(optimized.webp),
-        optBlobToBase64(origBlob),
-      ]);
-
+      setOptInfo("Uploading optimized WebP…");
+      const optB64 = await optBlobToBase64(optimized.webp);
       await writeVariants({
         data: {
-          main: { key: mainKey, contentType: "image/webp", dataBase64: mainB64 },
-          // Keep the untouched original as backup for Revert.
-          backup: { key: backupKey, contentType: origContentType, dataBase64: origB64 },
+          main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
         },
       });
-
-      // Clean up leftover generated files from previous multi-variant runs
-      // and the pre-optimized key if the extension changed.
-      const cleanupTargets = new Set<string>();
-      if (mainKey !== asset.r2Key) cleanupTargets.add(asset.r2Key);
-      const dot = asset.r2Key.lastIndexOf(".");
-      const base = dot > 0 ? asset.r2Key.slice(0, dot) : asset.r2Key;
-      for (const ext of ["jpg", "jpeg", "avif", "png"]) {
-        cleanupTargets.add(`${base}.${ext}`);
-        cleanupTargets.add(`${base}.thumb.${ext}`);
-      }
-      cleanupTargets.add(`${base}.thumb.webp`);
-      cleanupTargets.delete(mainKey);
-      for (const k of cleanupTargets) {
-        try {
-          await removeR2({ data: { key: k, includeRelated: false } });
-        } catch {
-          /* sibling may not exist — ignore */
-        }
-      }
 
       const newSize = optimized.webp.size;
       const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
@@ -506,42 +478,14 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
-
-
-  const doRevert = async () => {
-    if (!asset.r2Key || !backupUrl) return;
-    setOptBusy(true);
-    setOptInfo(null);
-    try {
-      const res = await fetch(backupUrl, { cache: "no-store" });
-      if (!res.ok) throw new Error("Backup fetch failed");
-      const blob = await res.blob();
-      const ct = res.headers.get("content-type") || "application/octet-stream";
-      const b64 = await blobToBase64(blob);
-      await replaceR2({ data: { key: asset.r2Key, contentType: ct, dataBase64: b64 } });
-      setOptInfo(`Reverted (${Math.round(blob.size / 1024)} KB)`);
-      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
-    } catch (e) {
-      alert("Revert failed: " + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setOptBusy(false);
-    }
-  };
-
-  const doDelete = async () => {
-    if (!asset.r2Key) {
-      alert("This asset is referenced from site content but is not an R2 object. Remove it from its gallery, setting, or video list.");
-      return;
-    }
-    const msg =
-      `Delete this file permanently?\n\n${asset.name ?? asset.r2Key}\n\n` +
-      (asset.usedOnSite ? "⚠️ This file is used on the site — it will disappear from any gallery that references it.\n\n" : "") +
-      "This cannot be undone.";
-    if (!window.confirm(msg)) return;
+  const doDeleteKey = async (key: string, kind: "original" | "optimized" | "asset") => {
+    if (!window.confirm(`Delete this ${kind} file permanently?\n\n${key}\n\nThis cannot be undone.`)) return;
     setDeleting(true);
     try {
-      await removeR2({ data: { key: asset.r2Key } });
-      setDeleted(true);
+      await removeR2({ data: { key } });
+      if (kind === "asset" || (kind === "original" && !asset.optimizedKey)) {
+        setDeleted(true);
+      }
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
       qc.invalidateQueries({ queryKey: ["admin", "asset-meta"] });
     } catch (e) {
@@ -550,6 +494,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       setDeleting(false);
     }
   };
+
 
   if (deleted) return null;
 
