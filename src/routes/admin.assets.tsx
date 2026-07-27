@@ -653,44 +653,88 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
           </button>
         </div>
 
-        {asset.kind === "image" && (
-          <>
-            <div className="flex gap-2 items-stretch">
+        {asset.kind === "image" && asset.r2Key && (
+          <div className="mt-1 border rounded divide-y text-[11px]">
+            {/* Original */}
+            <div className="p-2 flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500">Original</div>
+                <div className="truncate font-mono" title={asset.r2Key}>{asset.r2Key.split("/").pop()}</div>
+                <div className="text-neutral-500">{humanSize(asset.size)}</div>
+              </div>
               <button
                 type="button"
-                onClick={() => doOptimize()}
-                disabled={optBusy || !asset.r2Key}
-                title={asset.r2Key ? "Resize max 1600px → WebP. Keeps a backup." : "Upload to R2 first"}
-                className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={() => doDeleteKey(asset.r2Key!, "original")}
+                disabled={deleting}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
               >
-                {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                Optimize
-              </button>
-              <button
-                type="button"
-                onClick={doRevert}
-                disabled={optBusy || !asset.r2Key}
-                title="Restore from the last Optimize backup"
-                className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Undo2 className="w-3 h-3" />
-                Revert
+                <Trash2 className="w-3 h-3" /> Delete original
               </button>
             </div>
-            {optInfo && <div className="text-[10px] text-emerald-700 truncate">{optInfo}</div>}
-          </>
+            {/* Optimized */}
+            <div className="p-2 flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500">Optimized (WebP)</div>
+                {asset.optimizedKey ? (
+                  <>
+                    <div className="truncate font-mono" title={asset.optimizedKey}>
+                      {asset.optimizedKey.split("/").pop()}
+                    </div>
+                    <div className="text-neutral-500">
+                      {humanSize(asset.optimizedSize)}
+                      {asset.size && asset.optimizedSize
+                        ? ` · −${Math.max(0, Math.round((1 - asset.optimizedSize / asset.size) * 100))}%`
+                        : ""}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-neutral-500 italic">Not generated yet</div>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={() => doOptimize()}
+                  disabled={optBusy}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
+                  title="Regenerate optimized WebP from original"
+                >
+                  {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                  {asset.optimizedKey ? "Regenerate" : "Optimize"}
+                </button>
+                {asset.optimizedKey && (
+                  <button
+                    type="button"
+                    onClick={() => doDeleteKey(asset.optimizedKey!, "optimized")}
+                    disabled={deleting}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
+                  >
+                    <Trash2 className="w-3 h-3" /> Delete optimized
+                  </button>
+                )}
+              </div>
+            </div>
+            {optInfo && <div className="p-2 text-[10px] text-emerald-700 truncate">{optInfo}</div>}
+          </div>
         )}
 
-        <button
-          type="button"
-          onClick={doDelete}
-          disabled={deleting || !asset.r2Key}
-          title={asset.r2Key ? "Permanently delete this R2 file" : "Referenced asset — remove it from its source"}
-          className="mt-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-          Delete
-        </button>
+        {asset.kind !== "image" && asset.r2Key && (
+          <button
+            type="button"
+            onClick={() => doDeleteKey(asset.r2Key!, "asset")}
+            disabled={deleting}
+            className="mt-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
+          >
+            {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            Delete
+          </button>
+        )}
+        {!asset.r2Key && (
+          <div className="mt-1 text-[10px] text-neutral-500 text-center py-1">
+            Referenced asset — remove it from its source (gallery / setting).
+          </div>
+        )}
+
       </div>
     </div>
   );
