@@ -4,9 +4,15 @@ export type SiteSettings = {
   showVideo: boolean;
   showPatterns: boolean;
   showTestimonials: boolean;
+  showFotografieCulinara: boolean;
 };
 
-const DEFAULTS: SiteSettings = { showVideo: true, showPatterns: true, showTestimonials: true };
+const DEFAULTS: SiteSettings = {
+  showVideo: true,
+  showPatterns: true,
+  showTestimonials: true,
+  showFotografieCulinara: true,
+};
 const KEY = "point-studio-settings";
 const EVT = "point-studio-settings-change";
 
