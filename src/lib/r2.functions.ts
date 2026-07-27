@@ -266,6 +266,3 @@ export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
           : "R2 upload is active. No non-R2 assets were found to copy.",
     };
   });
-
-// Retained for compatibility — used to copy R2 objects (rare).
-export { copyR2ObjectDirect };
