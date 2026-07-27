@@ -41,7 +41,6 @@ export async function listAllAssetsDirect(): Promise<SiteAsset[]> {
       name: object.key.split("/").pop(),
       size: object.size,
       r2Key: object.key,
-      usedOnSite: usedUrls.has(object.url),
       usedOnSite: false,
     }));
   } catch (e) {
