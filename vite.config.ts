@@ -12,4 +12,16 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    cloudflare: {
+      wrangler: {
+        r2_buckets: [
+          {
+            binding: "MY_ASSETS",
+            bucket_name: "pointstudio-assets",
+          },
+        ],
+      },
+    },
+  },
 });
