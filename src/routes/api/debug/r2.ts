@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { getR2RuntimeDebug } from "@/lib/r2.server";
-
 export const Route = createFileRoute("/api/debug/r2")({
   server: {
     handlers: {
       GET: async () => {
+        const { getR2RuntimeDebug } = await import("@/lib/r2.server");
         const debug = getR2RuntimeDebug();
         console.info("R2 runtime debug", {
           workerBindingSeen: debug.workerBindingSeen,
