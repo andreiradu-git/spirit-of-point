@@ -10,7 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { saveAssetMeta, generateAssetMeta } from "@/lib/asset-meta.functions";
 import { uploadToR2 } from "@/lib/r2.functions";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
-import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical } from "lucide-react";
+import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
   DndContext,
   closestCenter,
