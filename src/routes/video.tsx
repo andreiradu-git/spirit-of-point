@@ -9,6 +9,7 @@ import { useSiteList } from "@/hooks/use-site-list";
 import { useServerFn } from "@tanstack/react-start";
 import { saveAssetMeta, generateAssetMeta } from "@/lib/asset-meta.functions";
 import { uploadToR2 } from "@/lib/r2.functions";
+import { derivePoster, DEFAULT_VIDEO_POSTER } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
 import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
@@ -27,7 +28,23 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-type VideoItem = { title: string; poster: string; src: string };
+type VideoItem = {
+  title: string;
+  poster: string;
+  src: string;
+  // Extended fields (optional for back-compat with existing saved data)
+  videoUrl?: string;
+  posterUrl?: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  /** Marks that the current poster was auto-generated (safe to overwrite). */
+  posterAuto?: boolean;
+};
+
+function posterOf(v: VideoItem): string {
+  return v.posterUrl || v.poster || "";
+}
 
 export const Route = createFileRoute("/video")({
   component: VideoPage,
@@ -122,22 +139,87 @@ function VideoPage() {
     await save(videos.filter((_, idx) => idx !== i));
   };
 
+  const generatePosterFor = async (item: VideoItem): Promise<Partial<VideoItem>> => {
+    const url = item.videoUrl || item.src;
+    if (!url) return {};
+    try {
+      const res = await derivePoster(url);
+      const meta: Partial<VideoItem> = {
+        duration: res.duration ?? item.duration,
+        width: res.width ?? item.width,
+        height: res.height ?? item.height,
+        posterAuto: true,
+      };
+      if (res.needsUpload && res.blob) {
+        // Convert blob → base64 and push to R2 as an image asset.
+        const buf = new Uint8Array(await res.blob.arrayBuffer());
+        let bin = "";
+        for (let i = 0; i < buf.length; i += 0x8000) {
+          bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + 0x8000)));
+        }
+        const { url: posterUrl } = await upload({
+          data: {
+            filename: `poster-${Date.now()}.webp`,
+            contentType: "image/webp",
+            dataBase64: btoa(bin),
+            kind: "image",
+          },
+        });
+        return { ...meta, posterUrl, poster: posterUrl };
+      }
+      if (res.posterUrl) {
+        return { ...meta, posterUrl: res.posterUrl, poster: res.posterUrl };
+      }
+      return { ...meta, posterUrl: DEFAULT_VIDEO_POSTER, poster: DEFAULT_VIDEO_POSTER };
+    } catch (e) {
+      console.error("Poster generation failed", e);
+      return { posterUrl: DEFAULT_VIDEO_POSTER, poster: DEFAULT_VIDEO_POSTER, posterAuto: true };
+    }
+  };
+
   const updateVideo = async (i: number, patch: Partial<VideoItem>) => {
     const next = [...videos];
-    const merged = { ...next[i], ...patch };
-    // Auto-fill poster from YouTube thumbnail if src is a YouTube URL and poster is empty
-    if (patch.src && !merged.poster) {
-      const d = detectEmbed(patch.src);
-      if (d.kind === "youtube" && d.id) {
-        merged.poster = `https://i.ytimg.com/vi/${d.id}/hqdefault.jpg`;
+    const prev = next[i];
+    const merged: VideoItem = { ...prev, ...patch };
+
+    // Keep videoUrl <-> src in sync for back-compat.
+    if (patch.src !== undefined) merged.videoUrl = patch.src;
+    if (patch.videoUrl !== undefined) merged.src = patch.videoUrl;
+
+    // Regenerate poster only when the video URL changes AND either no poster
+    // is set or the existing poster was auto-generated (never overwrite a
+    // custom poster the user pasted or picked).
+    const newSrc = merged.videoUrl || merged.src;
+    const prevSrc = prev.videoUrl || prev.src;
+    const videoChanged = newSrc && newSrc !== prevSrc;
+    const posterChangedByUser =
+      patch.poster !== undefined || patch.posterUrl !== undefined;
+
+    if (posterChangedByUser) {
+      merged.posterUrl = patch.posterUrl ?? patch.poster ?? merged.posterUrl;
+      merged.poster = patch.poster ?? patch.posterUrl ?? merged.poster;
+      merged.posterAuto = false;
+    } else if (videoChanged) {
+      const hasCustom = (prev.posterUrl || prev.poster) && prev.posterAuto === false;
+      if (!hasCustom) {
+        const gen = await generatePosterFor(merged);
+        Object.assign(merged, gen);
       }
     }
+
     next[i] = merged;
     try {
       await save(next);
     } catch (e) {
       alert("Save failed: " + (e instanceof Error ? e.message : String(e)));
     }
+  };
+
+  const regeneratePoster = async (i: number) => {
+    const gen = await generatePosterFor(videos[i]);
+    const next = [...videos];
+    next[i] = { ...next[i], ...gen };
+    await save(next);
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
@@ -186,7 +268,8 @@ function VideoPage() {
                   v={v}
                   index={i}
                   editable={editable}
-                  meta={metaMap[v.poster]}
+                  meta={metaMap[posterOf(v)]}
+                  onRegeneratePoster={() => regeneratePoster(i)}
                   uploading={uploadingFor === i}
                   onOpen={() => v.src && setActive(i)}
                   onDelete={() => removeVideo(i)}
@@ -268,6 +351,7 @@ function VideoCard({
   onPickPoster,
   onPickVideo,
   onUploadFile,
+  onRegeneratePoster,
 }: {
   id: string;
   v: VideoItem;
@@ -281,6 +365,7 @@ function VideoCard({
   onPickPoster: () => void;
   onPickVideo: () => void;
   onUploadFile: (f: File) => void;
+  onRegeneratePoster: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -294,6 +379,7 @@ function VideoCard({
   const label = meta?.label || v.title;
   const alt = meta?.alt || v.title;
   const embed = detectEmbed(v.src);
+  const poster = posterOf(v) || DEFAULT_VIDEO_POSTER;
 
   return (
     <div ref={setNodeRef} style={style} className="flex flex-col gap-2">
@@ -302,18 +388,16 @@ function VideoCard({
           onClick={onOpen}
           className="group relative aspect-video overflow-hidden bg-neutral-900 text-left w-full"
         >
-          {v.poster ? (
-            <img
-              src={cdn(v.poster, 1400)}
-              alt={alt}
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-neutral-500 text-sm">
-              No poster
-            </div>
-          )}
+          <img
+            src={cdn(poster, 1400)}
+            alt={alt}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = DEFAULT_VIDEO_POSTER;
+            }}
+          />
+
           <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="h-16 w-16 rounded-full bg-white/90 flex items-center justify-center text-black text-2xl">
@@ -357,13 +441,14 @@ function VideoCard({
       </div>
       {editable && (
         <VideoFieldsEditor
-          key={`${v.title}|${v.poster}|${v.src}`}
+          key={`${v.title}|${posterOf(v)}|${v.src}`}
           v={v}
           uploading={uploading}
           onUpdate={onUpdate}
           onPickPoster={onPickPoster}
           onPickVideo={onPickVideo}
           onUploadFile={onUploadFile}
+          onRegeneratePoster={onRegeneratePoster}
         />
       )}
     </div>
@@ -377,6 +462,7 @@ function VideoFieldsEditor({
   onPickPoster,
   onPickVideo,
   onUploadFile,
+  onRegeneratePoster,
 }: {
   v: VideoItem;
   uploading: boolean;
@@ -384,19 +470,37 @@ function VideoFieldsEditor({
   onPickPoster: () => void;
   onPickVideo: () => void;
   onUploadFile: (f: File) => void;
+  onRegeneratePoster: () => void;
 }) {
+  const currentPoster = v.posterUrl || v.poster;
   const [title, setTitle] = useState(v.title);
-  const [poster, setPoster] = useState(v.poster);
-  const [src, setSrc] = useState(v.src);
+  const [poster, setPoster] = useState(currentPoster);
+  const [src, setSrc] = useState(v.videoUrl || v.src);
+  const [regenBusy, setRegenBusy] = useState(false);
 
-  const dirty = title !== v.title || poster !== v.poster || src !== v.src;
+  const dirty = title !== v.title || poster !== currentPoster || src !== (v.videoUrl || v.src);
 
   const saveAll = () => {
     const patch: Partial<VideoItem> = {};
     if (title !== v.title) patch.title = title;
-    if (poster !== v.poster) patch.poster = poster;
-    if (src !== v.src) patch.src = src;
+    if (poster !== currentPoster) {
+      patch.poster = poster;
+      patch.posterUrl = poster;
+    }
+    if (src !== (v.videoUrl || v.src)) {
+      patch.src = src;
+      patch.videoUrl = src;
+    }
     if (Object.keys(patch).length) onUpdate(patch);
+  };
+
+  const doRegen = async () => {
+    setRegenBusy(true);
+    try {
+      await onRegeneratePoster();
+    } finally {
+      setRegenBusy(false);
+    }
   };
 
   return (
@@ -422,6 +526,15 @@ function VideoFieldsEditor({
           title="Pick from library"
         >
           <Images className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={doRegen}
+          disabled={regenBusy || !(v.videoUrl || v.src)}
+          className="p-1.5 border rounded hover:bg-neutral-100 disabled:opacity-40"
+          title="Regenerate poster from video"
+        >
+          {regenBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
         </button>
       </div>
       <div className="flex gap-1.5 items-center">
@@ -469,7 +582,7 @@ function VideoFieldsEditor({
       >
         {dirty ? "Save changes" : "Saved"}
       </button>
-      <VideoMetaEditor url={v.poster} initialLabel={v.title} initialAlt={v.title} />
+      <VideoMetaEditor url={v.posterUrl || v.poster} initialLabel={v.title} initialAlt={v.title} />
     </div>
   );
 }
