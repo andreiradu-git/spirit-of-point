@@ -29,14 +29,8 @@ export const renameR2Object = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    // Object keys use UUIDs; renaming only updates the stored "displayed"
-    // original filename in customMetadata. The public URL never changes.
-    const { getR2Client, putR2Object, b64ToBytes } = await import("@/lib/r2.server");
-    const bucket = await (await import("@/lib/r2.server")).getR2Client();
-    void bucket;
-    // Re-put the existing object body with refreshed customMetadata.
-    const mod = await import("@/lib/r2.server");
-    // Fetch existing object bytes via the public URL and re-put with new name.
+    // Object keys use UUIDs; "rename" only updates the displayed original
+    // filename stored in R2 customMetadata. The key and public URL never change.
     const { publicUrl } = await getR2Client();
     const res = await fetch(`${publicUrl}/${data.fromKey}`, { cache: "no-store" });
     if (!res.ok) throw new Error(`Cannot read object ${data.fromKey}`);
@@ -44,7 +38,6 @@ export const renameR2Object = createServerFn({ method: "POST" })
     const ct = res.headers.get("content-type") || undefined;
     const clean = sanitizeFileName(data.toName) || "file";
     await putR2Object(data.fromKey, buf, ct, clean);
-    void b64ToBytes; void mod;
     return { ok: true, key: data.fromKey, url: `${publicUrl}/${data.fromKey}`, displayName: clean };
   });
 
