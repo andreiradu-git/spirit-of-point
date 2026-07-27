@@ -15,13 +15,21 @@ type R2ClientBundle = {
   publicUrl: string;
 };
 
+declare global {
+  var __POINTSTUDIO_WORKER_ENV__: Record<string, string> | undefined;
+}
+
+function readRuntimeEnv(name: string): string | undefined {
+  return process.env[name] || globalThis.__POINTSTUDIO_WORKER_ENV__?.[name];
+}
+
 export function getR2Client(): R2ClientBundle {
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const accountId = process.env.R2_ACCOUNT_ID;
-  let endpoint = process.env.R2_ENDPOINT;
-  const bucket = process.env.R2_BUCKET_NAME || process.env.R2_BUCKET;
-  const publicUrl = process.env.R2_PUBLIC_URL || "https://images.pointstudio.ro";
+  const accessKeyId = readRuntimeEnv("R2_ACCESS_KEY_ID");
+  const secretAccessKey = readRuntimeEnv("R2_SECRET_ACCESS_KEY");
+  const accountId = readRuntimeEnv("R2_ACCOUNT_ID");
+  let endpoint = readRuntimeEnv("R2_ENDPOINT");
+  const bucket = readRuntimeEnv("R2_BUCKET_NAME") || readRuntimeEnv("R2_BUCKET");
+  const publicUrl = readRuntimeEnv("R2_PUBLIC_URL") || "https://images.pointstudio.ro";
 
   if (!endpoint && accountId) endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
 
