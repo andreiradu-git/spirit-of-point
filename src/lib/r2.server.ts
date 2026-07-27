@@ -17,7 +17,12 @@ type R2ClientBundle = {
   publicUrl: string;
 };
 
-type RuntimeSource = "env" | "request.runtime.cloudflare.env" | "globalThis.__POINTSTUDIO_WORKER_ENV__" | "globalThis.__env__";
+type RuntimeSource =
+  | "cloudflare:workers.env"
+  | "env"
+  | "request.runtime.cloudflare.env"
+  | "globalThis.__POINTSTUDIO_WORKER_ENV__"
+  | "globalThis.__env__";
 
 type RuntimeValue = {
   value?: string;
@@ -34,15 +39,29 @@ export type R2RuntimeDebug = {
   hasBucket: boolean;
 };
 
+export type R2RuntimeDiagnostics = R2RuntimeDebug & {
+  runtimeName: string;
+  contextKeys: string[];
+  contextAfterGlobalMiddlewaresKeys: string[];
+  requestRuntimeKeys: string[];
+  requestRuntimeCloudflareKeys: string[];
+  workerEnvKeys: string[];
+  globalEnvKeys: string[];
+  cloudflareWorkersEnvKeys: string[];
+};
+
 declare global {
   var __POINTSTUDIO_WORKER_ENV__: Record<string, unknown> | undefined;
+  var __POINTSTUDIO_WORKER_RUNTIME__: string | undefined;
   var __env__: Record<string, unknown> | undefined;
 }
 
 type CloudflareRuntimeRequest = Request & {
   runtime?: {
+    name?: string;
     cloudflare?: {
       env?: Record<string, unknown>;
+      context?: unknown;
     };
   };
 };
@@ -50,9 +69,14 @@ type CloudflareRuntimeRequest = Request & {
 type StartContextWithCloudflareEnv = {
   contextAfterGlobalMiddlewares?: {
     cloudflareEnv?: Record<string, unknown>;
+    cloudflareCtx?: unknown;
   };
   request?: CloudflareRuntimeRequest;
 };
+
+function recordKeys(value: unknown): string[] {
+  return value && typeof value === "object" ? Object.keys(value as Record<string, unknown>).sort() : [];
+}
 
 function normalizeEnvValue(value: unknown): string | undefined {
   if (typeof value === "string") {
@@ -61,6 +85,27 @@ function normalizeEnvValue(value: unknown): string | undefined {
   }
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   return undefined;
+}
+
+async function readCloudflareWorkersRuntimeValue(name: string): Promise<RuntimeValue> {
+  try {
+    const moduleName = "cloudflare:workers";
+    const cloudflareWorkers = (await import(/* @vite-ignore */ moduleName)) as { env?: Record<string, unknown> };
+    const value = normalizeEnvValue(cloudflareWorkers.env?.[name]);
+    return value ? { value, source: "cloudflare:workers.env", name } : {};
+  } catch {
+    return {};
+  }
+}
+
+async function readCloudflareWorkersEnvKeys(): Promise<string[]> {
+  try {
+    const moduleName = "cloudflare:workers";
+    const cloudflareWorkers = (await import(/* @vite-ignore */ moduleName)) as { env?: Record<string, unknown> };
+    return recordKeys(cloudflareWorkers.env);
+  } catch {
+    return [];
+  }
 }
 
 function readContextRuntimeValue(name: string): RuntimeValue {
@@ -86,7 +131,10 @@ function readRequestRuntimeValue(name: string): RuntimeValue {
   }
 }
 
-function readRuntimeEnv(name: string): RuntimeValue {
+async function readRuntimeEnv(name: string): Promise<RuntimeValue> {
+  const cloudflareWorkersValue = await readCloudflareWorkersRuntimeValue(name);
+  if (cloudflareWorkersValue.value) return cloudflareWorkersValue;
+
   const contextValue = readContextRuntimeValue(name);
   if (contextValue.value) return contextValue;
 
@@ -102,15 +150,15 @@ function readRuntimeEnv(name: string): RuntimeValue {
   return {};
 }
 
-function readFirstRuntimeEnv(names: string[]): RuntimeValue {
+async function readFirstRuntimeEnv(names: string[]): Promise<RuntimeValue> {
   for (const name of names) {
-    const result = readRuntimeEnv(name);
+    const result = await readRuntimeEnv(name);
     if (result.value) return result;
   }
   return {};
 }
 
-function runtimeValue(names: string[]): RuntimeValue {
+function runtimeValue(names: string[]): Promise<RuntimeValue> {
   return readFirstRuntimeEnv(names);
 }
 
@@ -118,13 +166,17 @@ function firstRuntimeSource(...values: RuntimeValue[]): RuntimeSource | "none" {
   return values.find((value) => value.source)?.source ?? "none";
 }
 
-export function getR2Client(): R2ClientBundle {
-  const accessKeyId = runtimeValue(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
-  const secretAccessKey = runtimeValue(["R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY"]);
-  const accountId = runtimeValue(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
-  let endpoint = runtimeValue(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
-  const bucket = runtimeValue(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
-  const publicUrl = runtimeValue(["R2_PUBLIC_URL", "CLOUDFLARE_R2_PUBLIC_URL"]);
+export async function getR2Client(): Promise<R2ClientBundle> {
+  const accessKeyId = await runtimeValue(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
+  const secretAccessKey = await runtimeValue([
+    "R2_SECRET_ACCESS_KEY",
+    "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+    "AWS_SECRET_ACCESS_KEY",
+  ]);
+  const accountId = await runtimeValue(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
+  let endpoint = await runtimeValue(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
+  const bucket = await runtimeValue(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
+  const publicUrl = await runtimeValue(["R2_PUBLIC_URL", "CLOUDFLARE_R2_PUBLIC_URL"]);
 
   if (!endpoint.value && accountId.value) {
     endpoint = {
@@ -135,7 +187,7 @@ export function getR2Client(): R2ClientBundle {
   }
 
   const resolvedPublicUrl = publicUrl.value || "https://images.pointstudio.ro";
-  const debug = getR2RuntimeDebug();
+  const debug = await getR2RuntimeDebug();
   console.info("R2 runtime", debug);
 
   if (!accessKeyId.value || !secretAccessKey.value || !endpoint.value || !bucket.value || !resolvedPublicUrl) {
@@ -156,12 +208,16 @@ export function getR2Client(): R2ClientBundle {
   return { client, endpoint: cleanEndpoint, bucket: bucket.value, publicUrl: resolvedPublicUrl.replace(/\/+$/, "") };
 }
 
-export function getR2RuntimeDebug(): R2RuntimeDebug {
-  const accessKeyId = runtimeValue(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
-  const secretAccessKey = runtimeValue(["R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY"]);
-  const accountId = runtimeValue(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
-  const directEndpoint = runtimeValue(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
-  const bucket = runtimeValue(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
+export async function getR2RuntimeDebug(): Promise<R2RuntimeDebug> {
+  const accessKeyId = await runtimeValue(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
+  const secretAccessKey = await runtimeValue([
+    "R2_SECRET_ACCESS_KEY",
+    "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+    "AWS_SECRET_ACCESS_KEY",
+  ]);
+  const accountId = await runtimeValue(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
+  const directEndpoint = await runtimeValue(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
+  const bucket = await runtimeValue(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
 
   const endpointResolvedFromAccountId = !directEndpoint.value && Boolean(accountId.value);
 
@@ -172,6 +228,30 @@ export function getR2RuntimeDebug(): R2RuntimeDebug {
     hasAccount: Boolean(accountId.value),
     hasEndpoint: Boolean(directEndpoint.value || endpointResolvedFromAccountId),
     hasBucket: Boolean(bucket.value),
+  };
+}
+
+export async function getR2RuntimeDiagnostics(): Promise<R2RuntimeDiagnostics> {
+  const debug = await getR2RuntimeDebug();
+  const startContext = getStartContext({ throwIfNotFound: false }) as StartContextWithCloudflareEnv | undefined;
+  let request: CloudflareRuntimeRequest | undefined;
+
+  try {
+    request = getRequest() as CloudflareRuntimeRequest;
+  } catch {
+    request = startContext?.request;
+  }
+
+  return {
+    ...debug,
+    runtimeName: request?.runtime?.name ?? globalThis.__POINTSTUDIO_WORKER_RUNTIME__ ?? "unknown",
+    contextKeys: recordKeys(startContext),
+    contextAfterGlobalMiddlewaresKeys: recordKeys(startContext?.contextAfterGlobalMiddlewares),
+    requestRuntimeKeys: recordKeys(request?.runtime),
+    requestRuntimeCloudflareKeys: recordKeys(request?.runtime?.cloudflare),
+    workerEnvKeys: recordKeys(globalThis.__POINTSTUDIO_WORKER_ENV__),
+    globalEnvKeys: recordKeys(globalThis.__env__),
+    cloudflareWorkersEnvKeys: await readCloudflareWorkersEnvKeys(),
   };
 }
 
@@ -200,7 +280,7 @@ function decodeXml(value: string): string {
 }
 
 export async function listR2ObjectsDirect(): Promise<R2Object[]> {
-  const { client, endpoint, bucket, publicUrl } = getR2Client();
+  const { client, endpoint, bucket, publicUrl } = await getR2Client();
   const results: R2Object[] = [];
   let continuationToken: string | undefined;
 
@@ -235,7 +315,7 @@ export async function listR2ObjectsDirect(): Promise<R2Object[]> {
 }
 
 export async function putR2Object(key: string, body: Uint8Array, contentType?: string): Promise<string> {
-  const { client, endpoint, bucket, publicUrl } = getR2Client();
+  const { client, endpoint, bucket, publicUrl } = await getR2Client();
   const res = await client.fetch(`${endpoint}/${bucket}/${encodeURI(key)}`, {
     method: "PUT",
     body: body as BodyInit,
@@ -249,7 +329,7 @@ export async function putR2Object(key: string, body: Uint8Array, contentType?: s
 }
 
 export async function deleteR2ObjectDirect(key: string): Promise<void> {
-  const { client, endpoint, bucket } = getR2Client();
+  const { client, endpoint, bucket } = await getR2Client();
   const res = await client.fetch(`${endpoint}/${bucket}/${encodeURI(key)}`, { method: "DELETE" });
   if (!res.ok && res.status !== 404) {
     throw new Error(`R2 delete failed [${res.status}]: ${await res.text()}`);
@@ -257,7 +337,7 @@ export async function deleteR2ObjectDirect(key: string): Promise<void> {
 }
 
 export async function copyR2ObjectDirect(fromKey: string, toKey: string): Promise<string> {
-  const { client, endpoint, bucket, publicUrl } = getR2Client();
+  const { client, endpoint, bucket, publicUrl } = await getR2Client();
   const res = await client.fetch(`${endpoint}/${bucket}/${encodeURI(toKey)}`, {
     method: "PUT",
     headers: {
