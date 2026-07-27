@@ -97,7 +97,15 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const directWorkerEnv = asRecord(env);
+      console.log("worker.fetch host", new URL(request.url).host);
+      console.log("worker.fetch env keys", Object.keys(directWorkerEnv ?? {}));
+      console.log("worker.fetch has MY_ASSETS", Boolean(directWorkerEnv?.MY_ASSETS));
+
       const cloudflareEnv = bindWorkerEnv(request, env);
+      console.log("server.context cloudflareEnv keys", Object.keys(cloudflareEnv ?? {}));
+      console.log("server.context has MY_ASSETS", Boolean(cloudflareEnv?.MY_ASSETS));
+
       const runtimeRequest = request as CloudflareRuntimeRequest;
       const cloudflareCtx = ctx ?? runtimeRequest.runtime?.cloudflare?.context;
       const handler = await getServerEntry();

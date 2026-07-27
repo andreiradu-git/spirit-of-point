@@ -6,10 +6,29 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+const nitroWithR2Binding = {
+  cloudflare: {
+    wrangler: {
+      r2_buckets: [
+        {
+          binding: "MY_ASSETS",
+          bucket_name: "pointstudio-assets",
+        },
+      ],
+    },
+  },
+} as unknown as {
+  cloudflare: {
+    nodeCompat?: boolean;
+    deployConfig?: boolean;
+  };
+};
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: nitroWithR2Binding,
 });
