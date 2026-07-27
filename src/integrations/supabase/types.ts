@@ -17,19 +17,28 @@ export type Database = {
       asset_meta: {
         Row: {
           alt: string | null
+          caption: string | null
+          description: string | null
           label: string | null
+          tags: string[]
           updated_at: string
           url: string
         }
         Insert: {
           alt?: string | null
+          caption?: string | null
+          description?: string | null
           label?: string | null
+          tags?: string[]
           updated_at?: string
           url: string
         }
         Update: {
           alt?: string | null
+          caption?: string | null
+          description?: string | null
           label?: string | null
+          tags?: string[]
           updated_at?: string
           url?: string
         }

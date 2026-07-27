@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
   b64ToBytes,
+  copyR2ObjectDirect,
   deleteR2ObjectDirect,
   getR2Client,
   listR2ObjectsDirect,
@@ -10,6 +11,30 @@ import {
 } from "@/lib/r2.server";
 
 export type { R2Object } from "@/lib/r2.server";
+
+export const renameR2Object = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        fromKey: z.string().min(1).max(600),
+        toName: z.string().min(1).max(240),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { publicUrl } = getR2Client();
+    const folder = data.fromKey.includes("/")
+      ? data.fromKey.slice(0, data.fromKey.lastIndexOf("/"))
+      : "";
+    const ext = (data.toName.split(".").pop() || data.fromKey.split(".").pop() || "bin").toLowerCase();
+    const base = sanitizeFileName(data.toName.replace(/\.[^.]+$/, "")) || "file";
+    const toKey = `${folder ? folder + "/" : ""}${base}.${ext}`;
+    if (toKey === data.fromKey) return { ok: true, key: toKey, url: `${publicUrl}/${toKey}` };
+    const url = await copyR2ObjectDirect(data.fromKey, toKey);
+    await deleteR2ObjectDirect(data.fromKey);
+    return { ok: true, key: toKey, url };
+  });
+
 
 export const uploadToR2 = createServerFn({ method: "POST" })
   .inputValidator((input) =>

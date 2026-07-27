@@ -138,3 +138,16 @@ export async function deleteR2ObjectDirect(key: string): Promise<void> {
     throw new Error(`R2 delete failed [${res.status}]: ${await res.text()}`);
   }
 }
+
+export async function copyR2ObjectDirect(fromKey: string, toKey: string): Promise<string> {
+  const { client, endpoint, bucket, publicUrl } = getR2Client();
+  const res = await client.fetch(`${endpoint}/${bucket}/${encodeURI(toKey)}`, {
+    method: "PUT",
+    headers: {
+      "x-amz-copy-source": `/${bucket}/${encodeURI(fromKey)}`,
+      "cache-control": "public, max-age=31536000, immutable",
+    },
+  });
+  if (!res.ok) throw new Error(`R2 copy failed [${res.status}]: ${await res.text()}`);
+  return `${publicUrl}/${toKey}`;
+}
