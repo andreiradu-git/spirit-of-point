@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VideoRouteImport } from './routes/video'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as PatternsRouteImport } from './routes/patterns'
+import { Route as FotografieCulinaraBucurestiRouteImport } from './routes/fotografie-culinara-bucuresti'
 import { Route as FoodRouteImport } from './routes/food'
 import { Route as EditorialRouteImport } from './routes/editorial'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -33,6 +35,11 @@ const VideoRoute = VideoRouteImport.update({
   path: '/video',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PeopleRoute = PeopleRouteImport.update({
   id: '/people',
   path: '/people',
@@ -43,6 +50,12 @@ const PatternsRoute = PatternsRouteImport.update({
   path: '/patterns',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FotografieCulinaraBucurestiRoute =
+  FotografieCulinaraBucurestiRouteImport.update({
+    id: '/fotografie-culinara-bucuresti',
+    path: '/fotografie-culinara-bucuresti',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const FoodRoute = FoodRouteImport.update({
   id: '/food',
   path: '/food',
@@ -125,8 +138,10 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/fotografie-culinara-bucuresti': typeof FotografieCulinaraBucurestiRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
@@ -145,8 +160,10 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/fotografie-culinara-bucuresti': typeof FotografieCulinaraBucurestiRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
@@ -166,8 +183,10 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/fotografie-culinara-bucuresti': typeof FotografieCulinaraBucurestiRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
@@ -188,8 +207,10 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/fotografie-culinara-bucuresti'
     | '/patterns'
     | '/people'
+    | '/sitemap.xml'
     | '/video'
     | '/admin/analytics'
     | '/admin/assets'
@@ -208,8 +229,10 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/fotografie-culinara-bucuresti'
     | '/patterns'
     | '/people'
+    | '/sitemap.xml'
     | '/video'
     | '/admin/analytics'
     | '/admin/assets'
@@ -228,8 +251,10 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/fotografie-culinara-bucuresti'
     | '/patterns'
     | '/people'
+    | '/sitemap.xml'
     | '/video'
     | '/admin/analytics'
     | '/admin/assets'
@@ -249,8 +274,10 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   EditorialRoute: typeof EditorialRoute
   FoodRoute: typeof FoodRoute
+  FotografieCulinaraBucurestiRoute: typeof FotografieCulinaraBucurestiRoute
   PatternsRoute: typeof PatternsRoute
   PeopleRoute: typeof PeopleRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VideoRoute: typeof VideoRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAssetsRoute: typeof AdminAssetsRoute
@@ -273,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VideoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/people': {
       id: '/people'
       path: '/people'
@@ -285,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/patterns'
       fullPath: '/patterns'
       preLoaderRoute: typeof PatternsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fotografie-culinara-bucuresti': {
+      id: '/fotografie-culinara-bucuresti'
+      path: '/fotografie-culinara-bucuresti'
+      fullPath: '/fotografie-culinara-bucuresti'
+      preLoaderRoute: typeof FotografieCulinaraBucurestiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/food': {
@@ -401,8 +442,10 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   EditorialRoute: EditorialRoute,
   FoodRoute: FoodRoute,
+  FotografieCulinaraBucurestiRoute: FotografieCulinaraBucurestiRoute,
   PatternsRoute: PatternsRoute,
   PeopleRoute: PeopleRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   VideoRoute: VideoRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAssetsRoute: AdminAssetsRoute,

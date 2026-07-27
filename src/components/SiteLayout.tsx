@@ -116,6 +116,7 @@ export function SiteLayout({
             <Editable as="div" id="footer.email" className="block">andrei@pointstudio.ro</Editable>
             <Editable as="div" id="footer.phone" className="block">+40 744 341 286</Editable>
             <Editable as="div" id="footer.address" className="block">Piața Presei Libere 1, Bucharest</Editable>
+            <FotografieCulinaraFooterLink />
           </div>
           <div className="flex flex-col gap-3 md:items-end">
             <SocialIcons />
