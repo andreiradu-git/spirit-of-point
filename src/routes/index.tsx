@@ -154,7 +154,7 @@ function Index() {
                   <Editable as="div" id="hero.stat1.value" className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">
                     10+
                   </Editable>
-                  <Editable as="div" id="hero.stat1.label" className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] whitespace-pre-line">
+                  <Editable as="div" id="hero.stat1.label" multiline className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] whitespace-pre-line">
                     {"Years of\nexpertise"}
                   </Editable>
                 </div>
