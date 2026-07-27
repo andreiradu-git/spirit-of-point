@@ -9,12 +9,16 @@ type ServerEntry = {
 
 declare global {
   var __POINTSTUDIO_WORKER_ENV__: Record<string, unknown> | undefined;
+  var __POINTSTUDIO_WORKER_RUNTIME__: string | undefined;
+  var __env__: Record<string, unknown> | undefined;
 }
 
 type CloudflareRuntimeRequest = Request & {
   runtime?: {
+    name?: string;
     cloudflare?: {
       env?: Record<string, unknown>;
+      context?: unknown;
     };
   };
 };
@@ -30,19 +34,27 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : undefined;
+}
+
 function bindWorkerEnv(request: Request, env: unknown): Record<string, unknown> | undefined {
-  if (!env || typeof env !== "object") return undefined;
-  const rawEnv = env as Record<string, unknown>;
+  const runtimeRequest = request as CloudflareRuntimeRequest;
+  const rawEnv =
+    asRecord(env) ?? asRecord(runtimeRequest.runtime?.cloudflare?.env) ?? asRecord(globalThis.__env__);
+
+  if (!rawEnv) return undefined;
 
   globalThis.__POINTSTUDIO_WORKER_ENV__ = {
     ...(globalThis.__POINTSTUDIO_WORKER_ENV__ ?? {}),
     ...rawEnv,
   };
+  globalThis.__POINTSTUDIO_WORKER_RUNTIME__ = runtimeRequest.runtime?.name ?? "cloudflare";
 
   try {
-    const runtimeRequest = request as CloudflareRuntimeRequest;
     runtimeRequest.runtime = {
       ...(runtimeRequest.runtime ?? {}),
+      name: runtimeRequest.runtime?.name ?? "cloudflare",
       cloudflare: {
         ...(runtimeRequest.runtime?.cloudflare ?? {}),
         env: rawEnv,
@@ -86,11 +98,13 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const cloudflareEnv = bindWorkerEnv(request, env);
+      const runtimeRequest = request as CloudflareRuntimeRequest;
+      const cloudflareCtx = ctx ?? runtimeRequest.runtime?.cloudflare?.context;
       const handler = await getServerEntry();
       const response = await handler.fetch(request, {
         context: {
           ...(cloudflareEnv ? { cloudflareEnv } : {}),
-          ...(ctx ? { cloudflareCtx: ctx } : {}),
+          ...(cloudflareCtx ? { cloudflareCtx } : {}),
         },
       });
       return await normalizeCatastrophicSsrResponse(response);
