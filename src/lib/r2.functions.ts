@@ -6,19 +6,23 @@ import { AwsClient } from "aws4fetch";
 function getClient() {
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const endpoint = process.env.R2_ENDPOINT;
+  let endpoint = process.env.R2_ENDPOINT;
   const bucket = process.env.R2_BUCKET;
   const publicUrl = process.env.R2_PUBLIC_URL;
   if (!accessKeyId || !secretAccessKey || !endpoint || !bucket || !publicUrl) {
     throw new Error("R2 is not configured (missing env vars)");
   }
+  // Strip trailing slash + accidental bucket suffix in endpoint (e.g. "https://<acct>.r2.cloudflarestorage.com/<bucket>")
+  endpoint = endpoint.replace(/\/+$/, "");
+  const suffix = `/${bucket}`;
+  if (endpoint.endsWith(suffix)) endpoint = endpoint.slice(0, -suffix.length);
   const client = new AwsClient({
     accessKeyId,
     secretAccessKey,
     service: "s3",
     region: "auto",
   });
-  return { client, endpoint: endpoint.replace(/\/+$/, ""), bucket, publicUrl: publicUrl.replace(/\/+$/, "") };
+  return { client, endpoint, bucket, publicUrl: publicUrl.replace(/\/+$/, "") };
 }
 
 async function assertAdmin(context: { supabase: import("@supabase/supabase-js").SupabaseClient; userId: string }) {
