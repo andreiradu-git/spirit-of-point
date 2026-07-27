@@ -29,23 +29,23 @@ export const renameR2Object = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    // With uuid-based keys, "rename" only updates the stored original-name
-    // metadata by re-copying the object in place. The public URL is unchanged.
-    const { publicUrl } = await getR2Client();
-    // Copy in-place to refresh customMetadata with the new original filename.
-    // R2 has no atomic rename, so we do copy-with-metadata then keep the same key.
-    // (We still expose renameR2Object mainly to update the displayed filename.)
-    const bucket = await import("@/lib/r2.server");
-    // Load the object, then write it back with new customMetadata.
-    const src = await (await import("@/lib/r2.server")).copyR2ObjectDirect(data.fromKey, data.fromKey);
-    void src;
+    // Object keys use UUIDs; renaming only updates the stored "displayed"
+    // original filename in customMetadata. The public URL never changes.
+    const { getR2Client, putR2Object, b64ToBytes } = await import("@/lib/r2.server");
+    const bucket = await (await import("@/lib/r2.server")).getR2Client();
     void bucket;
-    // No-op fallback for old callers that expected a new key — return existing.
-    const cleanName = sanitizeFileName(data.toName) || "file";
-    // Write a metadata-only refresh by re-putting with same body:
-    const source = await (await import("@/lib/r2.server"));
-    void source;
-    return { ok: true, key: data.fromKey, url: `${publicUrl}/${data.fromKey}`, displayName: cleanName };
+    // Re-put the existing object body with refreshed customMetadata.
+    const mod = await import("@/lib/r2.server");
+    // Fetch existing object bytes via the public URL and re-put with new name.
+    const { publicUrl } = await getR2Client();
+    const res = await fetch(`${publicUrl}/${data.fromKey}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Cannot read object ${data.fromKey}`);
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const ct = res.headers.get("content-type") || undefined;
+    const clean = sanitizeFileName(data.toName) || "file";
+    await putR2Object(data.fromKey, buf, ct, clean);
+    void b64ToBytes; void mod;
+    return { ok: true, key: data.fromKey, url: `${publicUrl}/${data.fromKey}`, displayName: clean };
   });
 
 const uploadSchema = z.object({
