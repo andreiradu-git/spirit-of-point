@@ -13,9 +13,6 @@
 
 // ---------- env ----------
 
-import { getRequest } from "@tanstack/react-start/server";
-import { getStartContext } from "@tanstack/start-storage-context";
-
 declare global {
   // eslint-disable-next-line no-var
   var __POINTSTUDIO_WORKER_ENV__: Record<string, unknown> | undefined;
@@ -23,54 +20,84 @@ declare global {
   var __env__: Record<string, unknown> | undefined;
 }
 
-type CloudflareRuntimeRequest = Request & {
-  runtime?: { cloudflare?: { env?: Record<string, unknown> } };
+type ImportMetaWithEnv = ImportMeta & {
+  env?: Record<string, string | undefined>;
 };
 
-async function readEnv(name: string): Promise<string | undefined> {
-  // 1) Cloudflare Workers native env
-  try {
-    const moduleName = "cloudflare:workers";
-    const mod = (await import(/* @vite-ignore */ moduleName)) as {
-      env?: Record<string, unknown>;
-    };
-    const v = mod.env?.[name];
-    if (typeof v === "string" && v) return v;
-  } catch {}
-  // 2) TanStack Start request context populated by src/server.ts
-  try {
-    const ctx = getStartContext({ throwIfNotFound: false }) as
-      | { contextAfterGlobalMiddlewares?: { cloudflareEnv?: Record<string, unknown> }; request?: CloudflareRuntimeRequest }
-      | undefined;
-    const fromCtx = ctx?.contextAfterGlobalMiddlewares?.cloudflareEnv?.[name];
-    if (typeof fromCtx === "string" && fromCtx) return fromCtx;
-    const fromReq = ctx?.request?.runtime?.cloudflare?.env?.[name];
-    if (typeof fromReq === "string" && fromReq) return fromReq;
-  } catch {}
-  // 3) Request runtime
-  try {
-    const req = getRequest() as CloudflareRuntimeRequest;
-    const v = req?.runtime?.cloudflare?.env?.[name];
-    if (typeof v === "string" && v) return v;
-  } catch {}
-  // 4) Globals
-  const fromGlobal = globalThis.__POINTSTUDIO_WORKER_ENV__?.[name];
-  if (typeof fromGlobal === "string" && fromGlobal) return fromGlobal;
-  const fromNitro = globalThis.__env__?.[name];
-  if (typeof fromNitro === "string" && fromNitro) return fromNitro;
-  // 5) Node process.env (dev / SSR)
-  const fromProc = typeof process !== "undefined" ? process.env?.[name] : undefined;
-  return fromProc || undefined;
+type AIEnvDebug = {
+  runtime: string;
+  hasProcessEnv: boolean;
+  hasImportMetaEnv: boolean;
+  hasProcessOpenAIKey: boolean;
+  hasImportMetaOpenAIKey: boolean;
+  hasWorkerGlobalOpenAIKey: boolean;
+  hasNitroGlobalOpenAIKey: boolean;
+  hasOpenAIKey: boolean;
+  hasOpenAIModel: boolean;
+};
+
+function asNonEmptyString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function getImportMetaEnv(): Record<string, string | undefined> | undefined {
+  return (import.meta as ImportMetaWithEnv).env;
+}
+
+function detectRuntime(): string {
+  if (globalThis.__POINTSTUDIO_WORKER_RUNTIME__) return globalThis.__POINTSTUDIO_WORKER_RUNTIME__;
+  if (globalThis.__POINTSTUDIO_WORKER_ENV__ || globalThis.__env__) return "cloudflare";
+  if (typeof process !== "undefined" && process.versions?.node) return "node";
+  return "unknown";
+}
+
+function resolveAIEnv(): { apiKey?: string; model: string; debug: AIEnvDebug } {
+  const processEnv = typeof process !== "undefined" ? process.env : undefined;
+  const importMetaEnv = getImportMetaEnv();
+  const workerEnv = globalThis.__POINTSTUDIO_WORKER_ENV__;
+  const nitroEnv = globalThis.__env__;
+
+  const apiKey =
+    asNonEmptyString(processEnv?.OPENAI_API_KEY) ??
+    asNonEmptyString(workerEnv?.OPENAI_API_KEY) ??
+    asNonEmptyString(nitroEnv?.OPENAI_API_KEY) ??
+    asNonEmptyString(importMetaEnv?.OPENAI_API_KEY);
+  const model =
+    asNonEmptyString(processEnv?.OPENAI_MODEL) ??
+    asNonEmptyString(workerEnv?.OPENAI_MODEL) ??
+    asNonEmptyString(nitroEnv?.OPENAI_MODEL) ??
+    asNonEmptyString(importMetaEnv?.OPENAI_MODEL) ??
+    "gpt-4o-mini";
+
+  return {
+    apiKey,
+    model,
+    debug: {
+      runtime: detectRuntime(),
+      hasProcessEnv: Boolean(processEnv),
+      hasImportMetaEnv: Boolean(importMetaEnv),
+      hasProcessOpenAIKey: Boolean(processEnv?.OPENAI_API_KEY),
+      hasImportMetaOpenAIKey: Boolean(importMetaEnv?.OPENAI_API_KEY),
+      hasWorkerGlobalOpenAIKey: Boolean(workerEnv?.OPENAI_API_KEY),
+      hasNitroGlobalOpenAIKey: Boolean(nitroEnv?.OPENAI_API_KEY),
+      hasOpenAIKey: Boolean(apiKey),
+      hasOpenAIModel: Boolean(model),
+    },
+  };
+}
+
+export function getAIEnvDebug(): AIEnvDebug {
+  return resolveAIEnv().debug;
 }
 
 export async function getAIConfig(): Promise<{ apiKey: string; model: string }> {
-  const apiKey = await readEnv("OPENAI_API_KEY");
+  const { apiKey, model, debug } = resolveAIEnv();
+  console.log("AI env debug", debug);
   if (!apiKey) {
     throw new Error(
       "Missing OPENAI_API_KEY. Add it in Project Settings → Secrets.",
     );
   }
-  const model = (await readEnv("OPENAI_MODEL")) || "gpt-4o-mini";
   return { apiKey, model };
 }
 

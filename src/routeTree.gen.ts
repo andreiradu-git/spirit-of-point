@@ -30,6 +30,7 @@ import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
 import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
+import { Route as ApiDebugAiRouteImport } from './routes/api/debug/ai'
 
 const VideoRoute = VideoRouteImport.update({
   id: '/video',
@@ -137,6 +138,11 @@ const ApiDebugR2Route = ApiDebugR2RouteImport.update({
   path: '/api/debug/r2',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDebugAiRoute = ApiDebugAiRouteImport.update({
+  id: '/api/debug/ai',
+  path: '/api/debug/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/r2': typeof ApiDebugR2Route
 }
 export interface FileRoutesByTo {
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/r2': typeof ApiDebugR2Route
 }
 export interface FileRoutesById {
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/r2': typeof ApiDebugR2Route
 }
 export interface FileRouteTypes {
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/admin/storage-cleanup'
     | '/admin/theme'
     | '/work/$slug'
+    | '/api/debug/ai'
     | '/api/debug/r2'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/admin/storage-cleanup'
     | '/admin/theme'
     | '/work/$slug'
+    | '/api/debug/ai'
     | '/api/debug/r2'
   id:
     | '__root__'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/admin/storage-cleanup'
     | '/admin/theme'
     | '/work/$slug'
+    | '/api/debug/ai'
     | '/api/debug/r2'
   fileRoutesById: FileRoutesById
 }
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   AdminStorageCleanupRoute: typeof AdminStorageCleanupRoute
   AdminThemeRoute: typeof AdminThemeRoute
   WorkSlugRoute: typeof WorkSlugRoute
+  ApiDebugAiRoute: typeof ApiDebugAiRoute
   ApiDebugR2Route: typeof ApiDebugR2Route
 }
 
@@ -453,6 +466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDebugR2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/debug/ai': {
+      id: '/api/debug/ai'
+      path: '/api/debug/ai'
+      fullPath: '/api/debug/ai'
+      preLoaderRoute: typeof ApiDebugAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -477,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminStorageCleanupRoute: AdminStorageCleanupRoute,
   AdminThemeRoute: AdminThemeRoute,
   WorkSlugRoute: WorkSlugRoute,
+  ApiDebugAiRoute: ApiDebugAiRoute,
   ApiDebugR2Route: ApiDebugR2Route,
 }
 export const routeTree = rootRouteImport
