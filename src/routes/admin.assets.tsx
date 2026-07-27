@@ -798,9 +798,8 @@ function DropZoneUploader() {
         const isImage = (file.type || "").startsWith("image/");
         try {
           if (isImage) {
-            // Upload the untouched original first (kept as backup), then run
-            // the shared optimize pipeline and publish the single WebP display
-            // file the site actually serves.
+            // 1. Upload the untouched original — server places it under
+            //    `originals/<uuid>.<ext>` and returns that key.
             patch(id, { progress: 10, status: "uploading original" });
             const origB64 = await optBlobToBase64(file);
             const uploaded = await doUploadR2({
@@ -808,24 +807,24 @@ function DropZoneUploader() {
                 filename: file.name,
                 contentType: file.type || "application/octet-stream",
                 dataBase64: origB64,
-                folder,
+                kind: "image",
               },
             });
+
+            // 2. Optimize in the browser to a single WebP display file and
+            //    upload it under the paired `optimized/<uuid>.webp` key.
             patch(id, { progress: 45, status: "optimizing" });
             const optimized = await optimizeImageBlob(file);
-            const mainKey = withExt(uploaded.key, "webp");
-            const backupKey = `_originals/${uploaded.key}`;
+            const base = uploaded.key.split("/").pop() || uploaded.key;
+            const dot = base.lastIndexOf(".");
+            const stem = dot > 0 ? base.slice(0, dot) : base;
+            const optKey = `optimized/${stem}.webp`;
 
-            patch(id, { progress: 75, status: "publishing" });
-            const mainB64 = await optBlobToBase64(optimized.webp);
+            patch(id, { progress: 75, status: "publishing optimized" });
+            const optB64 = await optBlobToBase64(optimized.webp);
             await writeVariants({
               data: {
-                main: { key: mainKey, contentType: "image/webp", dataBase64: mainB64 },
-                backup: {
-                  key: backupKey,
-                  contentType: file.type || "application/octet-stream",
-                  dataBase64: origB64,
-                },
+                main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
               },
             });
             const pct = file.size > 0 ? Math.round((1 - optimized.webp.size / file.size) * 100) : 0;
@@ -852,6 +851,7 @@ function DropZoneUploader() {
             patch(id, { progress: 100, done: true, status: "done" });
           }
         } catch (e) {
+
           patch(id, {
             error: e instanceof Error ? e.message : String(e),
             progress: 100,
