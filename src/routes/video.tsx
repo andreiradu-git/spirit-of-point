@@ -441,13 +441,14 @@ function VideoCard({
       </div>
       {editable && (
         <VideoFieldsEditor
-          key={`${v.title}|${v.poster}|${v.src}`}
+          key={`${v.title}|${posterOf(v)}|${v.src}`}
           v={v}
           uploading={uploading}
           onUpdate={onUpdate}
           onPickPoster={onPickPoster}
           onPickVideo={onPickVideo}
           onUploadFile={onUploadFile}
+          onRegeneratePoster={onRegeneratePoster}
         />
       )}
     </div>
