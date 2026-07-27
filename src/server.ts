@@ -4,7 +4,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
 type ServerEntry = {
-  fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
+  fetch: (request: Request, opts?: { context?: Record<string, unknown> }) => Promise<Response> | Response;
 };
 
 declare global {
@@ -30,8 +30,8 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function bindWorkerEnv(request: Request, env: unknown) {
-  if (!env || typeof env !== "object") return;
+function bindWorkerEnv(request: Request, env: unknown): Record<string, unknown> | undefined {
+  if (!env || typeof env !== "object") return undefined;
   const rawEnv = env as Record<string, unknown>;
 
   globalThis.__POINTSTUDIO_WORKER_ENV__ = {
@@ -52,6 +52,8 @@ function bindWorkerEnv(request: Request, env: unknown) {
     // Some Request implementations may be non-extensible; the global binding
     // above remains the fallback for code running inside this same Worker.
   }
+
+  return rawEnv;
 }
 
 // h3 swallows in-handler throws into a normal 500 Response with body
@@ -83,9 +85,14 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      bindWorkerEnv(request, env);
+      const cloudflareEnv = bindWorkerEnv(request, env);
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
+      const response = await handler.fetch(request, {
+        context: {
+          ...(cloudflareEnv ? { cloudflareEnv } : {}),
+          ...(ctx ? { cloudflareCtx: ctx } : {}),
+        },
+      });
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
