@@ -148,8 +148,9 @@ export const listAllAssets = createServerFn({ method: "GET" })
           service: "s3",
           region: "auto",
         });
-        const endpoint = process.env.R2_ENDPOINT!.replace(/\/+$/, "");
+        let endpoint = process.env.R2_ENDPOINT!.replace(/\/+$/, "");
         const bucket = process.env.R2_BUCKET!;
+        if (endpoint.endsWith(`/${bucket}`)) endpoint = endpoint.slice(0, -(bucket.length + 1));
         const publicUrl = process.env.R2_PUBLIC_URL!.replace(/\/+$/, "");
         let token: string | undefined;
         do {
