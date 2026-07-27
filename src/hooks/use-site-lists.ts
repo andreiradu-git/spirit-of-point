@@ -40,9 +40,10 @@ export function useSaveList() {
   const qc = useQueryClient();
   return async <T,>(id: string, items: T[]) => {
     const key = `${LIST_PREFIX}${id}`;
+    const value = { items } as unknown as Record<string, unknown>;
     const { error } = await supabase
       .from("site_settings")
-      .upsert({ key, value: { items } }, { onConflict: "key" });
+      .upsert({ key, value: value as never }, { onConflict: "key" });
     if (error) throw error;
     qc.invalidateQueries({ queryKey: ["site-lists"] });
   };
