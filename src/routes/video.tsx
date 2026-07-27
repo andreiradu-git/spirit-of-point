@@ -9,6 +9,7 @@ import { useSiteList } from "@/hooks/use-site-list";
 import { useServerFn } from "@tanstack/react-start";
 import { saveAssetMeta, generateAssetMeta } from "@/lib/asset-meta.functions";
 import { uploadToR2 } from "@/lib/r2.functions";
+import { derivePoster, DEFAULT_VIDEO_POSTER } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
 import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
@@ -27,7 +28,23 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-type VideoItem = { title: string; poster: string; src: string };
+type VideoItem = {
+  title: string;
+  poster: string;
+  src: string;
+  // Extended fields (optional for back-compat with existing saved data)
+  videoUrl?: string;
+  posterUrl?: string;
+  duration?: number;
+  width?: number;
+  height?: number;
+  /** Marks that the current poster was auto-generated (safe to overwrite). */
+  posterAuto?: boolean;
+};
+
+function posterOf(v: VideoItem): string {
+  return v.posterUrl || v.poster || "";
+}
 
 export const Route = createFileRoute("/video")({
   component: VideoPage,
