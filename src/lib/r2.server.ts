@@ -218,20 +218,31 @@ export function inferKindFromContentType(ct?: string, filename?: string): AssetK
 }
 
 /**
- * Produce a predictable object key: `{folder}/YYYY/MM/{uuid}.{ext}`.
- * The original filename is intentionally NOT part of the key — store it as
- * R2 customMetadata (originalName) instead.
+ * Produce a predictable object key. For images this is `originals/<uuid>.<ext>`
+ * so every uploaded image has its own unique original file, paired with a
+ * matching `optimized/<uuid>.webp` produced by the optimize pipeline.
+ * The displayed filename is stored separately in R2 customMetadata.originalName.
  */
 export function makeR2Key(kind: AssetKind, filename: string): string {
-  const folder = kind === "image" ? "images" : kind === "video" ? "videos" : "files";
-  const now = new Date();
-  const yyyy = String(now.getUTCFullYear());
-  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const folder = kind === "image" ? "originals" : kind === "video" ? "videos" : "files";
   const rawExt = (filename.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const ext = rawExt || (kind === "image" ? "jpg" : kind === "video" ? "mp4" : "bin");
   const uuid = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
-  return `${folder}/${yyyy}/${mm}/${uuid}.${ext}`;
+  return `${folder}/${uuid}.${ext}`;
 }
+
+/**
+ * Derive the `optimized/<uuid>.webp` key that pairs with a given original key.
+ * Works for the new `originals/<uuid>.<ext>` layout and any legacy image key
+ * (falls back to the file's basename as the stem).
+ */
+export function optimizedKeyFor(originalKey: string): string {
+  const base = originalKey.split("/").pop() || originalKey;
+  const dot = base.lastIndexOf(".");
+  const stem = dot > 0 ? base.slice(0, dot) : base;
+  return `optimized/${stem}.webp`;
+}
+
 
 export async function listR2ObjectsDirect(): Promise<R2Object[]> {
   const bucket = await getBucket();
