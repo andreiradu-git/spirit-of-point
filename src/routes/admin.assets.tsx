@@ -526,10 +526,11 @@ function DirectUpload() {
           }
         } catch (e) {
           fail++;
-          console.error(e);
+          console.error("upload failed", file.name, e);
+          setMsg(`Upload failed for ${file.name}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
-      setMsg(`${ok} uploaded${fail ? `, ${fail} failed` : ""}`);
+      if (fail === 0) setMsg(`${ok} uploaded`);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });
       qc.invalidateQueries({ queryKey: ["media-picker", "assets"] });
     } finally {
