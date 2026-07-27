@@ -462,6 +462,7 @@ function VideoFieldsEditor({
   onPickPoster,
   onPickVideo,
   onUploadFile,
+  onRegeneratePoster,
 }: {
   v: VideoItem;
   uploading: boolean;
@@ -469,19 +470,37 @@ function VideoFieldsEditor({
   onPickPoster: () => void;
   onPickVideo: () => void;
   onUploadFile: (f: File) => void;
+  onRegeneratePoster: () => void;
 }) {
+  const currentPoster = v.posterUrl || v.poster;
   const [title, setTitle] = useState(v.title);
-  const [poster, setPoster] = useState(v.poster);
-  const [src, setSrc] = useState(v.src);
+  const [poster, setPoster] = useState(currentPoster);
+  const [src, setSrc] = useState(v.videoUrl || v.src);
+  const [regenBusy, setRegenBusy] = useState(false);
 
-  const dirty = title !== v.title || poster !== v.poster || src !== v.src;
+  const dirty = title !== v.title || poster !== currentPoster || src !== (v.videoUrl || v.src);
 
   const saveAll = () => {
     const patch: Partial<VideoItem> = {};
     if (title !== v.title) patch.title = title;
-    if (poster !== v.poster) patch.poster = poster;
-    if (src !== v.src) patch.src = src;
+    if (poster !== currentPoster) {
+      patch.poster = poster;
+      patch.posterUrl = poster;
+    }
+    if (src !== (v.videoUrl || v.src)) {
+      patch.src = src;
+      patch.videoUrl = src;
+    }
     if (Object.keys(patch).length) onUpdate(patch);
+  };
+
+  const doRegen = async () => {
+    setRegenBusy(true);
+    try {
+      await onRegeneratePoster();
+    } finally {
+      setRegenBusy(false);
+    }
   };
 
   return (
@@ -507,6 +526,15 @@ function VideoFieldsEditor({
           title="Pick from library"
         >
           <Images className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={doRegen}
+          disabled={regenBusy || !(v.videoUrl || v.src)}
+          className="p-1.5 border rounded hover:bg-neutral-100 disabled:opacity-40"
+          title="Regenerate poster from video"
+        >
+          {regenBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
         </button>
       </div>
       <div className="flex gap-1.5 items-center">
