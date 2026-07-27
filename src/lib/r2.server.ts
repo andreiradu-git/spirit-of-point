@@ -298,3 +298,30 @@ export async function copyR2ObjectDirect(
   });
   return `${PUBLIC_URL}/${toKey}`;
 }
+
+export function bytesToBase64(bytes: Uint8Array): string {
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+export async function readR2ObjectDirect(key: string): Promise<{
+  dataBase64: string;
+  contentType: string;
+  size: number;
+  originalName?: string;
+}> {
+  const bucket = await getBucket();
+  const obj = await bucket.get(key);
+  if (!obj) throw new Error(`R2 object "${key}" not found in bucket ${BINDING_NAME}`);
+  const bytes = new Uint8Array(await obj.arrayBuffer());
+  return {
+    dataBase64: bytesToBase64(bytes),
+    contentType: obj.httpMetadata?.contentType || "application/octet-stream",
+    size: bytes.byteLength,
+    originalName: obj.customMetadata?.originalName,
+  };
+}
