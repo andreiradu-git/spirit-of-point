@@ -95,7 +95,7 @@ export type ChatOptions = {
 };
 
 export async function aiChat(opts: ChatOptions): Promise<string> {
-  const { apiKey, model: defaultModel } = getAIConfig();
+  const { apiKey, model: defaultModel } = await getAIConfig();
   const model = opts.model || defaultModel;
 
   const body: Record<string, unknown> = { model, messages: opts.messages };
