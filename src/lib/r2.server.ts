@@ -7,6 +7,7 @@ export type R2Object = {
   size: number;
   contentType?: string;
   lastModified?: string;
+  originalName?: string;
 };
 
 const BINDING_NAME = "MY_ASSETS";
