@@ -26,6 +26,7 @@ import { Route as AdminLinksRouteImport } from './routes/admin.links'
 import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
 import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
 
 const VideoRoute = VideoRouteImport.update({
   id: '/video',
@@ -112,6 +113,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/admin/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDebugR2Route = ApiDebugR2RouteImport.update({
+  id: '/api/debug/r2',
+  path: '/api/debug/r2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/admin/socials': typeof AdminSocialsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/api/debug/r2': typeof ApiDebugR2Route
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/admin/socials': typeof AdminSocialsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/api/debug/r2': typeof ApiDebugR2Route
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/admin/socials': typeof AdminSocialsRoute
   '/admin/theme': typeof AdminThemeRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/api/debug/r2': typeof ApiDebugR2Route
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/admin/socials'
     | '/admin/theme'
     | '/work/$slug'
+    | '/api/debug/r2'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/admin/socials'
     | '/admin/theme'
     | '/work/$slug'
+    | '/api/debug/r2'
   id:
     | '__root__'
     | '/'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/admin/socials'
     | '/admin/theme'
     | '/work/$slug'
+    | '/api/debug/r2'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   AdminSocialsRoute: typeof AdminSocialsRoute
   AdminThemeRoute: typeof AdminThemeRoute
   WorkSlugRoute: typeof WorkSlugRoute
+  ApiDebugR2Route: typeof ApiDebugR2Route
 }
 
 declare module '@tanstack/react-router' {
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/debug/r2': {
+      id: '/api/debug/r2'
+      path: '/api/debug/r2'
+      fullPath: '/api/debug/r2'
+      preLoaderRoute: typeof ApiDebugR2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -393,6 +413,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSocialsRoute: AdminSocialsRoute,
   AdminThemeRoute: AdminThemeRoute,
   WorkSlugRoute: WorkSlugRoute,
+  ApiDebugR2Route: ApiDebugR2Route,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
