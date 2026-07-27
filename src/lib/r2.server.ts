@@ -1,4 +1,5 @@
 import { AwsClient } from "aws4fetch";
+import { getRequest } from "@tanstack/react-start/server";
 
 export type R2Object = {
   key: string;
@@ -16,20 +17,61 @@ type R2ClientBundle = {
 };
 
 declare global {
-  var __POINTSTUDIO_WORKER_ENV__: Record<string, string> | undefined;
+  var __POINTSTUDIO_WORKER_ENV__: Record<string, unknown> | undefined;
+  var __env__: Record<string, unknown> | undefined;
+}
+
+type CloudflareRuntimeRequest = Request & {
+  runtime?: {
+    cloudflare?: {
+      env?: Record<string, unknown>;
+    };
+  };
+};
+
+function normalizeEnvValue(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return undefined;
+}
+
+function readRequestEnv(name: string): string | undefined {
+  try {
+    const request = getRequest() as CloudflareRuntimeRequest;
+    return normalizeEnvValue(request.runtime?.cloudflare?.env?.[name]);
+  } catch {
+    return undefined;
+  }
 }
 
 function readRuntimeEnv(name: string): string | undefined {
-  return process.env[name] || globalThis.__POINTSTUDIO_WORKER_ENV__?.[name];
+  const processEnv = typeof process !== "undefined" ? process.env?.[name] : undefined;
+  return (
+    normalizeEnvValue(processEnv) ||
+    normalizeEnvValue(globalThis.__POINTSTUDIO_WORKER_ENV__?.[name]) ||
+    normalizeEnvValue(globalThis.__env__?.[name]) ||
+    readRequestEnv(name)
+  );
+}
+
+function readFirstRuntimeEnv(names: string[]): string | undefined {
+  for (const name of names) {
+    const value = readRuntimeEnv(name);
+    if (value) return value;
+  }
+  return undefined;
 }
 
 export function getR2Client(): R2ClientBundle {
-  const accessKeyId = readRuntimeEnv("R2_ACCESS_KEY_ID");
-  const secretAccessKey = readRuntimeEnv("R2_SECRET_ACCESS_KEY");
-  const accountId = readRuntimeEnv("R2_ACCOUNT_ID");
-  let endpoint = readRuntimeEnv("R2_ENDPOINT");
-  const bucket = readRuntimeEnv("R2_BUCKET_NAME") || readRuntimeEnv("R2_BUCKET");
-  const publicUrl = readRuntimeEnv("R2_PUBLIC_URL") || "https://images.pointstudio.ro";
+  const accessKeyId = readFirstRuntimeEnv(["R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID"]);
+  const secretAccessKey = readFirstRuntimeEnv(["R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY"]);
+  const accountId = readFirstRuntimeEnv(["R2_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]);
+  let endpoint = readFirstRuntimeEnv(["R2_ENDPOINT", "CLOUDFLARE_R2_ENDPOINT"]);
+  const bucket = readFirstRuntimeEnv(["R2_BUCKET_NAME", "R2_BUCKET", "CLOUDFLARE_R2_BUCKET"]);
+  const publicUrl = readFirstRuntimeEnv(["R2_PUBLIC_URL", "CLOUDFLARE_R2_PUBLIC_URL"]) || "https://images.pointstudio.ro";
 
   if (!endpoint && accountId) endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
 
