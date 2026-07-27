@@ -10,6 +10,7 @@ export type SiteAsset = {
   size?: number;
   contentType?: string;
   storagePath?: string; // for media bucket entries — enables delete
+  r2Key?: string; // for R2 entries — enables delete via R2 API
   usedOnSite: boolean;
 };
 
