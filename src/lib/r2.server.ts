@@ -9,7 +9,7 @@ export type R2Object = {
   lastModified?: string;
 };
 
-const BINDING_NAME = "MYASSETS";
+const BINDING_NAME = "MY_ASSETS";
 const PUBLIC_URL = "https://images.pointstudio.ro";
 
 // Minimal shape of the Cloudflare R2Bucket binding we rely on.
