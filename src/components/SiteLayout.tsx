@@ -4,6 +4,19 @@ import { useSiteSettings } from "@/hooks/use-site-settings";
 import { Editable } from "@/components/Editable";
 import { useSocials, SOCIAL_ICON_PATHS } from "@/hooks/use-socials";
 import { useAdmin } from "@/hooks/use-admin";
+import { fotografieCulinaraContent } from "@/data/fotografie-culinara";
+
+function FotografieCulinaraFooterLink() {
+  if (!fotografieCulinaraContent.isVisibleInNav) return null;
+  return (
+    <Link
+      to="/fotografie-culinara-bucuresti"
+      className="mt-2 block text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+    >
+      {fotografieCulinaraContent.navLinkLabel}
+    </Link>
+  );
+}
 
 
 
@@ -116,6 +129,7 @@ export function SiteLayout({
             <Editable as="div" id="footer.email" className="block">andrei@pointstudio.ro</Editable>
             <Editable as="div" id="footer.phone" className="block">+40 744 341 286</Editable>
             <Editable as="div" id="footer.address" className="block">Piața Presei Libere 1, Bucharest</Editable>
+            <FotografieCulinaraFooterLink />
           </div>
           <div className="flex flex-col gap-3 md:items-end">
             <SocialIcons />

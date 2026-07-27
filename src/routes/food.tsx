@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { cdn } from "@/components/SiteLayout";
 import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/food.json";
+import { fotografieCulinaraContent } from "@/data/fotografie-culinara";
 
 export const Route = createFileRoute("/food")({
   component: FoodPage,
@@ -27,5 +28,19 @@ export const Route = createFileRoute("/food")({
 });
 
 function FoodPage() {
-  return <PortfolioPage slug="food" tagline="Food, Product & Tabletop Photography" fallbackImages={data} />;
+  return (
+    <>
+      <PortfolioPage slug="food" tagline="Food, Product & Tabletop Photography" fallbackImages={data} />
+      {fotografieCulinaraContent.isVisibleInNav && (
+        <div className="mx-auto max-w-3xl px-6 pb-10 text-center">
+          <Link
+            to="/fotografie-culinara-bucuresti"
+            className="inline-block text-sm underline underline-offset-4 text-muted-foreground hover:text-foreground"
+          >
+            {fotografieCulinaraContent.navLinkLabel}
+          </Link>
+        </div>
+      )}
+    </>
+  );
 }
