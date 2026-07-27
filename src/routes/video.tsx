@@ -10,7 +10,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { saveAssetMeta, generateAssetMeta } from "@/lib/asset-meta.functions";
 import { uploadToR2 } from "@/lib/r2.functions";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
-import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical } from "lucide-react";
+import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -139,9 +139,31 @@ function VideoPage() {
 
   const activeEmbed = active !== null ? embedUrl(videos[active]?.src || "") : null;
 
+  const sortBy = async (mode: "title-asc" | "title-desc" | "reverse" | "shuffle") => {
+    const metaLabel = (v: VideoItem) => (metaMap[v.poster]?.label || v.title || "").toLowerCase();
+    let next = [...videos];
+    if (mode === "title-asc") next.sort((a, b) => metaLabel(a).localeCompare(metaLabel(b)));
+    else if (mode === "title-desc") next.sort((a, b) => metaLabel(b).localeCompare(metaLabel(a)));
+    else if (mode === "reverse") next.reverse();
+    else if (mode === "shuffle") next.sort(() => Math.random() - 0.5);
+    await save(next);
+  };
+
   return (
     <SiteLayout>
       <div className="mx-auto max-w-7xl px-6 pt-16 pb-24">
+        {editable && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1 text-neutral-500 uppercase tracking-widest">
+              <ArrowUpDown className="w-3.5 h-3.5" /> Sort:
+            </span>
+            <button onClick={() => sortBy("title-asc")} className="px-2 py-1 border rounded hover:bg-neutral-100">Title A→Z</button>
+            <button onClick={() => sortBy("title-desc")} className="px-2 py-1 border rounded hover:bg-neutral-100">Title Z→A</button>
+            <button onClick={() => sortBy("reverse")} className="px-2 py-1 border rounded hover:bg-neutral-100">Reverse</button>
+            <button onClick={() => sortBy("shuffle")} className="px-2 py-1 border rounded hover:bg-neutral-100">Shuffle</button>
+            <span className="text-neutral-400">· or drag cards to reorder manually</span>
+          </div>
+        )}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={ids} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
