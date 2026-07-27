@@ -588,6 +588,17 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
           >
             <ExternalLink className="w-3 h-3" />
           </a>
+          {asset.r2Key && (
+            <button
+              type="button"
+              onClick={doDeleteAll}
+              disabled={deleting}
+              className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
+              title="Delete asset (original + optimized)"
+            >
+              {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            </button>
+          )}
         </div>
 
         <label className="flex flex-col gap-0.5">
