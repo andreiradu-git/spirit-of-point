@@ -356,70 +356,120 @@ function VideoCard({
         )}
       </div>
       {editable && (
-        <div className="bg-white border border-blue-400/60 border-dashed rounded p-2 flex flex-col gap-2 text-xs">
-          <input
-            defaultValue={v.title}
-            onBlur={(e) => onUpdate({ title: e.target.value })}
-            placeholder="Title"
-            className="border rounded px-2 py-1"
-          />
-          <div className="flex gap-1.5 items-center">
-            <span className="text-neutral-500 w-12 shrink-0">Poster:</span>
-            <input
-              defaultValue={v.poster}
-              onBlur={(e) => onUpdate({ poster: e.target.value })}
-              placeholder="Poster URL"
-              className="border rounded px-2 py-1 flex-1 min-w-0"
-            />
-            <button
-              type="button"
-              onClick={onPickPoster}
-              className="p-1.5 border rounded hover:bg-neutral-100"
-              title="Pick from library"
-            >
-              <Images className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="flex gap-1.5 items-center">
-            <span className="text-neutral-500 w-12 shrink-0">Video:</span>
-            <input
-              defaultValue={v.src}
-              onBlur={(e) => onUpdate({ src: e.target.value })}
-              placeholder="MP4 URL, YouTube or Vimeo link"
-              className="border rounded px-2 py-1 flex-1 min-w-0"
-            />
-            <button
-              type="button"
-              onClick={onPickVideo}
-              className="p-1.5 border rounded hover:bg-neutral-100"
-              title="Pick from library"
-            >
-              <Images className="w-3.5 h-3.5" />
-            </button>
-            <label
-              className="p-1.5 border rounded hover:bg-neutral-100 cursor-pointer"
-              title="Upload video to Cloudflare R2"
-            >
-              {uploading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Upload className="w-3.5 h-3.5" />
-              )}
-              <input
-                type="file"
-                accept="video/mp4,video/webm,video/quicktime"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) onUploadFile(f);
-                  e.target.value = "";
-                }}
-              />
-            </label>
-          </div>
-          <VideoMetaEditor url={v.poster} initialLabel={label} initialAlt={alt} />
-        </div>
+        <VideoFieldsEditor
+          key={`${v.title}|${v.poster}|${v.src}`}
+          v={v}
+          uploading={uploading}
+          onUpdate={onUpdate}
+          onPickPoster={onPickPoster}
+          onPickVideo={onPickVideo}
+          onUploadFile={onUploadFile}
+        />
       )}
+    </div>
+  );
+}
+
+function VideoFieldsEditor({
+  v,
+  uploading,
+  onUpdate,
+  onPickPoster,
+  onPickVideo,
+  onUploadFile,
+}: {
+  v: VideoItem;
+  uploading: boolean;
+  onUpdate: (patch: Partial<VideoItem>) => void;
+  onPickPoster: () => void;
+  onPickVideo: () => void;
+  onUploadFile: (f: File) => void;
+}) {
+  const [title, setTitle] = useState(v.title);
+  const [poster, setPoster] = useState(v.poster);
+  const [src, setSrc] = useState(v.src);
+
+  const dirty = title !== v.title || poster !== v.poster || src !== v.src;
+
+  const saveAll = () => {
+    const patch: Partial<VideoItem> = {};
+    if (title !== v.title) patch.title = title;
+    if (poster !== v.poster) patch.poster = poster;
+    if (src !== v.src) patch.src = src;
+    if (Object.keys(patch).length) onUpdate(patch);
+  };
+
+  return (
+    <div className="bg-white border border-blue-400/60 border-dashed rounded p-2 flex flex-col gap-2 text-xs">
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Title"
+        className="border rounded px-2 py-1"
+      />
+      <div className="flex gap-1.5 items-center">
+        <span className="text-neutral-500 w-12 shrink-0">Poster:</span>
+        <input
+          value={poster}
+          onChange={(e) => setPoster(e.target.value)}
+          placeholder="Poster URL"
+          className="border rounded px-2 py-1 flex-1 min-w-0"
+        />
+        <button
+          type="button"
+          onClick={onPickPoster}
+          className="p-1.5 border rounded hover:bg-neutral-100"
+          title="Pick from library"
+        >
+          <Images className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div className="flex gap-1.5 items-center">
+        <span className="text-neutral-500 w-12 shrink-0">Video:</span>
+        <input
+          value={src}
+          onChange={(e) => setSrc(e.target.value)}
+          placeholder="YouTube / Vimeo link or MP4 URL"
+          className="border rounded px-2 py-1 flex-1 min-w-0"
+        />
+        <button
+          type="button"
+          onClick={onPickVideo}
+          className="p-1.5 border rounded hover:bg-neutral-100"
+          title="Pick from library"
+        >
+          <Images className="w-3.5 h-3.5" />
+        </button>
+        <label
+          className="p-1.5 border rounded hover:bg-neutral-100 cursor-pointer"
+          title="Upload video file"
+        >
+          {uploading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Upload className="w-3.5 h-3.5" />
+          )}
+          <input
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onUploadFile(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
+      <button
+        type="button"
+        onClick={saveAll}
+        disabled={!dirty}
+        className="px-3 py-1.5 rounded bg-black text-white text-xs hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {dirty ? "Save changes" : "Saved"}
+      </button>
+      <VideoMetaEditor url={v.poster} initialLabel={v.title} initialAlt={v.title} />
     </div>
   );
 }
