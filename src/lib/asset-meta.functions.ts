@@ -78,7 +78,6 @@ export const saveAssetMeta = createServerFn({ method: "POST" })
   });
 
 export const generateAssetMeta = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -88,19 +87,14 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data, context }) => {
-    const { data: role } = await context.supabase
-      .from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
-    if (!role) throw new Error("Forbidden");
-
+  .handler(async ({ data }) => {
     const svc = await import("./ai-service.server");
 
     if (data.kind === "video") {
-      const m = await svc.generateVideoMetadata({
+      return svc.generateVideoMetadata({
         videoUrl: data.imageUrl,
         context: data.context,
       });
-      return m;
     }
     if (data.kind === "link") {
       const l = await svc.generateLinkMetadata({
@@ -120,3 +114,4 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
       context: data.context,
     });
   });
+
