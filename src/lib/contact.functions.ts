@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const submitSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -21,9 +20,11 @@ export const submitContactMessage = createServerFn({ method: "POST" })
       readServerEnv("SUPABASE_ANON_KEY") ??
       readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
     if (!url || !key) {
-      throw new Error(
-        "Contact form is temporarily unavailable — the site backend is not configured. Please email us directly.",
-      );
+      // Return an HTTP 500 Response so monitoring sees a server error instead of a 200 with an error body
+      throw new Response(JSON.stringify({ message: "Contact form is temporarily unavailable — the site backend is not configured. Please email us directly." }), {
+        status: 500,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      });
     }
     const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(url, key, {
@@ -37,7 +38,7 @@ export const submitContactMessage = createServerFn({ method: "POST" })
       message: data.message,
       source_path: data.source_path || null,
     });
-    if (error) throw new Error(error.message);
+    if (error) throw error;
     return { ok: true };
   });
 
