@@ -217,7 +217,7 @@ export function EditableGallery({
       invalidate(slug);
     } catch (e) {
       console.error("Upload failed", e);
-      alert("Upload failed. Please try again.");
+      alert("Upload failed: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setUploading(false);
     }
