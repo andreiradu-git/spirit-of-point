@@ -13,34 +13,61 @@ const submitSchema = z.object({
 
 export const submitContactMessage = createServerFn({ method: "POST" })
   .validator((data) => submitSchema.parse(data))
-  .handler(async ({ data }) => {
-    const { readServerEnv } = await import("@/lib/server-env");
-    const url = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
-    const key =
-      readServerEnv("SUPABASE_PUBLISHABLE_KEY") ??
-      readServerEnv("SUPABASE_ANON_KEY") ??
-      readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
-    if (!url || !key) {
-      // Return an HTTP 500 Response so monitoring sees a server error instead of a 200 with an error body
-      throw new Response(JSON.stringify({ message: "Contact form is temporarily unavailable — the site backend is not configured. Please email us directly." }), {
-        status: 500,
-        headers: { "content-type": "application/json; charset=utf-8" },
+  .handler(async ({ data, context }) => {
+    const tag = "[contact]";
+    try {
+      console.log(`${tag} submitContactMessage called`, { data });
+
+      const { readServerEnv } = await import("@/lib/server-env");
+      const url = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
+      const key =
+        readServerEnv("SUPABASE_PUBLISHABLE_KEY") ??
+        readServerEnv("SUPABASE_ANON_KEY") ??
+        readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
+
+      console.log(`${tag} supabase env present`, { hasUrl: Boolean(url), hasKey: Boolean(key) });
+
+      if (!url || !key) {
+        console.error(`${tag} missing supabase env`, { url, key });
+        // Return an HTTP 500 Response so monitoring sees a server error instead of a 200 with an error body
+        throw new Response(JSON.stringify({ message: "Contact form is temporarily unavailable — the site backend is not configured. Please email us directly." }), {
+          status: 500,
+          headers: { "content-type": "application/json; charset=utf-8" },
+        });
+      }
+
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false },
       });
+
+      const payload = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        subject: data.subject || null,
+        message: data.message,
+        source_path: data.source_path || null,
+      };
+
+      console.log(`${tag} inserting into contact_messages`, { payload });
+      // Insert and request the returned row(s) when possible
+      const insertRes = await supabase.from("contact_messages").insert(payload).select();
+      console.log(`${tag} insert result`, insertRes);
+      if (insertRes.error) {
+        console.error(`${tag} insert failed`, insertRes.error);
+        throw insertRes.error;
+      }
+
+      // No email sending logic present in repository; log and return success once DB insert succeeded.
+      console.log(`${tag} insert succeeded, rows:`, insertRes.data);
+
+      return { ok: true, rows: insertRes.data ?? null };
+    } catch (e) {
+      console.error("[contact] submitContactMessage error", e);
+      // Never swallow errors — rethrow so client sees the failure.
+      throw e;
     }
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { error } = await supabase.from("contact_messages").insert({
-      name: data.name,
-      email: data.email,
-      phone: data.phone || null,
-      subject: data.subject || null,
-      message: data.message,
-      source_path: data.source_path || null,
-    });
-    if (error) throw error;
-    return { ok: true };
   });
 
 
