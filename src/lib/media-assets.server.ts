@@ -50,7 +50,13 @@ export function getMediaDbClient(service = false): Db {
   const r2OnlyFlag = (readServerEnv("R2_ONLY_MODE") || "").toLowerCase() === "true" || readServerEnv("R2_ONLY_MODE") === "1";
 
   if (!url || !key) {
-    if (!r2OnlyFlag) throw new Error("Media database is not configured in this runtime.");
+    if (!r2OnlyFlag) {
+      // Return an HTTP 500 response to make missing dependency visible to monitoring
+      throw new Response(JSON.stringify({ message: "Media database is not configured in this runtime." }), {
+        status: 500,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      });
+    }
 
     // Minimal stub that implements the `.from(...).select/upsert/update/delete/...` chain
     // used across the media pipeline. Returns empty results or success objects.
@@ -68,7 +74,6 @@ export function getMediaDbClient(service = false): Db {
         limit: function () { return this; },
         order: function () { return this; },
         in: function () { return this; },
-        // keep maybeSingle defined twice is harmless; left for compatibility
         maybeSingle: async () => ({ data: null, error: null }),
       };
       return chain;

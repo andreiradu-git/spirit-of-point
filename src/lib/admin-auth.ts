@@ -22,7 +22,12 @@ export const requireAdminAuth = createMiddleware({ type: "function" }).server(as
   // If Supabase is not configured but an ADMIN_BYPASS_KEY is provided we accept
   // a single static bearer token for local/dev admin operations.
   if (!url || !key) {
-    if (!ADMIN_BYPASS_KEY) throw new Error("Backend auth is not configured in this runtime.");
+    if (!ADMIN_BYPASS_KEY) {
+      throw new Response(JSON.stringify({ message: "Backend auth is not configured in this runtime." }), {
+        status: 500,
+        headers: { "content-type": "application/json; charset=utf-8" },
+      });
+    }
 
     const request = getRequest();
     const authHeader = request.headers.get("authorization") ?? "";
