@@ -3,7 +3,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listAllAssets, type SiteAsset } from "@/lib/assets.functions";
+import { deleteMediaAsset, listAllAssets, type SiteAsset } from "@/lib/assets.functions";
 import {
   listAssetMeta,
   saveAssetMeta,
@@ -12,7 +12,6 @@ import {
 } from "@/lib/asset-meta.functions";
 import {
   uploadToR2,
-  deleteR2Object,
   migrateSupabaseToR2,
   renameR2Object,
   readR2Object,
@@ -23,7 +22,6 @@ import {
   blobToBase64 as optBlobToBase64,
 } from "@/lib/optimize-image";
 
-import { supabase } from "@/integrations/supabase/client";
 import {
   Sparkles,
   Loader2,
@@ -46,76 +44,6 @@ export const Route = createFileRoute("/admin/assets")({
 // -----------------------------------------------------------------------------
 // helpers
 // -----------------------------------------------------------------------------
-
-function collectSettingUrls(value: unknown, key: string, out: SiteAsset[]) {
-  if (typeof value === "string") {
-    if (/^https?:\/\//.test(value)) {
-      out.push({
-        kind: /\.(mp4|webm|mov)(\?.*)?$/i.test(value) ? "video" : "image",
-        url: value,
-        source: `Setting: ${key}`,
-        usedOnSite: true,
-      });
-    }
-    return;
-  }
-  if (Array.isArray(value)) {
-    for (const item of value) collectSettingUrls(item, key, out);
-    return;
-  }
-  if (!value || typeof value !== "object") return;
-  const obj = value as Record<string, unknown>;
-  const url = typeof obj.src === "string" ? obj.src : typeof obj.url === "string" ? obj.url : null;
-  const alt = typeof obj.alt === "string" ? obj.alt : null;
-  if (url && /^https?:\/\//.test(url)) {
-    out.push({
-      kind: /\.(mp4|webm|mov)(\?.*)?$/i.test(url) || key.toLowerCase().includes("video") ? "video" : "image",
-      url,
-      source: `Setting: ${key}`,
-      alt,
-      usedOnSite: true,
-    });
-  }
-  for (const nested of Object.values(obj)) {
-    if (nested && typeof nested === "object") collectSettingUrls(nested, key, out);
-  }
-}
-
-async function mergeAssets(r2Assets: SiteAsset[]): Promise<SiteAsset[]> {
-  const referenced: SiteAsset[] = [];
-  const usedUrls = new Set<string>();
-  try {
-    const { data: galleries } = await supabase
-      .from("galleries")
-      .select("slug, gallery_images(src, alt)");
-    for (const gallery of galleries ?? []) {
-      for (const image of (gallery.gallery_images ?? []) as Array<{ src: string; alt: string | null }>) {
-        usedUrls.add(image.src);
-        referenced.push({
-          kind: "image",
-          url: image.src,
-          source: `Gallery: ${gallery.slug}`,
-          alt: image.alt,
-          usedOnSite: true,
-        });
-      }
-    }
-    const { data: settings } = await supabase.from("site_settings").select("key, value");
-    for (const row of settings ?? []) collectSettingUrls(row.value, row.key, referenced);
-    for (const asset of referenced) usedUrls.add(asset.url);
-  } catch (e) {
-    console.warn("Site asset references unavailable; showing R2 library only", e);
-  }
-  const merged = r2Assets.map((asset) => ({ ...asset, usedOnSite: usedUrls.has(asset.url) || asset.usedOnSite }));
-  const seen = new Set(merged.map((asset) => asset.url));
-  for (const asset of referenced) {
-    if (!seen.has(asset.url)) {
-      merged.push(asset);
-      seen.add(asset.url);
-    }
-  }
-  return merged;
-}
 
 async function blobToBase64(blob: Blob): Promise<string> {
   const buf = await blob.arrayBuffer();
@@ -167,7 +95,7 @@ function AdminAssetsPage() {
 
   const { data: assets = [], isLoading } = useQuery<SiteAsset[]>({
     queryKey: ["admin", "assets"],
-    queryFn: async () => mergeAssets(await list() as SiteAsset[]),
+    queryFn: () => list() as Promise<SiteAsset[]>,
     enabled: !!isAdmin,
     staleTime: 30_000,
   });
@@ -319,7 +247,7 @@ function AdminAssetsPage() {
 function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
-  const removeR2 = useServerFn(deleteR2Object);
+  const removeAsset = useServerFn(deleteMediaAsset);
   const rename = useServerFn(renameR2Object);
 
   const readSource = useServerFn(readR2Object);
@@ -480,7 +408,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     if (!window.confirm(`Delete this ${kind} file permanently?\n\n${key}\n\nThis cannot be undone.`)) return;
     setDeleting(true);
     try {
-      await removeR2({ data: { key } });
+      await removeAsset({ data: { id: asset.id, key, url: asset.url } });
       if (kind === "asset" || (kind === "original" && !asset.optimizedKey)) {
         setDeleted(true);
       }
@@ -500,7 +428,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     setDeleting(true);
     try {
       for (const k of parts) {
-        await removeR2({ data: { key: k } });
+        await removeAsset({ data: { id: asset.id, key: k, url: asset.url } });
       }
       setDeleted(true);
       qc.invalidateQueries({ queryKey: ["admin", "assets"] });

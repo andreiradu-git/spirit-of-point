@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminAuth } from "@/lib/admin-auth";
+import {
+  deleteMediaAssetDirect,
+  markOptimizedMediaAssetDirect,
+  upsertMediaAssetDirect,
+} from "@/lib/media-assets.server";
 import {
   b64ToBytes,
   deleteR2ObjectDirect,
@@ -37,6 +42,7 @@ const variantSchema = z.object({
 // untouched original. `siblings` is kept for backward compatibility but the
 // current pipeline never sends any.
 export const writeR2Variants = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -51,20 +57,49 @@ export const writeR2Variants = createServerFn({ method: "POST" })
     if (data.backup) {
       const body = b64ToBytes(data.backup.dataBase64);
       const url = await putR2Object(data.backup.key, body, data.backup.contentType);
+      await upsertMediaAssetDirect({
+        key: data.backup.key,
+        url,
+        filename: data.backup.key.split("/").pop() ?? data.backup.key,
+        kind: inferKindFromContentType(data.backup.contentType, data.backup.key),
+        contentType: data.backup.contentType,
+        size: body.byteLength,
+      });
       results.push({ key: data.backup.key, size: body.byteLength, url });
     }
     const main = b64ToBytes(data.main.dataBase64);
     const mainUrl = await putR2Object(data.main.key, main, data.main.contentType);
+    if (data.main.key.startsWith("optimized/")) {
+      await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength);
+    } else {
+      await upsertMediaAssetDirect({
+        key: data.main.key,
+        url: mainUrl,
+        filename: data.main.key.split("/").pop() ?? data.main.key,
+        kind: inferKindFromContentType(data.main.contentType, data.main.key),
+        contentType: data.main.contentType,
+        size: main.byteLength,
+      });
+    }
     results.push({ key: data.main.key, size: main.byteLength, url: mainUrl });
     for (const s of data.siblings) {
       const body = b64ToBytes(s.dataBase64);
       const url = await putR2Object(s.key, body, s.contentType);
+      await upsertMediaAssetDirect({
+        key: s.key,
+        url,
+        filename: s.key.split("/").pop() ?? s.key,
+        kind: inferKindFromContentType(s.contentType, s.key),
+        contentType: s.contentType,
+        size: body.byteLength,
+      });
       results.push({ key: s.key, size: body.byteLength, url });
     }
     return { ok: true, results };
   });
 
 export const renameR2Object = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -92,23 +127,26 @@ const uploadSchema = z.object({
 });
 
 export const uploadToR2 = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
   .inputValidator((input) => uploadSchema.parse(input))
   .handler(async ({ data }) => {
     const kind: AssetKind = data.kind ?? inferKindFromContentType(data.contentType, data.filename);
     const key = makeR2Key(kind, data.filename);
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(key, body, data.contentType, data.filename);
+    await upsertMediaAssetDirect({ key, url, filename: data.filename, kind, contentType: data.contentType, size: body.byteLength });
     return { url, key, size: body.byteLength, kind };
   });
 
 export const listR2Objects = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .handler(async () => listR2ObjectsDirect());
 
 // Deletes exactly one R2 object by key. Never expands by prefix or by any
 // derived sibling — the caller must pass the precise key it wants gone.
 // R2-only; no Supabase dependency.
 export const deleteR2Object = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -117,12 +155,13 @@ export const deleteR2Object = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
-    await deleteR2ObjectDirect(data.key);
+    await deleteMediaAssetDirect({ key: data.key });
     return { ok: true, deleted: [data.key] };
   });
 
 
 export const replaceR2Object = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -141,6 +180,14 @@ export const replaceR2Object = createServerFn({ method: "POST" })
     }
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(data.key, body, data.contentType);
+    await upsertMediaAssetDirect({
+      key: data.key,
+      url,
+      filename: data.key.split("/").pop() ?? data.key,
+      kind: inferKindFromContentType(data.contentType, data.key),
+      contentType: data.contentType,
+      size: body.byteLength,
+    });
     return { ok: true, url, size: body.byteLength };
   });
 
@@ -150,7 +197,7 @@ export const replaceR2Object = createServerFn({ method: "POST" })
  * (or its key) is referenced anywhere in CMS content. Never deletes anything.
  */
 export const scanStorageOrphans = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
       try {
@@ -259,7 +306,7 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
 // Legacy migration helper — kept for backward compatibility but marked as
 // admin-only. Not used by the storage cleanup flow.
 export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .inputValidator((input) =>
     z
       .object({

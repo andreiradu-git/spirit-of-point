@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Database } from "@/integrations/supabase/types";
+import { requireAdminAuth } from "@/lib/admin-auth";
+import { getMediaDbClient, inferMediaAssetForUrlDirect } from "@/lib/media-assets.server";
 
 // NOTE: All file uploads/deletes are handled through Cloudflare R2
 // (`src/lib/r2.functions.ts` — `uploadToR2` / `deleteR2Object` /
@@ -10,10 +10,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 
 export const getGalleries = createServerFn({ method: "GET" }).handler(async () => {
-  const { createClient } = await import("@supabase/supabase-js");
-  const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-  });
+  const supabase = getMediaDbClient(false) as ReturnType<typeof getMediaDbClient> & { from: (table: string) => any };
   const { data, error } = await supabase
     .from("galleries")
     .select("*, gallery_images(*)")
@@ -26,9 +23,8 @@ export const getGalleryBySlug = createServerFn({ method: "GET" })
   .validator((data) => z.object({ slug: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
-      auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    });
+    void createClient;
+    const supabase = getMediaDbClient(false) as ReturnType<typeof getMediaDbClient> & { from: (table: string) => any };
     const { data: gallery, error } = await supabase
       .from("galleries")
       .select("*, gallery_images(*)")
@@ -40,7 +36,7 @@ export const getGalleryBySlug = createServerFn({ method: "GET" })
   });
 
 export const upsertGallery = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .validator((data) =>
     z
       .object({
@@ -59,7 +55,7 @@ export const upsertGallery = createServerFn({ method: "POST" })
   });
 
 export const addGalleryImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .validator((data) =>
     z
       .object({
@@ -71,6 +67,7 @@ export const addGalleryImage = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    const media = await inferMediaAssetForUrlDirect(data.src, data.alt);
     const { data: gallery } = await context.supabase.from("galleries").select("id").eq("slug", data.gallerySlug).single();
     if (!gallery) throw new Error("Gallery not found");
 
@@ -81,7 +78,8 @@ export const addGalleryImage = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase.from("gallery_images").insert({
       gallery_id: gallery.id,
-      src: data.src,
+      media_asset_id: media.id,
+      src: media.url,
       alt: data.alt,
       title: data.title,
       position: (count ?? 0) + 1,
@@ -91,7 +89,7 @@ export const addGalleryImage = createServerFn({ method: "POST" })
   });
 
 export const removeGalleryImage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .validator((data) => z.object({ imageId: z.string() }).parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("gallery_images").delete().eq("id", data.imageId);
@@ -100,7 +98,7 @@ export const removeGalleryImage = createServerFn({ method: "POST" })
   });
 
 export const reorderGalleryImages = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .validator((data) => z.object({ imageIds: z.array(z.string()) }).parse(data))
   .handler(async ({ data, context }) => {
     for (let i = 0; i < data.imageIds.length; i++) {
@@ -111,7 +109,7 @@ export const reorderGalleryImages = createServerFn({ method: "POST" })
   });
 
 export const updateImageMeta = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .validator((data) =>
     z
       .object({

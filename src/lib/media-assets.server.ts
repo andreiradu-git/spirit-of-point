@@ -28,6 +28,7 @@ export type SiteAsset = {
 };
 
 type Db = ReturnType<typeof createClient>;
+type UnsafeDb = ReturnType<typeof createClient> & { from: (table: string) => any };
 
 function dbFetch(key: string): typeof fetch {
   return (input, init) => {
@@ -49,6 +50,10 @@ export function getMediaDbClient(service = false): Db {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     global: { fetch: dbFetch(key) },
   });
+}
+
+function unsafeDb(service = false): UnsafeDb {
+  return getMediaDbClient(service) as UnsafeDb;
 }
 
 function kindFromUrl(url: string): SiteAsset["kind"] {
@@ -135,7 +140,7 @@ export async function syncR2MediaAssetsDirect(): Promise<void> {
     if (!paired) rows.push(r2Row(object));
   }
   if (!rows.length) return;
-  const db = getMediaDbClient(true);
+  const db = unsafeDb(true);
   const { error } = await db.from("media_assets").upsert(rows, { onConflict: "url" });
   if (error) throw new Error(error.message);
 }
@@ -146,7 +151,7 @@ export async function listAllAssetsDirect(): Promise<SiteAsset[]> {
   } catch (error) {
     console.warn("Media R2 sync skipped", error);
   }
-  const db = getMediaDbClient(false);
+  const db = unsafeDb(false);
   const { data, error } = await db
     .from("media_assets")
     .select("id, storage_provider, bucket, object_key, filename, url, kind, content_type, size, optimized_object_key, optimized_url, alt, used_on_site, updated_at")
@@ -163,7 +168,7 @@ export async function upsertMediaAssetDirect(input: {
   contentType?: string;
   size?: number;
 }): Promise<void> {
-  const db = getMediaDbClient(true);
+  const db = unsafeDb(true);
   const { error } = await db.from("media_assets").upsert(
     {
       storage_provider: "r2",
@@ -181,7 +186,7 @@ export async function upsertMediaAssetDirect(input: {
 }
 
 export async function markOptimizedMediaAssetDirect(key: string, url: string, size?: number): Promise<void> {
-  const db = getMediaDbClient(true);
+  const db = unsafeDb(true);
   const { data, error } = await db.from("media_assets").select("id, object_key").eq("storage_provider", "r2").eq("kind", "image");
   if (error) throw new Error(error.message);
   const match = ((data ?? []) as Array<{ id: string; object_key: string }>).find((row) => optimizedKeyFor(row.object_key) === key);
@@ -197,7 +202,7 @@ export async function markOptimizedMediaAssetDirect(key: string, url: string, si
 }
 
 export async function deleteMediaAssetDirect(input: { id?: string; key?: string; url?: string }): Promise<void> {
-  const db = getMediaDbClient(true);
+  const db = unsafeDb(true);
   let query = db.from("media_assets").select("*").limit(1);
   if (input.id) query = query.eq("id", input.id);
   else if (input.key) query = query.or(`object_key.eq.${input.key},optimized_object_key.eq.${input.key}`);
@@ -240,7 +245,7 @@ export async function deleteMediaAssetDirect(input: { id?: string; key?: string;
 }
 
 export async function inferMediaAssetForUrlDirect(url: string, alt?: string): Promise<{ id: string; url: string }> {
-  const db = getMediaDbClient(true);
+  const db = unsafeDb(true);
   const { data: existing, error: existingError } = await db
     .from("media_assets")
     .select("id, url, optimized_url")
