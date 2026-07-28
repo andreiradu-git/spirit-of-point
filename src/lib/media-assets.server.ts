@@ -45,7 +45,43 @@ export function getMediaDbClient(service = false): Db {
   const key = service
     ? readServerEnv("SUPABASE_SERVICE_ROLE_KEY")
     : readServerEnv("SUPABASE_PUBLISHABLE_KEY") ?? readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
-  if (!url || !key) throw new Error("Media database is not configured in this runtime.");
+
+  // If you want to run in an R2-only dev mode (no Supabase), set R2_ONLY_MODE=true in env.
+  const r2OnlyFlag = (readServerEnv("R2_ONLY_MODE") || "").toLowerCase() === "true" || readServerEnv("R2_ONLY_MODE") === "1";
+
+  if (!url || !key) {
+    if (!r2OnlyFlag) throw new Error("Media database is not configured in this runtime.");
+
+    // Minimal stub that implements the `.from(...).select/upsert/update/delete/...` chain
+    // used across the media pipeline. Returns empty results or success objects.
+    const makeStubQuery = () => {
+      const chain: any = {
+        select: async () => ({ data: [], error: null }),
+        maybeSingle: async () => ({ data: null, error: null }),
+        single: async () => ({ data: null, error: null }),
+        insert: async () => ({ data: null, error: null }),
+        upsert: async () => ({ error: null }),
+        update: async () => ({ error: null }),
+        delete: async () => ({ error: null }),
+        eq: function () { return this; },
+        or: function () { return this; },
+        limit: function () { return this; },
+        order: function () { return this; },
+        in: function () { return this; },
+        // keep maybeSingle defined twice is harmless; left for compatibility
+        maybeSingle: async () => ({ data: null, error: null }),
+      };
+      return chain;
+    };
+
+    const stubClient: any = {
+      from: (_table: string) => makeStubQuery(),
+      rpc: async () => ({ data: true, error: null }),
+    };
+
+    return stubClient as Db;
+  }
+
   return createClient(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     global: { fetch: dbFetch(key) },

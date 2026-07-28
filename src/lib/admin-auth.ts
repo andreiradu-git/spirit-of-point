@@ -16,7 +16,42 @@ function createSupabaseFetch(key: string): typeof fetch {
 export const requireAdminAuth = createMiddleware({ type: "function" }).server(async ({ next }) => {
   const url = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
   const key = readServerEnv("SUPABASE_PUBLISHABLE_KEY") ?? readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
-  if (!url || !key) throw new Error("Backend auth is not configured in this runtime.");
+
+  const ADMIN_BYPASS_KEY = readServerEnv("ADMIN_BYPASS_KEY");
+
+  // If Supabase is not configured but an ADMIN_BYPASS_KEY is provided we accept
+  // a single static bearer token for local/dev admin operations.
+  if (!url || !key) {
+    if (!ADMIN_BYPASS_KEY) throw new Error("Backend auth is not configured in this runtime.");
+
+    const request = getRequest();
+    const authHeader = request.headers.get("authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) throw new Error("Unauthorized: missing admin session");
+    const token = authHeader.slice("Bearer ".length);
+
+    if (token !== ADMIN_BYPASS_KEY) throw new Error("Unauthorized: invalid admin session");
+
+    // Minimal supabase-like stub used by downstream handlers.
+    const supabaseStub: any = {
+      from: (_table: string) => ({
+        select: async () => ({ data: [], error: null }),
+        insert: async () => ({ data: [], error: null }),
+        update: async () => ({ data: [], error: null }),
+        delete: async () => ({ data: [], error: null }),
+        eq: function () { return this; },
+        in: function () { return this; },
+        maybeSingle: async () => ({ data: null, error: null }),
+        single: async () => ({ data: null, error: null }),
+      }),
+      rpc: async () => ({ data: true, error: null }),
+      auth: {
+        getClaims: async () => ({ data: { claims: { sub: "dev-admin" } }, error: null }),
+      },
+    };
+
+    const userId = "dev-admin";
+    return next({ context: { supabase: supabaseStub, userId, claims: { sub: userId } } });
+  }
 
   const request = getRequest();
   const authHeader = request.headers.get("authorization") ?? "";
