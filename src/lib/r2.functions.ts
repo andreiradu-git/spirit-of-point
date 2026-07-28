@@ -214,3 +214,189 @@ export const replaceR2Object = createServerFn({ method: "POST" })
     });
     return { ok: true, url, size: body.byteLength };
   });
+
+/**
+ * Orphan scanner — lists every object in R2 and marks whether the object URL
+ * (or its key) is referenced anywhere in CMS content. Never deletes anything.
+ */
+export const scanStorageOrphans = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async ({ context }) => {
+    const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
+      try {
+        return await p;
+      } catch (e) {
+        console.warn("[storage-cleanup] CMS query failed, continuing:", e);
+        return { data: null };
+      }
+    };
+    const [objects, galleries, settings, pages, pageSeo, assetMeta] = await Promise.all([
+      listR2ObjectsDirect().catch((e) => {
+        console.error("[storage-cleanup] R2 list failed", e);
+        return [] as Awaited<ReturnType<typeof listR2ObjectsDirect>>;
+      }),
+      safe(context.supabase.from("gallery_images").select("src, gallery_id")),
+      safe(context.supabase.from("site_settings").select("key, value")),
+      safe(context.supabase.from("pages").select("slug, body")),
+      safe(context.supabase.from("page_seo").select("path, og_image")),
+      safe(context.supabase.from("asset_meta").select("url")),
+    ]);
+
+    // Build one big haystack containing every referenced URL/string in the CMS.
+    const haystackParts: string[] = [];
+    const referenceIndex: Array<{ source: string; text: string }> = [];
+
+    for (const row of galleries.data ?? []) {
+      if (row.src) {
+        haystackParts.push(row.src);
+        referenceIndex.push({ source: "gallery_images", text: row.src });
+      }
+    }
+    for (const row of settings.data ?? []) {
+      const json = JSON.stringify(row.value ?? "");
+      haystackParts.push(json);
+      referenceIndex.push({ source: `site_settings:${row.key}`, text: json });
+    }
+    for (const row of pages.data ?? []) {
+      const json = JSON.stringify(row.body ?? "");
+      haystackParts.push(json);
+      referenceIndex.push({ source: `page:${row.slug}`, text: json });
+    }
+    for (const row of pageSeo.data ?? []) {
+      if (row.og_image) {
+        haystackParts.push(row.og_image);
+        referenceIndex.push({ source: `page_seo:${row.path}`, text: row.og_image });
+      }
+    }
+    for (const row of assetMeta.data ?? []) {
+      if (row.url) {
+        haystackParts.push(row.url);
+        referenceIndex.push({ source: "asset_meta", text: row.url });
+      }
+    }
+
+    // Also include known bundled data files (videos list).
+    try {
+      const videos = (await import("@/data/videos.json")).default as Array<{ src: string }>;
+      for (const v of videos) {
+        haystackParts.push(v.src);
+        referenceIndex.push({ source: "videos.json", text: v.src });
+      }
+    } catch {
+      /* optional */
+    }
+
+    const haystack = haystackParts.join("\n");
+
+    let orphanBytes = 0;
+    const report = objects.map((obj) => {
+      // Match either the full URL or the bare key — covers both `https://…/key`
+      // and any legacy relative reference to the same key.
+      const referenced = haystack.includes(obj.url) || haystack.includes(obj.key);
+      const referencedIn = referenced
+        ? Array.from(
+            new Set(
+              referenceIndex
+                .filter((r) => r.text.includes(obj.url) || r.text.includes(obj.key))
+                .map((r) => r.source),
+            ),
+          )
+        : [];
+      if (!referenced) orphanBytes += obj.size;
+      return {
+        key: obj.key,
+        url: obj.url,
+        size: obj.size,
+        uploaded: obj.lastModified,
+        contentType: obj.contentType,
+        originalName: obj.originalName,
+        referenced,
+        referencedIn,
+      };
+    });
+
+    return {
+      bucketPublicUrl: PUBLIC_URL,
+      totalObjects: report.length,
+      totalBytes: report.reduce((n, r) => n + r.size, 0),
+      orphanCount: report.filter((r) => !r.referenced).length,
+      orphanBytes,
+      scannedAt: new Date().toISOString(),
+      objects: report,
+    };
+  });
+
+// Legacy migration helper — kept for backward compatibility but marked as
+// admin-only. Not used by the storage cleanup flow.
+export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        assets: z
+          .array(
+            z.object({
+              url: z.string().url(),
+              name: z.string().optional(),
+              contentType: z.string().optional(),
+            }),
+          )
+          .optional()
+          .default([]),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const { publicUrl } = await getR2Client();
+    const existing = new Set((await listR2ObjectsDirect()).map((object) => object.key));
+    const seenUrls = new Set<string>();
+    let copied = 0;
+    let skipped = 0;
+    let failed = 0;
+    const migrated: Array<{ from: string; to: string; key: string }> = [];
+
+    for (const asset of data.assets) {
+      if (seenUrls.has(asset.url) || asset.url.startsWith(`${publicUrl}/`)) {
+        skipped++;
+        continue;
+      }
+      seenUrls.add(asset.url);
+      const kind = inferKindFromContentType(asset.contentType, asset.name || asset.url);
+      const key = makeR2Key(kind, asset.name || asset.url.split("/").pop() || "asset.bin");
+      const nextUrl = `${publicUrl}/${key}`;
+      if (existing.has(key)) {
+        skipped++;
+        migrated.push({ from: asset.url, to: nextUrl, key });
+        continue;
+      }
+      try {
+        const res = await fetch(asset.url, { cache: "no-store" });
+        if (!res.ok) throw new Error(`source fetch failed [${res.status}]`);
+        const blob = await res.blob();
+        const body = new Uint8Array(await blob.arrayBuffer());
+        await putR2Object(key, body, asset.contentType || blob.type || res.headers.get("content-type") || undefined, asset.name);
+        copied++;
+        existing.add(key);
+        migrated.push({ from: asset.url, to: nextUrl, key });
+      } catch (e) {
+        console.error("R2 direct URL migration failed", asset.url, e);
+        failed++;
+      }
+    }
+
+    return {
+      totalFiles: data.assets.length,
+      copied,
+      skipped,
+      failed,
+      rewrites: 0,
+      migrated,
+      message:
+        migrated.length > 0
+          ? "Files copied to R2. Replace old gallery/page references with the new R2 assets from the library where needed."
+          : "R2 upload is active. No non-R2 assets were found to copy.",
+    };
+  });
+
+// Retained for compatibility — used to copy R2 objects (rare).
+export { /*copyR2ObjectDirect,*/ };
