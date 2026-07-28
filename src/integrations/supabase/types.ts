@@ -119,6 +119,7 @@ export type Database = {
           created_at: string
           gallery_id: string
           id: string
+          media_asset_id: string | null
           position: number
           src: string
           title: string | null
@@ -129,6 +130,7 @@ export type Database = {
           created_at?: string
           gallery_id: string
           id?: string
+          media_asset_id?: string | null
           position?: number
           src: string
           title?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           created_at?: string
           gallery_id?: string
           id?: string
+          media_asset_id?: string | null
           position?: number
           src?: string
           title?: string | null
@@ -152,7 +155,86 @@ export type Database = {
             referencedRelation: "galleries"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "gallery_images_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      media_assets: {
+        Row: {
+          alt: string | null
+          bucket: string
+          caption: string | null
+          content_type: string | null
+          created_at: string
+          description: string | null
+          filename: string
+          id: string
+          kind: string
+          label: string | null
+          object_key: string
+          optimized_object_key: string | null
+          optimized_url: string | null
+          original_object_key: string | null
+          original_url: string | null
+          size: number | null
+          storage_provider: string
+          tags: string[]
+          updated_at: string
+          url: string
+          used_on_site: boolean
+        }
+        Insert: {
+          alt?: string | null
+          bucket?: string
+          caption?: string | null
+          content_type?: string | null
+          created_at?: string
+          description?: string | null
+          filename: string
+          id?: string
+          kind?: string
+          label?: string | null
+          object_key: string
+          optimized_object_key?: string | null
+          optimized_url?: string | null
+          original_object_key?: string | null
+          original_url?: string | null
+          size?: number | null
+          storage_provider?: string
+          tags?: string[]
+          updated_at?: string
+          url: string
+          used_on_site?: boolean
+        }
+        Update: {
+          alt?: string | null
+          bucket?: string
+          caption?: string | null
+          content_type?: string | null
+          created_at?: string
+          description?: string | null
+          filename?: string
+          id?: string
+          kind?: string
+          label?: string | null
+          object_key?: string
+          optimized_object_key?: string | null
+          optimized_url?: string | null
+          original_object_key?: string | null
+          original_url?: string | null
+          size?: number | null
+          storage_provider?: string
+          tags?: string[]
+          updated_at?: string
+          url?: string
+          used_on_site?: boolean
+        }
+        Relationships: []
       }
       menu_items: {
         Row: {
