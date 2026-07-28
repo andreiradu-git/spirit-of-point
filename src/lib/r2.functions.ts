@@ -23,6 +23,17 @@ export type { R2Object } from "@/lib/r2.server";
 
 const PUBLIC_URL = "https://images.pointstudio.ro";
 
+function ensureString(value: unknown, name: string, location = "src/lib/r2.functions.ts") {
+  if (typeof value !== "string") {
+    console.error(`[${location}] ${name} is not a string`, value);
+    throw new Response(
+      JSON.stringify({ message: `${name} is required and must be a string` }),
+      { status: 400, headers: { "content-type": "application/json; charset=utf-8" } },
+    );
+  }
+  return value;
+}
+
 // -----------------------------------------------------------------------------
 // R2-only image pipeline (no Supabase). Image upload / optimize / delete only
 // depend on the Cloudflare R2 binding.
@@ -56,44 +67,52 @@ export const writeR2Variants = createServerFn({ method: "POST" })
     const results: Array<{ key: string; size: number; url: string }> = [];
     if (data.backup) {
       const body = b64ToBytes(data.backup.dataBase64);
-      const url = await putR2Object(data.backup.key, body, data.backup.contentType);
+      // defensive checks and logging
+      const bkKey = ensureString(data.backup.key, "backup.key", "writeR2Variants");
+      const bkContentType = ensureString(data.backup.contentType, "backup.contentType", "writeR2Variants");
+      const url = await putR2Object(bkKey, body, bkContentType);
       await upsertMediaAssetDirect({
-        key: data.backup.key,
+        key: bkKey,
         url,
-        filename: data.backup.key.split("/").pop() ?? data.backup.key,
-        kind: inferKindFromContentType(data.backup.contentType, data.backup.key),
-        contentType: data.backup.contentType,
+        filename: bkKey.split("/").pop() ?? bkKey,
+        kind: inferKindFromContentType(bkContentType, bkKey),
+        contentType: bkContentType,
         size: body.byteLength,
       });
-      results.push({ key: data.backup.key, size: body.byteLength, url });
+      results.push({ key: bkKey, size: body.byteLength, url });
     }
-    const main = b64ToBytes(data.main.dataBase64);
-    const mainUrl = await putR2Object(data.main.key, main, data.main.contentType);
-    if (data.main.key.startsWith("optimized/")) {
-      await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength);
+    const mainData = data.main;
+    const mainBody = b64ToBytes(mainData.dataBase64);
+    const mainKey = ensureString(mainData.key, "main.key", "writeR2Variants");
+    const mainContentType = ensureString(mainData.contentType, "main.contentType", "writeR2Variants");
+    const mainUrl = await putR2Object(mainKey, mainBody, mainContentType);
+    if (mainKey.startsWith("optimized/")) {
+      await markOptimizedMediaAssetDirect(mainKey, mainUrl, mainBody.byteLength);
     } else {
       await upsertMediaAssetDirect({
-        key: data.main.key,
+        key: mainKey,
         url: mainUrl,
-        filename: data.main.key.split("/").pop() ?? data.main.key,
-        kind: inferKindFromContentType(data.main.contentType, data.main.key),
-        contentType: data.main.contentType,
-        size: main.byteLength,
+        filename: mainKey.split("/").pop() ?? mainKey,
+        kind: inferKindFromContentType(mainContentType, mainKey),
+        contentType: mainContentType,
+        size: mainBody.byteLength,
       });
     }
-    results.push({ key: data.main.key, size: main.byteLength, url: mainUrl });
+    results.push({ key: mainKey, size: mainBody.byteLength, url: mainUrl });
     for (const s of data.siblings) {
       const body = b64ToBytes(s.dataBase64);
-      const url = await putR2Object(s.key, body, s.contentType);
+      const skey = ensureString(s.key, "sibling.key", "writeR2Variants");
+      const scontent = ensureString(s.contentType, "sibling.contentType", "writeR2Variants");
+      const url = await putR2Object(skey, body, scontent);
       await upsertMediaAssetDirect({
-        key: s.key,
+        key: skey,
         url,
-        filename: s.key.split("/").pop() ?? s.key,
-        kind: inferKindFromContentType(s.contentType, s.key),
-        contentType: s.contentType,
+        filename: skey.split("/").pop() ?? skey,
+        kind: inferKindFromContentType(scontent, skey),
+        contentType: scontent,
         size: body.byteLength,
       });
-      results.push({ key: s.key, size: body.byteLength, url });
+      results.push({ key: skey, size: body.byteLength, url });
     }
     return { ok: true, results };
   });
@@ -130,11 +149,15 @@ export const uploadToR2 = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .inputValidator((input) => uploadSchema.parse(input))
   .handler(async ({ data }) => {
-    const kind: AssetKind = data.kind ?? inferKindFromContentType(data.contentType, data.filename);
-    const key = makeR2Key(kind, data.filename);
+    // Defensive checks: ensure filename and contentType are strings
+    const filename = ensureString(data.filename, "filename", "uploadToR2");
+    const contentType = ensureString(data.contentType, "contentType", "uploadToR2");
+
+    const kind: AssetKind = data.kind ?? inferKindFromContentType(contentType, filename);
+    const key = makeR2Key(kind, filename);
     const body = b64ToBytes(data.dataBase64);
-    const url = await putR2Object(key, body, data.contentType, data.filename);
-    await upsertMediaAssetDirect({ key, url, filename: data.filename, kind, contentType: data.contentType, size: body.byteLength });
+    const url = await putR2Object(key, body, contentType, filename);
+    await upsertMediaAssetDirect({ key, url, filename, kind, contentType, size: body.byteLength });
     return { url, key, size: body.byteLength, kind };
   });
 
@@ -180,17 +203,17 @@ export const replaceR2Object = createServerFn({ method: "POST" })
     }
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(data.key, body, data.contentType);
+    const safeKey = ensureString(data.key, "key", "replaceR2Object");
     await upsertMediaAssetDirect({
-      key: data.key,
+      key: safeKey,
       url,
-      filename: data.key.split("/").pop() ?? data.key,
-      kind: inferKindFromContentType(data.contentType, data.key),
+      filename: safeKey.split("/").pop() ?? safeKey,
+      kind: inferKindFromContentType(data.contentType, safeKey),
       contentType: data.contentType,
       size: body.byteLength,
     });
     return { ok: true, url, size: body.byteLength };
   });
-
 
 /**
  * Orphan scanner — lists every object in R2 and marks whether the object URL
@@ -374,3 +397,6 @@ export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
           : "R2 upload is active. No non-R2 assets were found to copy.",
     };
   });
+
+// Retained for compatibility — used to copy R2 objects (rare).
+export { /*copyR2ObjectDirect,*/ };
