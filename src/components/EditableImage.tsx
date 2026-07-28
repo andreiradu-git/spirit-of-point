@@ -61,11 +61,13 @@ export function EditableImage({
       });
       onChange?.(res.url);
     } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       console.error("Upload failed", e);
-      alert("Upload failed. Please try again.");
+      alert("Upload failed: " + msg);
     } finally {
       setUploading(false);
     }
+
   };
 
   const onClick = () => {
