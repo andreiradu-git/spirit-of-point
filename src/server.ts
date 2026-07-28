@@ -51,6 +51,23 @@ function bindWorkerEnv(request: Request, env: unknown): Record<string, unknown> 
   };
   globalThis.__POINTSTUDIO_WORKER_RUNTIME__ = runtimeRequest.runtime?.name ?? "cloudflare";
 
+  // Cloudflare Workers do not populate `process.env` from the Worker's
+  // secrets/bindings. Mirror the string entries so any code (including the
+  // auto-generated Supabase auth middleware and other server fns) that reads
+  // `process.env.<NAME>` sees the runtime values.
+  try {
+    if (typeof process !== "undefined" && process.env) {
+      for (const [k, v] of Object.entries(rawEnv)) {
+        if (typeof v === "string" && !process.env[k]) {
+          (process.env as Record<string, string>)[k] = v;
+        }
+      }
+    }
+  } catch {
+    // Ignore — the global mirror above still works as a fallback.
+  }
+
+
   try {
     runtimeRequest.runtime = {
       ...(runtimeRequest.runtime ?? {}),
