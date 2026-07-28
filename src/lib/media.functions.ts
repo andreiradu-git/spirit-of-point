@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdminAuth } from "@/lib/admin-auth";
 import { getMediaDbClient, inferMediaAssetForUrlDirect } from "@/lib/media-assets.server";
+type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
 
 // NOTE: All file uploads/deletes are handled through Cloudflare R2
 // (`src/lib/r2.functions.ts` — `uploadToR2` / `deleteR2Object` /
@@ -10,7 +11,7 @@ import { getMediaDbClient, inferMediaAssetForUrlDirect } from "@/lib/media-asset
 
 
 export const getGalleries = createServerFn({ method: "GET" }).handler(async () => {
-  const supabase = getMediaDbClient(false) as ReturnType<typeof getMediaDbClient> & { from: (table: string) => any };
+  const supabase = getMediaDbClient(false) as unknown as AnyDb;
   const { data, error } = await supabase
     .from("galleries")
     .select("*, gallery_images(*)")
@@ -22,9 +23,7 @@ export const getGalleries = createServerFn({ method: "GET" }).handler(async () =
 export const getGalleryBySlug = createServerFn({ method: "GET" })
   .validator((data) => z.object({ slug: z.string() }).parse(data))
   .handler(async ({ data }) => {
-    const { createClient } = await import("@supabase/supabase-js");
-    void createClient;
-    const supabase = getMediaDbClient(false) as ReturnType<typeof getMediaDbClient> & { from: (table: string) => any };
+    const supabase = getMediaDbClient(false) as unknown as AnyDb;
     const { data: gallery, error } = await supabase
       .from("galleries")
       .select("*, gallery_images(*)")

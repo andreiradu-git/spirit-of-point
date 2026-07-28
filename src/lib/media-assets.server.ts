@@ -28,7 +28,7 @@ export type SiteAsset = {
 };
 
 type Db = ReturnType<typeof createClient>;
-type UnsafeDb = ReturnType<typeof createClient> & { from: (table: string) => any };
+type UnsafeDb = Omit<ReturnType<typeof createClient>, "from"> & { from: (table: string) => any };
 
 function dbFetch(key: string): typeof fetch {
   return (input, init) => {
@@ -53,7 +53,7 @@ export function getMediaDbClient(service = false): Db {
 }
 
 function unsafeDb(service = false): UnsafeDb {
-  return getMediaDbClient(service) as UnsafeDb;
+  return getMediaDbClient(service) as unknown as UnsafeDb;
 }
 
 function kindFromUrl(url: string): SiteAsset["kind"] {
