@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdminAuth } from "@/lib/admin-auth";
+import { requireAdminDb } from "@/lib/admin-db-context";
 import { deleteMediaAssetDirect, upsertMediaAssetDirect } from "@/lib/media-assets.server";
 import {
   b64ToBytes,
@@ -24,7 +25,8 @@ export const replaceMediaObject = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const db = requireAdminDb(context);
     if (data.backupKey && data.origBase64) {
       await putR2Object(
         data.backupKey,
@@ -41,7 +43,7 @@ export const replaceMediaObject = createServerFn({ method: "POST" })
       kind: inferKindFromContentType(data.contentType, data.key),
       contentType: data.contentType,
       size: body.byteLength,
-    });
+    }, { db });
     return { ok: true, url, size: body.byteLength };
   });
 
@@ -52,7 +54,8 @@ export const deleteMediaObject = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z.object({ key: z.string().min(1).max(600), alsoDeleteBackup: z.boolean().optional() }).parse(input),
   )
-  .handler(async ({ data }) => {
-    await deleteMediaAssetDirect({ key: data.key });
+  .handler(async ({ data, context }) => {
+    const db = requireAdminDb(context);
+    await deleteMediaAssetDirect({ key: data.key }, { db });
     return { ok: true };
   });

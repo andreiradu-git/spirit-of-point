@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdminAuth } from "@/lib/admin-auth";
+import { requireAdminDb, type AdminDb } from "@/lib/admin-db-context";
 import {
   deleteMediaAssetDirect,
   markOptimizedMediaAssetDirect,
@@ -22,8 +23,6 @@ import {
 export type { R2Object } from "@/lib/r2.server";
 
 const PUBLIC_URL = "https://images.pointstudio.ro";
-
-type AdminDb = { from: (table: string) => any };
 
 // -----------------------------------------------------------------------------
 // R2-only image pipeline (no Supabase). Image upload / optimize / delete only
@@ -54,7 +53,8 @@ export const writeR2Variants = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const db = requireAdminDb(context);
     const results: Array<{ key: string; size: number; url: string }> = [];
     if (data.backup) {
       const body = b64ToBytes(data.backup.dataBase64);
@@ -66,13 +66,13 @@ export const writeR2Variants = createServerFn({ method: "POST" })
         kind: inferKindFromContentType(data.backup.contentType, data.backup.key),
         contentType: data.backup.contentType,
         size: body.byteLength,
-      });
+      }, { db });
       results.push({ key: data.backup.key, size: body.byteLength, url });
     }
     const main = b64ToBytes(data.main.dataBase64);
     const mainUrl = await putR2Object(data.main.key, main, data.main.contentType);
     if (data.main.key.startsWith("optimized/")) {
-      await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength);
+      await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength, { db });
     } else {
       await upsertMediaAssetDirect({
         key: data.main.key,
@@ -81,7 +81,7 @@ export const writeR2Variants = createServerFn({ method: "POST" })
         kind: inferKindFromContentType(data.main.contentType, data.main.key),
         contentType: data.main.contentType,
         size: main.byteLength,
-      });
+      }, { db });
     }
     results.push({ key: data.main.key, size: main.byteLength, url: mainUrl });
     for (const s of data.siblings) {
@@ -94,7 +94,7 @@ export const writeR2Variants = createServerFn({ method: "POST" })
         kind: inferKindFromContentType(s.contentType, s.key),
         contentType: s.contentType,
         size: body.byteLength,
-      });
+      }, { db });
       results.push({ key: s.key, size: body.byteLength, url });
     }
     return { ok: true, results };
@@ -124,6 +124,11 @@ const uploadSchema = z.object({
   contentType: z.string().max(160).optional().default("application/octet-stream"),
   dataBase64: z.string().min(1),
   kind: z.enum(["image", "video", "file"]).optional(),
+  originalFilename: z.string().max(240).optional(),
+  width: z.number().int().positive().max(50000).optional(),
+  height: z.number().int().positive().max(50000).optional(),
+  duration: z.number().positive().max(60 * 60 * 12).optional(),
+  uploadDate: z.string().datetime().optional(),
   // Legacy — ignored, kept for backward compatibility with existing callers.
   folder: z.string().max(120).optional(),
 });
@@ -131,12 +136,30 @@ const uploadSchema = z.object({
 export const uploadToR2 = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .inputValidator((input) => uploadSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const db = requireAdminDb(context);
     const kind: AssetKind = data.kind ?? inferKindFromContentType(data.contentType, data.filename);
     const key = makeR2Key(kind, data.filename);
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(key, body, data.contentType, data.filename);
-    await upsertMediaAssetDirect({ key, url, filename: data.filename, kind, contentType: data.contentType, size: body.byteLength });
+    await upsertMediaAssetDirect(
+      {
+        key,
+        url,
+        filename: data.filename,
+        originalFilename: data.originalFilename ?? data.filename,
+        kind,
+        mediaType: kind,
+        contentType: data.contentType,
+        size: body.byteLength,
+        width: data.width,
+        height: data.height,
+        duration: data.duration,
+        uploadDate: data.uploadDate,
+        folder: data.folder,
+      },
+      { db },
+    );
     return { url, key, size: body.byteLength, kind };
   });
 
@@ -156,8 +179,9 @@ export const deleteR2Object = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
-    await deleteMediaAssetDirect({ key: data.key });
+  .handler(async ({ data, context }) => {
+    const db = requireAdminDb(context);
+    await deleteMediaAssetDirect({ key: data.key }, { db });
     return { ok: true, deleted: [data.key] };
   });
 
@@ -176,7 +200,8 @@ export const replaceR2Object = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const db = requireAdminDb(context);
     if (data.backupKey && data.origBase64) {
       await putR2Object(data.backupKey, b64ToBytes(data.origBase64), data.origContentType || data.contentType);
     }
@@ -189,7 +214,7 @@ export const replaceR2Object = createServerFn({ method: "POST" })
       kind: inferKindFromContentType(data.contentType, data.key),
       contentType: data.contentType,
       size: body.byteLength,
-    });
+    }, { db });
     return { ok: true, url, size: body.byteLength };
   });
 
