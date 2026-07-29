@@ -239,6 +239,8 @@ async function buildStorageCleanupReport(db: AdminDb) {
 
   const allObjectsMarkedOrphan = report.length > 0 && report.every((row) => !row.referenced);
   const hasAnyTrackedMedia = mediaRows.length > 0;
+  // If every R2 object looks orphaned while media_assets rows exist and none of
+  // them matched, the lookup itself is broken and deletion must stay blocked.
   const lookupHealthy = !(
     allObjectsMarkedOrphan &&
     hasAnyTrackedMedia &&

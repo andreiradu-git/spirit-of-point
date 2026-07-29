@@ -5,5 +5,5 @@ ALTER TABLE public.media_assets
 
 UPDATE public.media_assets
 SET
-  extension = COALESCE(extension, NULLIF(SUBSTRING(filename FROM '[^.]+$'), ''))
+  extension = COALESCE(extension, NULLIF(SUBSTRING(filename FROM '\.([^.]+)$'), ''))
 WHERE extension IS NULL;
