@@ -70,7 +70,21 @@ export const addGalleryImage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabase = context?.supabase as AnyDb | undefined;
     if (!supabase) throw new Error("Admin database client unavailable");
-    const media = await inferMediaAssetForUrlDirect(data.src, data.alt);
+
+    // inferMediaAssetForUrlDirect needs the service-role key to look up / create
+    // a media_assets row. If the service-role key is unavailable (e.g., bypass
+    // mode or R2-only deployment), fall back to inserting the gallery image
+    // directly with the provided src URL and no media_asset_id.
+    let mediaUrl = data.src;
+    let mediaId: string | null = null;
+    try {
+      const media = await inferMediaAssetForUrlDirect(data.src, data.alt);
+      mediaUrl = media.url;
+      mediaId = media.id;
+    } catch (e) {
+      console.warn("[addGalleryImage] inferMediaAssetForUrlDirect failed, inserting with src only:", e);
+    }
+
     const { data: gallery } = await supabase.from("galleries").select("id").eq("slug", data.gallerySlug).single();
     if (!gallery) throw new Error("Gallery not found");
 

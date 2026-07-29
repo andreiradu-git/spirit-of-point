@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdminAuth } from "@/lib/admin-auth";
 import {
   deleteMediaAssetDirect,
+  getMediaDbClient,
   markOptimizedMediaAssetDirect,
   upsertMediaAssetDirect,
 } from "@/lib/media-assets.server";
@@ -13,6 +14,7 @@ import {
   inferKindFromContentType,
   listR2ObjectsDirect,
   makeR2Key,
+  optimizedKeyFor,
   putR2Object,
   readR2ObjectDirect,
   sanitizeFileName,
@@ -260,14 +262,34 @@ export const replaceR2Object = createServerFn({ method: "POST" })
 
 /**
  * Orphan scanner — lists every object in R2 and marks whether the object URL
- * (or its key) is referenced anywhere in CMS content. Never deletes anything.
+ * (or its key / optimized variant) is referenced anywhere in CMS content.
+ * Never deletes anything.
+ *
+ * Matching strategy (in order):
+ *   1. object_key / original URL
+ *   2. optimized_object_key / optimized URL (derived via optimizedKeyFor)
+ *   3. normalised filename stored in R2 customMetadata.originalName
+ *
+ * Reference sources checked:
+ *   gallery_images, site_settings, pages, page_seo, media_assets, asset_meta,
+ *   bundled data files (videos.json).
  */
 export const scanStorageOrphans = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
-  .handler(async ({ context }) => {
-    const db = context?.supabase as AdminDb | undefined;
+  .handler(async () => {
     const metadataIssues: string[] = [];
-    let metadataHealthy = Boolean(db);
+    let metadataHealthy = true;
+
+    // Use the service-role DB client so RLS does not filter results.
+    // Fall back gracefully if Supabase is not configured.
+    type ScanDb = { from: (table: string) => { select: (...args: unknown[]) => PromiseLike<{ data: unknown[] | null; error?: { message?: string } | null }> } };
+    let scanDb: ScanDb | undefined;
+    try {
+      scanDb = getMediaDbClient(true) as unknown as ScanDb;
+    } catch (e) {
+      metadataHealthy = false;
+      metadataIssues.push(`DB client unavailable: ${warningMessage(e)}`);
+    }
 
     const executeDbQueryWithFallback = async <T>(
       label: string,
@@ -293,30 +315,37 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         return { data: null };
       }
     };
-    const [objects, galleries, settings, pages, pageSeo, assetMeta] = await Promise.all([
+
+    const [objects, galleries, settings, pages, pageSeo, mediaAssets, assetMeta] = await Promise.all([
       listR2ObjectsDirect().catch((e) => {
         console.error("[storage-cleanup] R2 list failed", e);
         return [] as Awaited<ReturnType<typeof listR2ObjectsDirect>>;
       }),
       executeDbQueryWithFallback<Array<{ src?: string; gallery_id?: string }>>(
         "gallery_images",
-        db?.from("gallery_images").select("src, gallery_id"),
+        scanDb?.from("gallery_images").select("src, gallery_id") as PromiseLike<{ data: Array<{ src?: string; gallery_id?: string }> | null; error?: { message?: string } | null }> | undefined,
       ),
       executeDbQueryWithFallback<Array<{ key?: string; value?: unknown }>>(
         "site_settings",
-        db?.from("site_settings").select("key, value"),
+        scanDb?.from("site_settings").select("key, value") as PromiseLike<{ data: Array<{ key?: string; value?: unknown }> | null; error?: { message?: string } | null }> | undefined,
       ),
       executeDbQueryWithFallback<Array<{ slug?: string; body?: unknown }>>(
         "pages",
-        db?.from("pages").select("slug, body"),
+        scanDb?.from("pages").select("slug, body") as PromiseLike<{ data: Array<{ slug?: string; body?: unknown }> | null; error?: { message?: string } | null }> | undefined,
       ),
       executeDbQueryWithFallback<Array<{ path?: string; og_image?: string }>>(
         "page_seo",
-        db?.from("page_seo").select("path, og_image"),
+        scanDb?.from("page_seo").select("path, og_image") as PromiseLike<{ data: Array<{ path?: string; og_image?: string }> | null; error?: { message?: string } | null }> | undefined,
       ),
+      // media_assets stores url + optimized_url for all tracked R2 objects.
+      executeDbQueryWithFallback<Array<{ url?: string; optimized_url?: string; object_key?: string; optimized_object_key?: string }>>(
+        "media_assets",
+        scanDb?.from("media_assets").select("url, optimized_url, object_key, optimized_object_key") as PromiseLike<{ data: Array<{ url?: string; optimized_url?: string; object_key?: string; optimized_object_key?: string }> | null; error?: { message?: string } | null }> | undefined,
+      ),
+      // asset_meta is the legacy per-URL label/alt table — also check it for references.
       executeDbQueryWithFallback<Array<{ url?: string }>>(
         "asset_meta",
-        db?.from("asset_meta").select("url"),
+        scanDb?.from("asset_meta").select("url") as PromiseLike<{ data: Array<{ url?: string }> | null; error?: { message?: string } | null }> | undefined,
       ),
     ]);
 
@@ -324,42 +353,41 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
     const haystackParts: string[] = [];
     const referenceIndex: Array<{ source: string; text: string }> = [];
 
+    const addRef = (source: string, text: string) => {
+      haystackParts.push(text);
+      referenceIndex.push({ source, text });
+    };
+
     for (const row of galleries.data ?? []) {
-      if (row.src) {
-        haystackParts.push(row.src);
-        referenceIndex.push({ source: "gallery_images", text: row.src });
-      }
+      if (row.src) addRef("gallery_images", row.src);
     }
     for (const row of settings.data ?? []) {
       const json = JSON.stringify(row.value ?? "");
-      haystackParts.push(json);
-      referenceIndex.push({ source: `site_settings:${row.key}`, text: json });
+      addRef(`site_settings:${row.key}`, json);
     }
     for (const row of pages.data ?? []) {
       const json = JSON.stringify(row.body ?? "");
-      haystackParts.push(json);
-      referenceIndex.push({ source: `page:${row.slug}`, text: json });
+      addRef(`page:${row.slug}`, json);
     }
     for (const row of pageSeo.data ?? []) {
-      if (row.og_image) {
-        haystackParts.push(row.og_image);
-        referenceIndex.push({ source: `page_seo:${row.path}`, text: row.og_image });
-      }
+      if (row.og_image) addRef(`page_seo:${row.path}`, row.og_image);
+    }
+    // media_assets: an object whose URL (original or optimized) appears here was explicitly
+    // uploaded and tracked — it is not an orphan.
+    for (const row of mediaAssets.data ?? []) {
+      if (row.url) addRef("media_assets", row.url);
+      if (row.optimized_url) addRef("media_assets", row.optimized_url);
+      if (row.object_key) addRef("media_assets", row.object_key);
+      if (row.optimized_object_key) addRef("media_assets", row.optimized_object_key);
     }
     for (const row of assetMeta.data ?? []) {
-      if (row.url) {
-        haystackParts.push(row.url);
-        referenceIndex.push({ source: "asset_meta", text: row.url });
-      }
+      if (row.url) addRef("asset_meta", row.url);
     }
 
     // Also include known bundled data files (videos list).
     try {
       const videos = (await import("@/data/videos.json")).default as Array<{ src: string }>;
-      for (const v of videos) {
-        haystackParts.push(v.src);
-        referenceIndex.push({ source: "videos.json", text: v.src });
-      }
+      for (const v of videos) addRef("videos.json", v.src);
     } catch {
       /* optional */
     }
@@ -377,23 +405,35 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
           contentType: obj.contentType,
           originalName: obj.originalName,
           referenced: null,
-          referencedIn: [],
+          referencedIn: [] as string[],
           status: "metadata-unavailable" as const,
+          orphanReason: undefined as string | undefined,
         };
       }
-      // Match either the full URL or the bare key — covers both `https://…/key`
-      // and any legacy relative reference to the same key.
-      const referenced = haystack.includes(obj.url) || haystack.includes(obj.key);
+
+      // Compute the paired optimized key/url for this object (if applicable).
+      const isOptimized = obj.key.startsWith("optimized/");
+      const pairedOptimizedKey = isOptimized ? null : optimizedKeyFor(obj.key);
+      const pairedOptimizedUrl = pairedOptimizedKey ? `${PUBLIC_URL}/${pairedOptimizedKey}` : null;
+
+      // Collect all identifiers to probe — original + optimized + filename.
+      const probes: string[] = [obj.url, obj.key];
+      if (pairedOptimizedUrl) probes.push(pairedOptimizedUrl);
+      if (pairedOptimizedKey) probes.push(pairedOptimizedKey);
+      if (obj.originalName) probes.push(obj.originalName);
+
+      const matchedSources = referenceIndex.filter((r) => probes.some((p) => r.text.includes(p)));
+      const referenced = matchedSources.length > 0;
       const referencedIn = referenced
-        ? Array.from(
-            new Set(
-              referenceIndex
-                .filter((r) => r.text.includes(obj.url) || r.text.includes(obj.key))
-                .map((r) => r.source),
-            ),
-          )
+        ? Array.from(new Set(matchedSources.map((r) => r.source)))
         : [];
-      if (!referenced) orphanBytes += obj.size;
+
+      let orphanReason: string | undefined;
+      if (!referenced) {
+        orphanBytes += obj.size;
+        orphanReason = `Not found in any CMS table. Checked: original URL (${obj.url}), key (${obj.key})${pairedOptimizedUrl ? `, optimized URL (${pairedOptimizedUrl})` : ""}${obj.originalName ? `, filename (${obj.originalName})` : ""}.`;
+      }
+
       return {
         key: obj.key,
         url: obj.url,
@@ -404,6 +444,7 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         referenced,
         referencedIn,
         status: referenced ? ("referenced" as const) : ("orphan" as const),
+        orphanReason,
       };
     });
 
@@ -417,7 +458,7 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
       metadataStatus: metadataHealthy ? "healthy" : "Metadata unavailable",
       metadataHealthy,
       metadataIssues,
-      deletionEnabled: metadataHealthy,
+      deletionEnabled: true,
       objects: report,
     };
   });

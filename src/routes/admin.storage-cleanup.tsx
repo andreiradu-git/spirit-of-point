@@ -74,7 +74,7 @@ function StorageCleanupPage() {
   };
 
   const deleteSelected = async () => {
-    if (selected.size === 0 || !data?.metadataHealthy) return;
+    if (selected.size === 0) return;
     if (!confirm(`Delete ${selected.size} object(s) from R2 permanently? This cannot be undone.`))
       return;
     setDeleting(true);
@@ -189,7 +189,7 @@ function StorageCleanupPage() {
           />
           <button
             onClick={deleteSelected}
-            disabled={selected.size === 0 || deleting || !data?.metadataHealthy}
+            disabled={selected.size === 0 || deleting}
             className="inline-flex items-center gap-2 rounded bg-red-600 text-white px-3 py-1.5 text-sm disabled:opacity-40"
           >
             {deleting ? (
@@ -197,9 +197,7 @@ function StorageCleanupPage() {
             ) : (
               <Trash2 className="h-4 w-4" />
             )}
-            {data?.metadataHealthy
-              ? `Delete selected (${selected.size})`
-              : "Delete disabled — Metadata unavailable"}
+            {`Delete selected (${selected.size})`}
           </button>
         </div>
 
@@ -252,6 +250,11 @@ function StorageCleanupPage() {
                     {r.status !== "metadata-unavailable" && r.referencedIn.length > 0 && (
                       <div className="text-xs text-neutral-500 mt-0.5">
                         used in: {r.referencedIn.join(", ")}
+                      </div>
+                    )}
+                    {"orphanReason" in r && r.orphanReason && (
+                      <div className="text-xs text-amber-700 mt-0.5 break-words max-w-xs" title={r.orphanReason}>
+                        {r.orphanReason}
                       </div>
                     )}
                   </td>
