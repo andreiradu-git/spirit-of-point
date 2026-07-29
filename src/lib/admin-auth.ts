@@ -55,14 +55,26 @@ export const requireAdminAuth = createMiddleware({ type: "function" }).server(as
     };
 
     const userId = "dev-admin";
-    return next({ context: { supabase: supabaseStub, userId, claims: { sub: userId } } });
+    const now = Math.floor(Date.now() / 1000);
+    const claims = {
+      iss: "pointstudio-dev",
+      sub: userId,
+      aud: "authenticated",
+      exp: now + 60 * 60,
+      iat: now,
+      role: "authenticated",
+      aal: "aal1",
+      session_id: "dev-admin-session",
+    };
+    return next({ context: { supabase: supabaseStub, userId, claims } });
   }
 
   const request = getRequest();
   const authHeader = request.headers.get("authorization") ?? "";
   if (!authHeader.startsWith("Bearer ")) throw new Error("Unauthorized: missing admin session");
-  const token = authHeader.slice("Bearer ".length);
-  if (!token || token.split(".").length !== 3) throw new Error("Unauthorized: invalid admin session");
+  const token = authHeader.slice("Bearer ".length).trim();
+  const tokenParts = token ? token.split(".") : [];
+  if (tokenParts.length !== 3) throw new Error("Unauthorized: invalid admin session");
 
   const supabase = createClient(url, key, {
     global: {
