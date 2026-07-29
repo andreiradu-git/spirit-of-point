@@ -41,6 +41,13 @@ export type SiteAsset = {
 
 type Db = ReturnType<typeof createClient>;
 export type MediaDb = { from: (table: string) => any };
+export type MediaAssetRuntimeSchema = {
+  projectId?: string;
+  supabaseUrl?: string;
+  hasExtension: boolean;
+  hasOptimizedSize: boolean;
+  hasOptimizedUpdatedAt: boolean;
+};
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
@@ -69,6 +76,16 @@ function folderFromKey(key: unknown): string | undefined {
   const slash = key.indexOf("/");
   if (slash <= 0) return undefined;
   return key.slice(0, slash);
+}
+
+function projectIdFromSupabaseUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    const host = new URL(url).host;
+    return host.endsWith(".supabase.co") ? host.replace(/\.supabase\.co$/, "") : host;
+  } catch {
+    return undefined;
+  }
 }
 
 function dbFetch(key: string): typeof fetch {
@@ -182,6 +199,83 @@ function resolveDb(db: MediaDb | undefined, service = false): MediaDb {
   return getMediaDbClient(service) as unknown as MediaDb;
 }
 
+const runtimeSchemaCache = new WeakMap<object, Promise<MediaAssetRuntimeSchema>>();
+
+function isMissingColumnError(error: { message?: string } | null | undefined, column: string): boolean {
+  const message = error?.message ?? "";
+  return (
+    message.includes(`Could not find the '${column}' column`) ||
+    message.includes(`column "${column}" does not exist`)
+  );
+}
+
+async function detectMediaAssetColumn(db: MediaDb, column: string): Promise<boolean> {
+  const { error } = await db.from("media_assets").select(column).limit(1);
+  if (!error) return true;
+  if (isMissingColumnError(error, column)) return false;
+  throw new Error(error.message);
+}
+
+export async function getMediaAssetRuntimeSchema(options?: {
+  db?: MediaDb;
+  service?: boolean;
+}): Promise<MediaAssetRuntimeSchema> {
+  const db = resolveDb(options?.db, options?.service ?? false);
+  const cached = runtimeSchemaCache.get(db as object);
+  if (cached) return cached;
+
+  const promise = (async () => {
+    const supabaseUrl = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
+    const [hasExtension, hasOptimizedSize, hasOptimizedUpdatedAt] = await Promise.all([
+      detectMediaAssetColumn(db, "extension"),
+      detectMediaAssetColumn(db, "optimized_size"),
+      detectMediaAssetColumn(db, "optimized_updated_at"),
+    ]);
+    return {
+      projectId: projectIdFromSupabaseUrl(supabaseUrl),
+      supabaseUrl,
+      hasExtension,
+      hasOptimizedSize,
+      hasOptimizedUpdatedAt,
+    };
+  })();
+
+  runtimeSchemaCache.set(db as object, promise);
+  return promise;
+}
+
+function selectMediaAssetColumns(schema: MediaAssetRuntimeSchema): string {
+  return [
+    "id",
+    "storage_provider",
+    "bucket",
+    "object_key",
+    "filename",
+    "original_filename",
+    "url",
+    "kind",
+    "media_type",
+    "content_type",
+    "mime_type",
+    ...(schema.hasExtension ? ["extension"] : []),
+    "size",
+    "width",
+    "height",
+    "duration",
+    "folder",
+    "upload_date",
+    "optimized_object_key",
+    "optimized_url",
+    ...(schema.hasOptimizedSize ? ["optimized_size"] : []),
+    ...(schema.hasOptimizedUpdatedAt ? ["optimized_updated_at"] : []),
+    "alt",
+    "tags",
+    "used_on_site",
+    "created_at",
+    "updated_at",
+  ].join(", ");
+}
+
 function kindFromUrl(url: string): SiteAsset["kind"] {
   const lower = url.toLowerCase();
   if (/\.(mp4|webm|mov|m4v)(\?.*)?$/.test(lower)) return "video";
@@ -263,7 +357,11 @@ function rowToAsset(row: Record<string, unknown>): SiteAsset | null {
   };
 }
 
-function r2Row(object: R2Object, optimized?: R2Object): Record<string, unknown> {
+function r2Row(
+  object: R2Object,
+  schema: MediaAssetRuntimeSchema,
+  optimized?: R2Object,
+): Record<string, unknown> {
   const filename = asString(object.originalName) ?? basenameFromKey(object.key, "media");
   const kind = kindFromUrl(object.url);
   const contentType = object.contentType ?? contentTypeFromUrl(object.url);
@@ -278,12 +376,14 @@ function r2Row(object: R2Object, optimized?: R2Object): Record<string, unknown> 
     media_type: kind,
     content_type: contentType,
     mime_type: contentType,
-    extension: extensionFromFilename(filename),
+    ...(schema.hasExtension ? { extension: extensionFromFilename(filename) } : {}),
     size: object.size,
     optimized_object_key: optimized?.key ?? null,
     optimized_url: optimized?.url ?? null,
-    optimized_size: optimized?.size ?? null,
-    optimized_updated_at: optimized?.lastModified ?? null,
+    ...(schema.hasOptimizedSize ? { optimized_size: optimized?.size ?? null } : {}),
+    ...(schema.hasOptimizedUpdatedAt
+      ? { optimized_updated_at: optimized?.lastModified ?? null }
+      : {}),
     upload_date: object.lastModified ?? new Date().toISOString(),
     folder: folderFromKey(object.key) ?? "uploads",
   };
@@ -291,19 +391,20 @@ function r2Row(object: R2Object, optimized?: R2Object): Record<string, unknown> 
 
 export async function syncR2MediaAssetsDirect(options?: { db?: MediaDb }): Promise<void> {
   const objects = await listR2ObjectsDirect();
+  const db = resolveDb(options?.db, true);
+  const schema = await getMediaAssetRuntimeSchema({ db, service: true });
   const byKey = new Map(objects.map((object) => [object.key, object]));
   const rows: Record<string, unknown>[] = [];
   for (const object of objects) {
     if (object.key.startsWith("optimized/")) continue;
-    rows.push(r2Row(object, byKey.get(optimizedKeyFor(object.key))));
+    rows.push(r2Row(object, schema, byKey.get(optimizedKeyFor(object.key))));
   }
   for (const object of objects) {
     if (!object.key.startsWith("optimized/")) continue;
     const paired = rows.some((row) => row.optimized_object_key === object.key);
-    if (!paired) rows.push(r2Row(object));
+    if (!paired) rows.push(r2Row(object, schema));
   }
   if (!rows.length) return;
-  const db = resolveDb(options?.db, true);
   const { error } = await db.from("media_assets").upsert(rows, { onConflict: "url" });
   if (error) throw new Error(error.message);
 }
@@ -314,9 +415,10 @@ export async function listAllAssetsDirect(options?: { db?: MediaDb; syncFromR2?:
   }
 
   const db = resolveDb(options?.db, false);
+  const schema = await getMediaAssetRuntimeSchema({ db });
   const { data, error } = await db
     .from("media_assets")
-    .select("id, storage_provider, bucket, object_key, filename, original_filename, url, kind, media_type, content_type, mime_type, extension, size, width, height, duration, folder, upload_date, optimized_object_key, optimized_url, optimized_size, optimized_updated_at, alt, tags, used_on_site, created_at, updated_at")
+    .select(selectMediaAssetColumns(schema))
     .order("upload_date", { ascending: false });
   if (error) throw new Error(error.message);
   return ((data ?? []) as Array<Record<string, unknown>>)
@@ -343,6 +445,7 @@ export async function upsertMediaAssetDirect(
   options?: { db?: MediaDb },
 ): Promise<void> {
   const db = resolveDb(options?.db, true);
+  const schema = await getMediaAssetRuntimeSchema({ db, service: true });
   const filename = input.filename || basenameFromKey(input.key, "media");
   const mediaType = input.mediaType ?? input.kind;
   const contentType = input.contentType ?? contentTypeFromUrl(input.url);
@@ -359,7 +462,7 @@ export async function upsertMediaAssetDirect(
       media_type: mediaType,
       content_type: contentType,
       mime_type: contentType,
-      extension: extensionFromFilename(filename),
+      ...(schema.hasExtension ? { extension: extensionFromFilename(filename) } : {}),
       size: input.size,
       width: input.width,
       height: input.height,
@@ -380,13 +483,21 @@ export async function markOptimizedMediaAssetDirect(
   options?: { db?: MediaDb },
 ): Promise<void> {
   const db = resolveDb(options?.db, true);
+  const schema = await getMediaAssetRuntimeSchema({ db, service: true });
   const { data, error } = await db.from("media_assets").select("id, object_key").eq("storage_provider", "r2").eq("kind", "image");
   if (error) throw new Error(error.message);
   const match = ((data ?? []) as Array<{ id: string; object_key: string }>).find((row) => optimizedKeyFor(row.object_key) === key);
   if (match) {
+    const payload: Record<string, unknown> = {
+      optimized_object_key: key,
+      optimized_url: url,
+      updated_at: new Date().toISOString(),
+    };
+    if (schema.hasOptimizedSize) payload.optimized_size = size;
+    if (schema.hasOptimizedUpdatedAt) payload.optimized_updated_at = new Date().toISOString();
     const { error: updateError } = await db
       .from("media_assets")
-      .update({ optimized_object_key: key, optimized_url: url, optimized_size: size, optimized_updated_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update(payload)
       .eq("id", match.id);
     if (updateError) throw new Error(updateError.message);
     return;
@@ -409,6 +520,7 @@ export async function markOptimizedMediaAssetDirect(
 
 export async function deleteMediaAssetDirect(input: { id?: string; key?: string; url?: string }, options?: { db?: MediaDb }): Promise<void> {
   const db = resolveDb(options?.db, true);
+  const schema = await getMediaAssetRuntimeSchema({ db, service: true });
   let query = db.from("media_assets").select("*").limit(1);
   if (input.id) query = query.eq("id", input.id);
   else if (input.key) query = query.or(`object_key.eq.${input.key},optimized_object_key.eq.${input.key}`);
@@ -427,9 +539,12 @@ export async function deleteMediaAssetDirect(input: { id?: string; key?: string;
     await deleteR2ObjectDirect(input.key);
     const rowId = asString(row.id);
     if (!rowId) throw new Error("Media asset row is missing id");
+    const payload: Record<string, unknown> = { optimized_object_key: null, optimized_url: null };
+    if (schema.hasOptimizedSize) payload.optimized_size = null;
+    if (schema.hasOptimizedUpdatedAt) payload.optimized_updated_at = null;
     const { error: updateError } = await db
       .from("media_assets")
-      .update({ optimized_object_key: null, optimized_url: null, optimized_size: null, optimized_updated_at: null })
+      .update(payload)
       .eq("id", rowId);
     if (updateError) throw new Error(updateError.message);
     return;
@@ -467,6 +582,7 @@ export async function inferMediaAssetForUrlDirect(
   options?: { db?: MediaDb },
 ): Promise<{ id: string; url: string }> {
   const db = resolveDb(options?.db, true);
+  const schema = await getMediaAssetRuntimeSchema({ db, service: true });
   const { data: existing, error: existingError } = await db
     .from("media_assets")
     .select("id, url, optimized_url")
@@ -494,7 +610,7 @@ export async function inferMediaAssetForUrlDirect(
       media_type: kind,
       content_type: contentType,
       mime_type: contentType,
-      extension: extensionFromFilename(filename),
+      ...(schema.hasExtension ? { extension: extensionFromFilename(filename) } : {}),
       alt: alt ?? null,
       used_on_site: true,
       folder: folderFromKey(objectKey) ?? provider,

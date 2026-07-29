@@ -154,13 +154,19 @@ function StorageCleanupPage() {
           />
           <button
             onClick={deleteSelected}
-            disabled={selected.size === 0 || deleting}
+            disabled={selected.size === 0 || deleting || Boolean(data?.deletionBlockedReason)}
             className="inline-flex items-center gap-2 rounded bg-red-600 text-white px-3 py-1.5 text-sm disabled:opacity-40"
           >
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
             Delete selected ({selected.size})
           </button>
         </div>
+
+        {data?.deletionBlockedReason && (
+          <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {data.deletionBlockedReason}
+          </div>
+        )}
 
         <div className="border rounded overflow-hidden">
           <table className="w-full text-sm">
