@@ -222,6 +222,18 @@ export function inferKindFromContentType(ct?: string, filename?: string): AssetK
   return "file";
 }
 
+function secureObjectId(): string {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return uuid;
+
+  if (!globalThis.crypto?.getRandomValues) {
+    throw new Error("Secure randomness unavailable for R2 key generation");
+  }
+  const values = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(values);
+  return Array.from(values, (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
 /**
  * Produce a predictable object key. For images this is `originals/<uuid>.<ext>`
  * so every uploaded image has its own unique original file, paired with a
@@ -232,8 +244,7 @@ export function makeR2Key(kind: AssetKind, filename: string): string {
   const folder = kind === "image" ? "originals" : kind === "video" ? "videos" : "files";
   const rawExt = (filename.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const ext = rawExt || (kind === "image" ? "jpg" : kind === "video" ? "mp4" : "bin");
-  const uuid =
-    globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const uuid = secureObjectId();
   return `${folder}/${uuid}.${ext}`;
 }
 

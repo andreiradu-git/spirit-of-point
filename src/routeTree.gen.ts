@@ -9,46 +9,51 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VideoRouteImport } from './routes/video'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as PeopleRouteImport } from './routes/people'
-import { Route as PatternsRouteImport } from './routes/patterns'
-import { Route as FotografieCulinaraBucurestiRouteImport } from './routes/fotografie-culinara-bucuresti'
-import { Route as FoodRouteImport } from './routes/food'
-import { Route as EditorialRouteImport } from './routes/editorial'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WorkSlugRouteImport } from './routes/work.$slug'
-import { Route as AdminThemeRouteImport } from './routes/admin.theme'
-import { Route as AdminStorageCleanupRouteImport } from './routes/admin.storage-cleanup'
-import { Route as AdminSocialsRouteImport } from './routes/admin.socials'
-import { Route as AdminSeoRouteImport } from './routes/admin.seo'
-import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
-import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
-import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as EditorialRouteImport } from './routes/editorial'
+import { Route as FoodRouteImport } from './routes/food'
+import { Route as FotografieCulinaraBucurestiRouteImport } from './routes/fotografie-culinara-bucuresti'
+import { Route as PatternsRouteImport } from './routes/patterns'
+import { Route as PeopleRouteImport } from './routes/people'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as VideoRouteImport } from './routes/video'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
-import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
+import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
+import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
+import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
+import { Route as AdminSeoRouteImport } from './routes/admin.seo'
+import { Route as AdminSocialsRouteImport } from './routes/admin.socials'
+import { Route as AdminStorageCleanupRouteImport } from './routes/admin.storage-cleanup'
+import { Route as AdminThemeRouteImport } from './routes/admin.theme'
+import { Route as WorkSlugRouteImport } from './routes/work.$slug'
 import { Route as ApiDebugAiRouteImport } from './routes/api/debug/ai'
+import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
 
-const VideoRoute = VideoRouteImport.update({
-  id: '/video',
-  path: '/video',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PeopleRoute = PeopleRouteImport.update({
-  id: '/people',
-  path: '/people',
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PatternsRoute = PatternsRouteImport.update({
-  id: '/patterns',
-  path: '/patterns',
+const EditorialRoute = EditorialRouteImport.update({
+  id: '/editorial',
+  path: '/editorial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FoodRoute = FoodRouteImport.update({
+  id: '/food',
+  path: '/food',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FotografieCulinaraBucurestiRoute =
@@ -57,69 +62,24 @@ const FotografieCulinaraBucurestiRoute =
     path: '/fotografie-culinara-bucuresti',
     getParentRoute: () => rootRouteImport,
   } as any)
-const FoodRoute = FoodRouteImport.update({
-  id: '/food',
-  path: '/food',
+const PatternsRoute = PatternsRouteImport.update({
+  id: '/patterns',
+  path: '/patterns',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EditorialRoute = EditorialRouteImport.update({
-  id: '/editorial',
-  path: '/editorial',
+const PeopleRoute = PeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ContactRoute = ContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkSlugRoute = WorkSlugRouteImport.update({
-  id: '/work/$slug',
-  path: '/work/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminThemeRoute = AdminThemeRouteImport.update({
-  id: '/admin/theme',
-  path: '/admin/theme',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminStorageCleanupRoute = AdminStorageCleanupRouteImport.update({
-  id: '/admin/storage-cleanup',
-  path: '/admin/storage-cleanup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminSocialsRoute = AdminSocialsRouteImport.update({
-  id: '/admin/socials',
-  path: '/admin/socials',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminSeoRoute = AdminSeoRouteImport.update({
-  id: '/admin/seo',
-  path: '/admin/seo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminPerformanceRoute = AdminPerformanceRouteImport.update({
-  id: '/admin/performance',
-  path: '/admin/performance',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminContactsRoute = AdminContactsRouteImport.update({
-  id: '/admin/contacts',
-  path: '/admin/contacts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminAssetsRoute = AdminAssetsRouteImport.update({
-  id: '/admin/assets',
-  path: '/admin/assets',
+const VideoRoute = VideoRouteImport.update({
+  id: '/video',
+  path: '/video',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -127,14 +87,54 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/admin/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiDebugR2Route = ApiDebugR2RouteImport.update({
-  id: '/api/debug/r2',
-  path: '/api/debug/r2',
+const AdminAssetsRoute = AdminAssetsRouteImport.update({
+  id: '/admin/assets',
+  path: '/admin/assets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminContactsRoute = AdminContactsRouteImport.update({
+  id: '/admin/contacts',
+  path: '/admin/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPerformanceRoute = AdminPerformanceRouteImport.update({
+  id: '/admin/performance',
+  path: '/admin/performance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSeoRoute = AdminSeoRouteImport.update({
+  id: '/admin/seo',
+  path: '/admin/seo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSocialsRoute = AdminSocialsRouteImport.update({
+  id: '/admin/socials',
+  path: '/admin/socials',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminStorageCleanupRoute = AdminStorageCleanupRouteImport.update({
+  id: '/admin/storage-cleanup',
+  path: '/admin/storage-cleanup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminThemeRoute = AdminThemeRouteImport.update({
+  id: '/admin/theme',
+  path: '/admin/theme',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkSlugRoute = WorkSlugRouteImport.update({
+  id: '/work/$slug',
+  path: '/work/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDebugAiRoute = ApiDebugAiRouteImport.update({
   id: '/api/debug/ai',
   path: '/api/debug/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDebugR2Route = ApiDebugR2RouteImport.update({
+  id: '/api/debug/r2',
+  path: '/api/debug/r2',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -306,60 +306,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/video': {
-      id: '/video'
-      path: '/video'
-      fullPath: '/video'
-      preLoaderRoute: typeof VideoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/people': {
-      id: '/people'
-      path: '/people'
-      fullPath: '/people'
-      preLoaderRoute: typeof PeopleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/patterns': {
-      id: '/patterns'
-      path: '/patterns'
-      fullPath: '/patterns'
-      preLoaderRoute: typeof PatternsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/fotografie-culinara-bucuresti': {
-      id: '/fotografie-culinara-bucuresti'
-      path: '/fotografie-culinara-bucuresti'
-      fullPath: '/fotografie-culinara-bucuresti'
-      preLoaderRoute: typeof FotografieCulinaraBucurestiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/food': {
-      id: '/food'
-      path: '/food'
-      fullPath: '/food'
-      preLoaderRoute: typeof FoodRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/editorial': {
-      id: '/editorial'
-      path: '/editorial'
-      fullPath: '/editorial'
-      preLoaderRoute: typeof EditorialRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/contact': {
-      id: '/contact'
-      path: '/contact'
-      fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -369,67 +320,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/work/$slug': {
-      id: '/work/$slug'
-      path: '/work/$slug'
-      fullPath: '/work/$slug'
-      preLoaderRoute: typeof WorkSlugRouteImport
+    '/editorial': {
+      id: '/editorial'
+      path: '/editorial'
+      fullPath: '/editorial'
+      preLoaderRoute: typeof EditorialRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/theme': {
-      id: '/admin/theme'
-      path: '/admin/theme'
-      fullPath: '/admin/theme'
-      preLoaderRoute: typeof AdminThemeRouteImport
+    '/food': {
+      id: '/food'
+      path: '/food'
+      fullPath: '/food'
+      preLoaderRoute: typeof FoodRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/storage-cleanup': {
-      id: '/admin/storage-cleanup'
-      path: '/admin/storage-cleanup'
-      fullPath: '/admin/storage-cleanup'
-      preLoaderRoute: typeof AdminStorageCleanupRouteImport
+    '/fotografie-culinara-bucuresti': {
+      id: '/fotografie-culinara-bucuresti'
+      path: '/fotografie-culinara-bucuresti'
+      fullPath: '/fotografie-culinara-bucuresti'
+      preLoaderRoute: typeof FotografieCulinaraBucurestiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/socials': {
-      id: '/admin/socials'
-      path: '/admin/socials'
-      fullPath: '/admin/socials'
-      preLoaderRoute: typeof AdminSocialsRouteImport
+    '/patterns': {
+      id: '/patterns'
+      path: '/patterns'
+      fullPath: '/patterns'
+      preLoaderRoute: typeof PatternsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/seo': {
-      id: '/admin/seo'
-      path: '/admin/seo'
-      fullPath: '/admin/seo'
-      preLoaderRoute: typeof AdminSeoRouteImport
+    '/people': {
+      id: '/people'
+      path: '/people'
+      fullPath: '/people'
+      preLoaderRoute: typeof PeopleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/performance': {
-      id: '/admin/performance'
-      path: '/admin/performance'
-      fullPath: '/admin/performance'
-      preLoaderRoute: typeof AdminPerformanceRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/contacts': {
-      id: '/admin/contacts'
-      path: '/admin/contacts'
-      fullPath: '/admin/contacts'
-      preLoaderRoute: typeof AdminContactsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/assets': {
-      id: '/admin/assets'
-      path: '/admin/assets'
-      fullPath: '/admin/assets'
-      preLoaderRoute: typeof AdminAssetsRouteImport
+    '/video': {
+      id: '/video'
+      path: '/video'
+      fullPath: '/video'
+      preLoaderRoute: typeof VideoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/analytics': {
@@ -439,11 +383,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/debug/r2': {
-      id: '/api/debug/r2'
-      path: '/api/debug/r2'
-      fullPath: '/api/debug/r2'
-      preLoaderRoute: typeof ApiDebugR2RouteImport
+    '/admin/assets': {
+      id: '/admin/assets'
+      path: '/admin/assets'
+      fullPath: '/admin/assets'
+      preLoaderRoute: typeof AdminAssetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/contacts': {
+      id: '/admin/contacts'
+      path: '/admin/contacts'
+      fullPath: '/admin/contacts'
+      preLoaderRoute: typeof AdminContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/performance': {
+      id: '/admin/performance'
+      path: '/admin/performance'
+      fullPath: '/admin/performance'
+      preLoaderRoute: typeof AdminPerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/seo': {
+      id: '/admin/seo'
+      path: '/admin/seo'
+      fullPath: '/admin/seo'
+      preLoaderRoute: typeof AdminSeoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/socials': {
+      id: '/admin/socials'
+      path: '/admin/socials'
+      fullPath: '/admin/socials'
+      preLoaderRoute: typeof AdminSocialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/storage-cleanup': {
+      id: '/admin/storage-cleanup'
+      path: '/admin/storage-cleanup'
+      fullPath: '/admin/storage-cleanup'
+      preLoaderRoute: typeof AdminStorageCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/theme': {
+      id: '/admin/theme'
+      path: '/admin/theme'
+      fullPath: '/admin/theme'
+      preLoaderRoute: typeof AdminThemeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/work/$slug': {
+      id: '/work/$slug'
+      path: '/work/$slug'
+      fullPath: '/work/$slug'
+      preLoaderRoute: typeof WorkSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/debug/ai': {
@@ -451,6 +444,13 @@ declare module '@tanstack/react-router' {
       path: '/api/debug/ai'
       fullPath: '/api/debug/ai'
       preLoaderRoute: typeof ApiDebugAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/debug/r2': {
+      id: '/api/debug/r2'
+      path: '/api/debug/r2'
+      fullPath: '/api/debug/r2'
+      preLoaderRoute: typeof ApiDebugR2RouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -482,3 +482,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

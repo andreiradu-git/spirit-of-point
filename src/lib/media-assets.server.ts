@@ -346,6 +346,11 @@ function r2ObjectToAsset(object: R2Object, optimized?: R2Object): SiteAsset {
   };
 }
 
+/**
+ * Builds the asset list directly from R2 by pairing each original object with
+ * its optimized variant when present, then appending any remaining optimized
+ * objects as standalone entries so no stored file is hidden from the admin UI.
+ */
 function buildAssetsFromR2(objects: R2Object[]): SiteAsset[] {
   const byKey = new Map(objects.map((object) => [object.key, object]));
   const seen = new Set<string>();
@@ -366,6 +371,16 @@ function buildAssetsFromR2(objects: R2Object[]): SiteAsset[] {
   }
 
   return assets.sort((a, b) => (b.lastModified ?? "").localeCompare(a.lastModified ?? ""));
+}
+
+function getR2ObjectKeyFromUrl(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    if (parsed.origin !== R2_PUBLIC_URL) return undefined;
+    return parsed.pathname.replace(/^\/+/, "");
+  } catch {
+    return undefined;
+  }
 }
 
 function mergeMetadataIntoR2Assets(
@@ -667,12 +682,13 @@ export async function inferMediaAssetForUrlDirect(
       url: ((existing.optimized_url as string | null) ?? existing.url) as string,
     };
 
-  const provider = url.startsWith(R2_PUBLIC_URL)
+  const r2ObjectKey = getR2ObjectKeyFromUrl(url);
+  const provider = r2ObjectKey
     ? "r2"
     : url.startsWith("/__l5e/assets-v1/")
       ? "lovable_asset"
       : "external";
-  const objectKey = provider === "r2" ? url.replace(`${R2_PUBLIC_URL}/`, "") : url;
+  const objectKey = provider === "r2" ? (r2ObjectKey ?? url) : url;
   const insertQuery =
     "INSERT INTO media_assets (storage_provider, bucket, object_key, filename, url, kind, content_type, alt, used_on_site)";
   const { data, error } = await db
