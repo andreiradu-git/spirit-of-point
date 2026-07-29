@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminAuth } from "@/lib/admin-auth";
+import { getMediaDbClient, inferMediaAssetForUrlDirect } from "@/lib/media-assets.server";
+
+type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
 
 export type AssetMeta = {
   url: string;
@@ -11,33 +14,14 @@ export type AssetMeta = {
   tags: string[];
 };
 
-/**
- * Storage helpers (list/save) still use Supabase — that's the current storage
- * layer and will be replaced during the D1 migration phase.
- * The AI generator below delegates to the pure AI service (no Supabase).
- */
 export const listAssetMeta = createServerFn({ method: "GET" }).handler(async () => {
-  const { createClient } = await import("@supabase/supabase-js");
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  if (!key || !url) return [] as AssetMeta[];
-  const supabase = createClient(url, key, {
-    auth: { persistSession: false },
-    global: {
-      fetch: (input, init) => {
-        const h = new Headers(init?.headers);
-        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization");
-        h.set("apikey", key);
-        return fetch(input, { ...init, headers: h });
-      },
-    },
-  });
-  const { data, error } = await supabase
-    .from("asset_meta")
-    .select("url, label, alt, caption, description, tags");
+  const db = getMediaDbClient(false) as unknown as AnyDb;
+  const { data, error } = await db
+    .from("media_assets")
+    .select("url, optimized_url, label, alt, caption, description, tags");
   if (error) throw error;
-  return ((data ?? []) as Array<Partial<AssetMeta>>).map((r) => ({
-    url: r.url as string,
+  return ((data ?? []) as Array<Partial<AssetMeta> & { optimized_url?: string | null }>).map((r) => ({
+    url: (r.optimized_url ?? r.url) as string,
     label: r.label ?? null,
     alt: r.alt ?? null,
     caption: r.caption ?? null,
@@ -47,7 +31,7 @@ export const listAssetMeta = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const saveAssetMeta = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -60,19 +44,16 @@ export const saveAssetMeta = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data, context }) => {
-    const { data: role } = await context.supabase
-      .from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
-    if (!role) throw new Error("Forbidden");
-    const payload: Record<string, unknown> = { url: data.url };
+  .handler(async ({ data }) => {
+    const db = getMediaDbClient(true) as unknown as AnyDb;
+    const media = await inferMediaAssetForUrlDirect(data.url, data.alt ?? undefined);
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.label !== undefined) payload.label = data.label;
     if (data.alt !== undefined) payload.alt = data.alt;
     if (data.caption !== undefined) payload.caption = data.caption;
     if (data.description !== undefined) payload.description = data.description;
     if (data.tags !== undefined) payload.tags = data.tags;
-    const { error } = await context.supabase
-      .from("asset_meta")
-      .upsert(payload as never, { onConflict: "url" });
+    const { error } = await db.from("media_assets").update(payload).eq("id", media.id);
     if (error) throw error;
     return { ok: true };
   });

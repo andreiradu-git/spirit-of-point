@@ -1,17 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminAuth } from "@/lib/admin-auth";
+import { deleteMediaAssetDirect, upsertMediaAssetDirect } from "@/lib/media-assets.server";
 import {
   b64ToBytes,
-  deleteR2ObjectDirect,
-  getR2Client,
   putR2Object,
+  inferKindFromContentType,
 } from "@/lib/r2.server";
 
 // Replace the R2 object at `key` with new bytes. Optionally back up the
 // existing bytes to `backupKey` (used by the optimizer to preserve originals).
 export const replaceMediaObject = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -24,13 +24,7 @@ export const replaceMediaObject = createServerFn({ method: "POST" })
       })
       .parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (roleErr || !isAdmin) throw new Error("Forbidden");
-
+  .handler(async ({ data }) => {
     if (data.backupKey && data.origBase64) {
       await putR2Object(
         data.backupKey,
@@ -40,35 +34,25 @@ export const replaceMediaObject = createServerFn({ method: "POST" })
     }
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(data.key, body, data.contentType);
+    await upsertMediaAssetDirect({
+      key: data.key,
+      url,
+      filename: data.key.split("/").pop() ?? data.key,
+      kind: inferKindFromContentType(data.contentType, data.key),
+      contentType: data.contentType,
+      size: body.byteLength,
+    });
     return { ok: true, url, size: body.byteLength };
   });
 
 // Delete an R2 object (and any legacy backup pair). Also removes gallery_images
 // / asset_meta rows that pointed to the deleted object's public URL.
 export const deleteMediaObject = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .inputValidator((input) =>
     z.object({ key: z.string().min(1).max(600), alsoDeleteBackup: z.boolean().optional() }).parse(input),
   )
-  .handler(async ({ data, context }) => {
-    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (roleErr || !isAdmin) throw new Error("Forbidden");
-
-    const { publicUrl } = await getR2Client();
-    await deleteR2ObjectDirect(data.key);
-    if (data.alsoDeleteBackup !== false) {
-      try {
-        await deleteR2ObjectDirect(`_originals/${data.key}`);
-      } catch {
-        /* backup may not exist — ignore */
-      }
-    }
-
-    const objectUrl = `${publicUrl}/${data.key}`;
-    await context.supabase.from("gallery_images").delete().eq("src", objectUrl);
-    await context.supabase.from("asset_meta").delete().eq("url", objectUrl);
+  .handler(async ({ data }) => {
+    await deleteMediaAssetDirect({ key: data.key });
     return { ok: true };
   });

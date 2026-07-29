@@ -1,6 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminAuth } from "@/lib/admin-auth";
+import { getMediaDbClient } from "@/lib/media-assets.server";
+
+type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
+
+export type ContactMessage = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string | null;
+  message: string;
+  source_path: string | null;
+  read_at: string | null;
+  archived: boolean;
+  created_at: string;
+};
 
 const submitSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -13,33 +29,12 @@ const submitSchema = z.object({
 
 export const submitContactMessage = createServerFn({ method: "POST" })
   .validator((data) => submitSchema.parse(data))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const tag = "[contact]";
     try {
       console.log(`${tag} submitContactMessage called`, { data });
 
-      const { readServerEnv } = await import("@/lib/server-env");
-      const url = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
-      const key =
-        readServerEnv("SUPABASE_PUBLISHABLE_KEY") ??
-        readServerEnv("SUPABASE_ANON_KEY") ??
-        readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
-
-      console.log(`${tag} supabase env present`, { hasUrl: Boolean(url), hasKey: Boolean(key) });
-
-      if (!url || !key) {
-        console.error(`${tag} missing supabase env`, { url, key });
-        // Return an HTTP 500 Response so monitoring sees a server error instead of a 200 with an error body
-        throw new Response(JSON.stringify({ message: "Contact form is temporarily unavailable — the site backend is not configured. Please email us directly." }), {
-          status: 500,
-          headers: { "content-type": "application/json; charset=utf-8" },
-        });
-      }
-
-      const { createClient } = await import("@supabase/supabase-js");
-      const supabase = createClient(url, key, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
+      const db = getMediaDbClient(false) as unknown as AnyDb;
 
       const payload = {
         name: data.name,
@@ -52,7 +47,7 @@ export const submitContactMessage = createServerFn({ method: "POST" })
 
       console.log(`${tag} inserting into contact_messages`, { payload });
       // Insert and request the returned row(s) when possible
-      const insertRes = await supabase.from("contact_messages").insert(payload).select();
+      const insertRes = await db.from("contact_messages").insert(payload).select();
       console.log(`${tag} insert result`, insertRes);
       if (insertRes.error) {
         console.error(`${tag} insert failed`, insertRes.error);
@@ -72,19 +67,21 @@ export const submitContactMessage = createServerFn({ method: "POST" })
 
 
 export const listContactMessages = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const db = context?.supabase as AnyDb | undefined;
+    if (!db) throw new Error("Admin database client unavailable");
+    const { data, error } = await db
       .from("contact_messages")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []) as ContactMessage[];
   });
 
 export const updateContactMessage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .validator((d) =>
     z.object({
       id: z.string().uuid(),
@@ -93,19 +90,23 @@ export const updateContactMessage = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    const db = context?.supabase as AnyDb | undefined;
+    if (!db) throw new Error("Admin database client unavailable");
     const patch: { read_at?: string | null; archived?: boolean } = {};
     if (data.read !== undefined) patch.read_at = data.read ? new Date().toISOString() : null;
     if (data.archived !== undefined) patch.archived = data.archived;
-    const { error } = await context.supabase.from("contact_messages").update(patch).eq("id", data.id);
+    const { error } = await db.from("contact_messages").update(patch).eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });
 
 export const deleteContactMessage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAuth])
   .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("contact_messages").delete().eq("id", data.id);
+    const db = context?.supabase as AnyDb | undefined;
+    if (!db) throw new Error("Admin database client unavailable");
+    const { error } = await db.from("contact_messages").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });

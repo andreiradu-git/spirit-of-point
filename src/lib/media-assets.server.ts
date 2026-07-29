@@ -74,7 +74,6 @@ export function getMediaDbClient(service = false): Db {
         limit: function () { return this; },
         order: function () { return this; },
         in: function () { return this; },
-        maybeSingle: async () => ({ data: null, error: null }),
       };
       return chain;
     };

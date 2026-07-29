@@ -23,6 +23,8 @@ export type { R2Object } from "@/lib/r2.server";
 
 const PUBLIC_URL = "https://images.pointstudio.ro";
 
+type AdminDb = { from: (table: string) => any };
+
 // -----------------------------------------------------------------------------
 // R2-only image pipeline (no Supabase). Image upload / optimize / delete only
 // depend on the Cloudflare R2 binding.
@@ -199,6 +201,8 @@ export const replaceR2Object = createServerFn({ method: "POST" })
 export const scanStorageOrphans = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
+    const db = context?.supabase as AdminDb | undefined;
+    if (!db) throw new Error("Admin database client unavailable");
     const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
       try {
         return await p;
@@ -212,11 +216,11 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         console.error("[storage-cleanup] R2 list failed", e);
         return [] as Awaited<ReturnType<typeof listR2ObjectsDirect>>;
       }),
-      safe(context.supabase.from("gallery_images").select("src, gallery_id")),
-      safe(context.supabase.from("site_settings").select("key, value")),
-      safe(context.supabase.from("pages").select("slug, body")),
-      safe(context.supabase.from("page_seo").select("path, og_image")),
-      safe(context.supabase.from("asset_meta").select("url")),
+      safe<Array<{ src?: string; gallery_id?: string }>>(db.from("gallery_images").select("src, gallery_id")),
+      safe<Array<{ key?: string; value?: unknown }>>(db.from("site_settings").select("key, value")),
+      safe<Array<{ slug?: string; body?: unknown }>>(db.from("pages").select("slug, body")),
+      safe<Array<{ path?: string; og_image?: string }>>(db.from("page_seo").select("path, og_image")),
+      safe<Array<{ url?: string }>>(db.from("asset_meta").select("url")),
     ]);
 
     // Build one big haystack containing every referenced URL/string in the CMS.

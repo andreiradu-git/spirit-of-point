@@ -172,21 +172,29 @@ export type Database = {
           content_type: string | null
           created_at: string
           description: string | null
+          duration: number | null
           filename: string
+          folder: string | null
+          height: number | null
           id: string
           kind: string
           label: string | null
+          media_type: string | null
+          mime_type: string | null
           object_key: string
           optimized_object_key: string | null
           optimized_url: string | null
+          original_filename: string | null
           original_object_key: string | null
           original_url: string | null
           size: number | null
           storage_provider: string
           tags: string[]
           updated_at: string
+          upload_date: string | null
           url: string
           used_on_site: boolean
+          width: number | null
         }
         Insert: {
           alt?: string | null
@@ -195,21 +203,29 @@ export type Database = {
           content_type?: string | null
           created_at?: string
           description?: string | null
+          duration?: number | null
           filename: string
+          folder?: string | null
+          height?: number | null
           id?: string
           kind?: string
           label?: string | null
+          media_type?: string | null
+          mime_type?: string | null
           object_key: string
           optimized_object_key?: string | null
           optimized_url?: string | null
+          original_filename?: string | null
           original_object_key?: string | null
           original_url?: string | null
           size?: number | null
           storage_provider?: string
           tags?: string[]
           updated_at?: string
+          upload_date?: string | null
           url: string
           used_on_site?: boolean
+          width?: number | null
         }
         Update: {
           alt?: string | null
@@ -218,21 +234,29 @@ export type Database = {
           content_type?: string | null
           created_at?: string
           description?: string | null
+          duration?: number | null
           filename?: string
+          folder?: string | null
+          height?: number | null
           id?: string
           kind?: string
           label?: string | null
+          media_type?: string | null
+          mime_type?: string | null
           object_key?: string
           optimized_object_key?: string | null
           optimized_url?: string | null
+          original_filename?: string | null
           original_object_key?: string | null
           original_url?: string | null
           size?: number | null
           storage_provider?: string
           tags?: string[]
           updated_at?: string
+          upload_date?: string | null
           url?: string
           used_on_site?: boolean
+          width?: number | null
         }
         Relationships: []
       }
