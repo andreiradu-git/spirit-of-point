@@ -77,7 +77,7 @@ function humanDate(iso?: string) {
   }
 }
 
-function basename(value?: string | null) {
+function extractFilename(value?: string | null) {
   if (!value) return "";
   return value.split("/").filter(Boolean).pop() ?? value;
 }
@@ -428,7 +428,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
 
   const doRename = async () => {
     if (!asset.r2Key) return;
-    const current = asset.name ?? basename(asset.r2Key) ?? "";
+    const current = asset.name ?? extractFilename(asset.r2Key) ?? "";
     const next = window.prompt("New file name (extension optional):", current);
     if (!next || next === current) return;
     setRenaming(true);
@@ -746,7 +746,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
                   Original
                 </div>
                 <div className="truncate font-mono" title={asset.r2Key}>
-                  {basename(asset.r2Key)}
+                  {extractFilename(asset.r2Key)}
                 </div>
                 <div className="text-neutral-500">{humanSize(asset.size)}</div>
               </div>
@@ -768,7 +768,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
                 {asset.optimizedKey ? (
                   <>
                     <div className="truncate font-mono" title={asset.optimizedKey}>
-                      {basename(asset.optimizedKey)}
+                      {extractFilename(asset.optimizedKey)}
                     </div>
                     <div className="text-neutral-500">
                       {humanSize(asset.optimizedSize)}
@@ -917,7 +917,7 @@ function DropZoneUploader() {
             //    upload it under the paired `optimized/<uuid>.webp` key.
             patch(id, { progress: 45, status: "optimizing" });
             const optimized = await optimizeImageBlob(file);
-            const base = basename(uploaded.key) || uploaded.key;
+            const base = extractFilename(uploaded.key) || uploaded.key;
             const dot = base.lastIndexOf(".");
             const stem = dot > 0 ? base.slice(0, dot) : base;
             const optKey = `optimized/${stem}.webp`;

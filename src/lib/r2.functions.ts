@@ -23,10 +23,10 @@ export type { R2Object } from "@/lib/r2.server";
 
 const PUBLIC_URL = "https://images.pointstudio.ro";
 
-type CleanupSelectResult<T> = PromiseLike<{ data: T | null; error?: { message?: string } | null }>;
+type AdminDbQueryResult<T> = PromiseLike<{ data: T | null; error?: { message?: string } | null }>;
 type AdminDb = {
   from: (table: string) => {
-    select: <T = unknown>(...args: unknown[]) => CleanupSelectResult<T>;
+    select: <T = unknown>(...args: unknown[]) => AdminDbQueryResult<T>;
   };
 };
 type UploadWarning = { code: "metadata_persist_failed"; message: string };
@@ -269,7 +269,7 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
     const metadataIssues: string[] = [];
     let metadataHealthy = Boolean(db);
 
-    const safe = async <T>(
+    const safeDbQuery = async <T>(
       label: string,
       p?: PromiseLike<{ data: T | null; error?: { message?: string } | null }>,
     ): Promise<{ data: T | null }> => {
@@ -298,23 +298,23 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         console.error("[storage-cleanup] R2 list failed", e);
         return [] as Awaited<ReturnType<typeof listR2ObjectsDirect>>;
       }),
-      safe<Array<{ src?: string; gallery_id?: string }>>(
+      safeDbQuery<Array<{ src?: string; gallery_id?: string }>>(
         "gallery_images",
         db?.from("gallery_images").select("src, gallery_id"),
       ),
-      safe<Array<{ key?: string; value?: unknown }>>(
+      safeDbQuery<Array<{ key?: string; value?: unknown }>>(
         "site_settings",
         db?.from("site_settings").select("key, value"),
       ),
-      safe<Array<{ slug?: string; body?: unknown }>>(
+      safeDbQuery<Array<{ slug?: string; body?: unknown }>>(
         "pages",
         db?.from("pages").select("slug, body"),
       ),
-      safe<Array<{ path?: string; og_image?: string }>>(
+      safeDbQuery<Array<{ path?: string; og_image?: string }>>(
         "page_seo",
         db?.from("page_seo").select("path, og_image"),
       ),
-      safe<Array<{ url?: string }>>("asset_meta", db?.from("asset_meta").select("url")),
+      safeDbQuery<Array<{ url?: string }>>("asset_meta", db?.from("asset_meta").select("url")),
     ]);
 
     // Build one big haystack containing every referenced URL/string in the CMS.

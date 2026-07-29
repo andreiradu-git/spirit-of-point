@@ -262,15 +262,16 @@ function StorageCleanupPage() {
                   <td className="px-3 py-2 align-top">
                     {r.status === "metadata-unavailable" ? (
                       <span className="inline-flex items-center gap-1 text-amber-700 text-xs">
-                        <AlertTriangle className="h-3.5 w-3.5" /> Metadata unavailable
+                        <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> Metadata
+                        unavailable
                       </span>
                     ) : r.referenced ? (
                       <span className="inline-flex items-center gap-1 text-green-700 text-xs">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Referenced
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Referenced
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-amber-700 text-xs">
-                        <AlertTriangle className="h-3.5 w-3.5" /> Orphan
+                        <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> Orphan
                       </span>
                     )}
                   </td>

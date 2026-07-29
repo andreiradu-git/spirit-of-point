@@ -379,6 +379,7 @@ function getR2ObjectKeyFromUrl(url: string): string | undefined {
     if (parsed.origin !== R2_PUBLIC_URL) return undefined;
     return parsed.pathname.replace(/^\/+/, "");
   } catch {
+    // Invalid or non-absolute URLs are treated as non-R2 values and handled by the caller.
     return undefined;
   }
 }
