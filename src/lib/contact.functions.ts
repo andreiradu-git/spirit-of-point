@@ -5,6 +5,19 @@ import { getMediaDbClient } from "@/lib/media-assets.server";
 
 type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
 
+export type ContactMessage = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string | null;
+  message: string;
+  source_path: string | null;
+  read_at: string | null;
+  archived: boolean;
+  created_at: string;
+};
+
 const submitSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(320),
@@ -16,7 +29,7 @@ const submitSchema = z.object({
 
 export const submitContactMessage = createServerFn({ method: "POST" })
   .validator((data) => submitSchema.parse(data))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const tag = "[contact]";
     try {
       console.log(`${tag} submitContactMessage called`, { data });
@@ -64,7 +77,7 @@ export const listContactMessages = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []) as ContactMessage[];
   });
 
 export const updateContactMessage = createServerFn({ method: "POST" })
