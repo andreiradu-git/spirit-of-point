@@ -1,5 +1,6 @@
 import { getRequest } from "@tanstack/react-start/server";
 import { getStartContext } from "@tanstack/start-storage-context";
+import { readServerEnv } from "@/lib/server-env";
 
 export type R2Object = {
   key: string;
@@ -73,6 +74,13 @@ type StartContextWithCloudflareEnv = {
   request?: CloudflareRuntimeRequest;
 };
 
+function shouldLogRuntimeDiagnostics() {
+  return (
+    readServerEnv("TEMP_MEDIA_DIAGNOSTICS") === "true" ||
+    readServerEnv("MEDIA_DIAGNOSTICS_ENABLED") === "true"
+  );
+}
+
 function isR2Bucket(value: unknown): value is R2BucketBinding {
   return (
     !!value &&
@@ -85,46 +93,43 @@ function isR2Bucket(value: unknown): value is R2BucketBinding {
 }
 
 async function resolveBucketBinding(): Promise<R2BucketBinding | undefined> {
-  // Diagnostic logging requested: print available env keys at each source.
-  try {
-    const ctx = getStartContext({ throwIfNotFound: false }) as
-      | StartContextWithCloudflareEnv
-      | undefined;
-    const cloudflareEnv = ctx?.contextAfterGlobalMiddlewares?.cloudflareEnv;
-    console.log("cloudflareEnv keys", Object.keys(cloudflareEnv ?? {}));
-    console.log("binding", cloudflareEnv?.[BINDING_NAME]);
-  } catch (e) {
-    console.log("cloudflareEnv keys <error>", e);
-  }
-  try {
-    const request = getRequest() as CloudflareRuntimeRequest;
-    console.log(
-      "request.runtime.cloudflare.env keys",
-      Object.keys(request.runtime?.cloudflare?.env ?? {}),
-    );
-  } catch (e) {
-    console.log("request.runtime.cloudflare.env keys <error>", e);
-  }
-  try {
-    console.log(
-      "globalThis.__POINTSTUDIO_WORKER_ENV__ keys",
-      Object.keys(globalThis.__POINTSTUDIO_WORKER_ENV__ ?? {}),
-    );
-    console.log(
-      "globalThis.__env__ keys",
-      Object.keys(globalThis.__env__ ?? {}),
-    );
-  } catch (e) {
-    console.log("global env keys <error>", e);
-  }
-  try {
-    const moduleName = "cloudflare:workers";
-    const mod = (await import(/* @vite-ignore */ moduleName)) as {
-      env?: Record<string, unknown>;
-    };
-    console.log("cloudflare:workers env keys", Object.keys(mod.env ?? {}));
-  } catch (e) {
-    console.log("cloudflare:workers import <error>", e);
+  if (shouldLogRuntimeDiagnostics()) {
+    try {
+      const ctx = getStartContext({ throwIfNotFound: false }) as
+        StartContextWithCloudflareEnv | undefined;
+      const cloudflareEnv = ctx?.contextAfterGlobalMiddlewares?.cloudflareEnv;
+      console.log("cloudflareEnv keys", Object.keys(cloudflareEnv ?? {}));
+      console.log("binding", cloudflareEnv?.[BINDING_NAME]);
+    } catch (e) {
+      console.log("cloudflareEnv keys <error>", e);
+    }
+    try {
+      const request = getRequest() as CloudflareRuntimeRequest;
+      console.log(
+        "request.runtime.cloudflare.env keys",
+        Object.keys(request.runtime?.cloudflare?.env ?? {}),
+      );
+    } catch (e) {
+      console.log("request.runtime.cloudflare.env keys <error>", e);
+    }
+    try {
+      console.log(
+        "globalThis.__POINTSTUDIO_WORKER_ENV__ keys",
+        Object.keys(globalThis.__POINTSTUDIO_WORKER_ENV__ ?? {}),
+      );
+      console.log("globalThis.__env__ keys", Object.keys(globalThis.__env__ ?? {}));
+    } catch (e) {
+      console.log("global env keys <error>", e);
+    }
+    try {
+      const moduleName = "cloudflare:workers";
+      const mod = (await import(/* @vite-ignore */ moduleName)) as {
+        env?: Record<string, unknown>;
+      };
+      console.log("cloudflare:workers env keys", Object.keys(mod.env ?? {}));
+    } catch (e) {
+      console.log("cloudflare:workers import <error>", e);
+    }
   }
 
   // 1) Modern Cloudflare Workers env import
@@ -142,20 +147,23 @@ async function resolveBucketBinding(): Promise<R2BucketBinding | undefined> {
   // 2) TanStack Start request context (populated by src/server.ts)
   try {
     const ctx = getStartContext({ throwIfNotFound: false }) as
-      | StartContextWithCloudflareEnv
-      | undefined;
+      StartContextWithCloudflareEnv | undefined;
     const fromCtx = ctx?.contextAfterGlobalMiddlewares?.cloudflareEnv?.[BINDING_NAME];
     if (isR2Bucket(fromCtx)) return fromCtx;
     const fromReq = ctx?.request?.runtime?.cloudflare?.env?.[BINDING_NAME];
     if (isR2Bucket(fromReq)) return fromReq;
-  } catch {}
+  } catch {
+    // Ignore and continue checking other runtime locations.
+  }
 
   // 3) Request runtime binding
   try {
     const req = getRequest() as CloudflareRuntimeRequest;
     const fromReq = req.runtime?.cloudflare?.env?.[BINDING_NAME];
     if (isR2Bucket(fromReq)) return fromReq;
-  } catch {}
+  } catch {
+    // Ignore and continue checking global fallbacks.
+  }
 
   // 4) Global fallbacks
   const fromGlobal = globalThis.__POINTSTUDIO_WORKER_ENV__?.[BINDING_NAME];
@@ -166,13 +174,10 @@ async function resolveBucketBinding(): Promise<R2BucketBinding | undefined> {
   return undefined;
 }
 
-
 async function getBucket(): Promise<R2BucketBinding> {
   const bucket = await resolveBucketBinding();
   if (!bucket) {
-    throw new Error(
-      `Cloudflare R2 binding "${BINDING_NAME}" not found in the Worker runtime`,
-    );
+    throw new Error(`Cloudflare R2 binding "${BINDING_NAME}" not found in the Worker runtime`);
   }
   return bucket;
 }
@@ -227,7 +232,8 @@ export function makeR2Key(kind: AssetKind, filename: string): string {
   const folder = kind === "image" ? "originals" : kind === "video" ? "videos" : "files";
   const rawExt = (filename.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "");
   const ext = rawExt || (kind === "image" ? "jpg" : kind === "video" ? "mp4" : "bin");
-  const uuid = (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  const uuid =
+    globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return `${folder}/${uuid}.${ext}`;
 }
 
@@ -243,22 +249,24 @@ export function optimizedKeyFor(originalKey: string): string {
   return `optimized/${stem}.webp`;
 }
 
-
 export async function listR2ObjectsDirect(): Promise<R2Object[]> {
   const bucket = await getBucket();
   const results: R2Object[] = [];
   let cursor: string | undefined;
 
   do {
-    const page = await bucket.list({ limit: 1000, cursor, include: ["httpMetadata", "customMetadata"] });
+    const page = await bucket.list({
+      limit: 1000,
+      cursor,
+      include: ["httpMetadata", "customMetadata"],
+    });
     for (const obj of page.objects) {
       results.push({
         key: obj.key,
         url: `${PUBLIC_URL}/${obj.key}`,
         size: obj.size,
         contentType: obj.httpMetadata?.contentType,
-        lastModified:
-          obj.uploaded instanceof Date ? obj.uploaded.toISOString() : undefined,
+        lastModified: obj.uploaded instanceof Date ? obj.uploaded.toISOString() : undefined,
         originalName: obj.customMetadata?.originalName,
       });
     }
@@ -292,10 +300,7 @@ export async function deleteR2ObjectDirect(key: string): Promise<void> {
   await bucket.delete(key);
 }
 
-export async function copyR2ObjectDirect(
-  fromKey: string,
-  toKey: string,
-): Promise<string> {
+export async function copyR2ObjectDirect(fromKey: string, toKey: string): Promise<string> {
   const bucket = await getBucket();
   const source = await bucket.get(fromKey);
   if (!source) throw new Error(`R2 copy failed: source "${fromKey}" not found`);

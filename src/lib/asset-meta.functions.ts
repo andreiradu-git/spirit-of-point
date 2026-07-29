@@ -1,9 +1,21 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdminAuth } from "@/lib/admin-auth";
-import { getMediaDbClient, inferMediaAssetForUrlDirect } from "@/lib/media-assets.server";
+import {
+  getMediaDbClient,
+  inferMediaAssetForUrlDirect,
+  listAssetMetaDirect,
+} from "@/lib/media-assets.server";
 
-type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
+type AssetMetaUpdateQuery = {
+  eq: (column: string, value: string) => Promise<{ error: { message?: string } | null }>;
+};
+
+type AssetMetaDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & {
+  from: (table: string) => {
+    update: (payload: Record<string, unknown>) => AssetMetaUpdateQuery;
+  };
+};
 
 export type AssetMeta = {
   url: string;
@@ -14,21 +26,9 @@ export type AssetMeta = {
   tags: string[];
 };
 
-export const listAssetMeta = createServerFn({ method: "GET" }).handler(async () => {
-  const db = getMediaDbClient(false) as unknown as AnyDb;
-  const { data, error } = await db
-    .from("media_assets")
-    .select("url, optimized_url, label, alt, caption, description, tags");
-  if (error) throw error;
-  return ((data ?? []) as Array<Partial<AssetMeta> & { optimized_url?: string | null }>).map((r) => ({
-    url: (r.optimized_url ?? r.url) as string,
-    label: r.label ?? null,
-    alt: r.alt ?? null,
-    caption: r.caption ?? null,
-    description: r.description ?? null,
-    tags: Array.isArray(r.tags) ? r.tags : [],
-  }));
-});
+export const listAssetMeta = createServerFn({ method: "GET" }).handler(async () =>
+  listAssetMetaDirect(),
+);
 
 export const saveAssetMeta = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
@@ -45,7 +45,7 @@ export const saveAssetMeta = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    const db = getMediaDbClient(true) as unknown as AnyDb;
+    const db = getMediaDbClient(true) as unknown as AssetMetaDb;
     const media = await inferMediaAssetForUrlDirect(data.url, data.alt ?? undefined);
     const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.label !== undefined) payload.label = data.label;
@@ -95,4 +95,3 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
       context: data.context,
     });
   });
-

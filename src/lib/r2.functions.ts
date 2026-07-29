@@ -23,7 +23,34 @@ export type { R2Object } from "@/lib/r2.server";
 
 const PUBLIC_URL = "https://images.pointstudio.ro";
 
-type AdminDb = { from: (table: string) => any };
+type CleanupSelectResult<T> = PromiseLike<{ data: T | null; error?: { message?: string } | null }>;
+type AdminDb = {
+  from: (table: string) => {
+    select: <T = unknown>(...args: unknown[]) => CleanupSelectResult<T>;
+  };
+};
+type UploadWarning = { code: "metadata_persist_failed"; message: string };
+
+function warningMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string") return error;
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return "Metadata persistence failed";
+}
+
+function metadataWarning(error: unknown): UploadWarning {
+  return {
+    code: "metadata_persist_failed",
+    message: warningMessage(error),
+  };
+}
 
 // -----------------------------------------------------------------------------
 // R2-only image pipeline (no Supabase). Image upload / optimize / delete only
@@ -55,49 +82,62 @@ export const writeR2Variants = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    const warnings: UploadWarning[] = [];
     const results: Array<{ key: string; size: number; url: string }> = [];
     if (data.backup) {
       const body = b64ToBytes(data.backup.dataBase64);
       const url = await putR2Object(data.backup.key, body, data.backup.contentType);
-      await upsertMediaAssetDirect({
-        key: data.backup.key,
-        url,
-        filename: data.backup.key.split("/").pop() ?? data.backup.key,
-        kind: inferKindFromContentType(data.backup.contentType, data.backup.key),
-        contentType: data.backup.contentType,
-        size: body.byteLength,
-      });
+      try {
+        await upsertMediaAssetDirect({
+          key: data.backup.key,
+          url,
+          filename: data.backup.key.split("/").pop() ?? data.backup.key,
+          kind: inferKindFromContentType(data.backup.contentType, data.backup.key),
+          contentType: data.backup.contentType,
+          size: body.byteLength,
+        });
+      } catch (error) {
+        warnings.push(metadataWarning(error));
+      }
       results.push({ key: data.backup.key, size: body.byteLength, url });
     }
     const main = b64ToBytes(data.main.dataBase64);
     const mainUrl = await putR2Object(data.main.key, main, data.main.contentType);
-    if (data.main.key.startsWith("optimized/")) {
-      await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength);
-    } else {
-      await upsertMediaAssetDirect({
-        key: data.main.key,
-        url: mainUrl,
-        filename: data.main.key.split("/").pop() ?? data.main.key,
-        kind: inferKindFromContentType(data.main.contentType, data.main.key),
-        contentType: data.main.contentType,
-        size: main.byteLength,
-      });
+    try {
+      if (data.main.key.startsWith("optimized/")) {
+        await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength);
+      } else {
+        await upsertMediaAssetDirect({
+          key: data.main.key,
+          url: mainUrl,
+          filename: data.main.key.split("/").pop() ?? data.main.key,
+          kind: inferKindFromContentType(data.main.contentType, data.main.key),
+          contentType: data.main.contentType,
+          size: main.byteLength,
+        });
+      }
+    } catch (error) {
+      warnings.push(metadataWarning(error));
     }
     results.push({ key: data.main.key, size: main.byteLength, url: mainUrl });
     for (const s of data.siblings) {
       const body = b64ToBytes(s.dataBase64);
       const url = await putR2Object(s.key, body, s.contentType);
-      await upsertMediaAssetDirect({
-        key: s.key,
-        url,
-        filename: s.key.split("/").pop() ?? s.key,
-        kind: inferKindFromContentType(s.contentType, s.key),
-        contentType: s.contentType,
-        size: body.byteLength,
-      });
+      try {
+        await upsertMediaAssetDirect({
+          key: s.key,
+          url,
+          filename: s.key.split("/").pop() ?? s.key,
+          kind: inferKindFromContentType(s.contentType, s.key),
+          contentType: s.contentType,
+          size: body.byteLength,
+        });
+      } catch (error) {
+        warnings.push(metadataWarning(error));
+      }
       results.push({ key: s.key, size: body.byteLength, url });
     }
-    return { ok: true, results };
+    return { ok: true, results, warnings };
   });
 
 export const renameR2Object = createServerFn({ method: "POST" })
@@ -116,7 +156,12 @@ export const renameR2Object = createServerFn({ method: "POST" })
     const source = await readR2ObjectDirect(data.fromKey);
     const clean = sanitizeFileName(data.toName) || "file";
     await putR2Object(data.fromKey, b64ToBytes(source.dataBase64), source.contentType, clean);
-    return { ok: true, key: data.fromKey, url: `${PUBLIC_URL}/${data.fromKey}`, displayName: clean };
+    return {
+      ok: true,
+      key: data.fromKey,
+      url: `${PUBLIC_URL}/${data.fromKey}`,
+      displayName: clean,
+    };
   });
 
 const uploadSchema = z.object({
@@ -136,8 +181,20 @@ export const uploadToR2 = createServerFn({ method: "POST" })
     const key = makeR2Key(kind, data.filename);
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(key, body, data.contentType, data.filename);
-    await upsertMediaAssetDirect({ key, url, filename: data.filename, kind, contentType: data.contentType, size: body.byteLength });
-    return { url, key, size: body.byteLength, kind };
+    const warnings: UploadWarning[] = [];
+    try {
+      await upsertMediaAssetDirect({
+        key,
+        url,
+        filename: data.filename,
+        kind,
+        contentType: data.contentType,
+        size: body.byteLength,
+      });
+    } catch (error) {
+      warnings.push(metadataWarning(error));
+    }
+    return { url, key, size: body.byteLength, kind, warnings };
   });
 
 export const listR2Objects = createServerFn({ method: "GET" })
@@ -161,7 +218,6 @@ export const deleteR2Object = createServerFn({ method: "POST" })
     return { ok: true, deleted: [data.key] };
   });
 
-
 export const replaceR2Object = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .inputValidator((input) =>
@@ -178,21 +234,29 @@ export const replaceR2Object = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     if (data.backupKey && data.origBase64) {
-      await putR2Object(data.backupKey, b64ToBytes(data.origBase64), data.origContentType || data.contentType);
+      await putR2Object(
+        data.backupKey,
+        b64ToBytes(data.origBase64),
+        data.origContentType || data.contentType,
+      );
     }
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(data.key, body, data.contentType);
-    await upsertMediaAssetDirect({
-      key: data.key,
-      url,
-      filename: data.key.split("/").pop() ?? data.key,
-      kind: inferKindFromContentType(data.contentType, data.key),
-      contentType: data.contentType,
-      size: body.byteLength,
-    });
-    return { ok: true, url, size: body.byteLength };
+    const warnings: UploadWarning[] = [];
+    try {
+      await upsertMediaAssetDirect({
+        key: data.key,
+        url,
+        filename: data.key.split("/").pop() ?? data.key,
+        kind: inferKindFromContentType(data.contentType, data.key),
+        contentType: data.contentType,
+        size: body.byteLength,
+      });
+    } catch (error) {
+      warnings.push(metadataWarning(error));
+    }
+    return { ok: true, url, size: body.byteLength, warnings };
   });
-
 
 /**
  * Orphan scanner — lists every object in R2 and marks whether the object URL
@@ -202,11 +266,29 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
     const db = context?.supabase as AdminDb | undefined;
-    if (!db) throw new Error("Admin database client unavailable");
-    const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
+    const metadataIssues: string[] = [];
+    let metadataHealthy = Boolean(db);
+
+    const safe = async <T>(
+      label: string,
+      p?: PromiseLike<{ data: T | null; error?: { message?: string } | null }>,
+    ): Promise<{ data: T | null }> => {
+      if (!p) {
+        metadataHealthy = false;
+        metadataIssues.push(`${label}: Metadata unavailable`);
+        return { data: null };
+      }
       try {
-        return await p;
+        const result = await p;
+        if (result?.error?.message) {
+          metadataHealthy = false;
+          metadataIssues.push(`${label}: ${result.error.message}`);
+          return { data: result.data ?? null };
+        }
+        return { data: result?.data ?? null };
       } catch (e) {
+        metadataHealthy = false;
+        metadataIssues.push(`${label}: ${warningMessage(e)}`);
         console.warn("[storage-cleanup] CMS query failed, continuing:", e);
         return { data: null };
       }
@@ -216,11 +298,23 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         console.error("[storage-cleanup] R2 list failed", e);
         return [] as Awaited<ReturnType<typeof listR2ObjectsDirect>>;
       }),
-      safe<Array<{ src?: string; gallery_id?: string }>>(db.from("gallery_images").select("src, gallery_id")),
-      safe<Array<{ key?: string; value?: unknown }>>(db.from("site_settings").select("key, value")),
-      safe<Array<{ slug?: string; body?: unknown }>>(db.from("pages").select("slug, body")),
-      safe<Array<{ path?: string; og_image?: string }>>(db.from("page_seo").select("path, og_image")),
-      safe<Array<{ url?: string }>>(db.from("asset_meta").select("url")),
+      safe<Array<{ src?: string; gallery_id?: string }>>(
+        "gallery_images",
+        db?.from("gallery_images").select("src, gallery_id"),
+      ),
+      safe<Array<{ key?: string; value?: unknown }>>(
+        "site_settings",
+        db?.from("site_settings").select("key, value"),
+      ),
+      safe<Array<{ slug?: string; body?: unknown }>>(
+        "pages",
+        db?.from("pages").select("slug, body"),
+      ),
+      safe<Array<{ path?: string; og_image?: string }>>(
+        "page_seo",
+        db?.from("page_seo").select("path, og_image"),
+      ),
+      safe<Array<{ url?: string }>>("asset_meta", db?.from("asset_meta").select("url")),
     ]);
 
     // Build one big haystack containing every referenced URL/string in the CMS.
@@ -271,6 +365,19 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
 
     let orphanBytes = 0;
     const report = objects.map((obj) => {
+      if (!metadataHealthy) {
+        return {
+          key: obj.key,
+          url: obj.url,
+          size: obj.size,
+          uploaded: obj.lastModified,
+          contentType: obj.contentType,
+          originalName: obj.originalName,
+          referenced: null,
+          referencedIn: [],
+          status: "metadata-unavailable" as const,
+        };
+      }
       // Match either the full URL or the bare key — covers both `https://…/key`
       // and any legacy relative reference to the same key.
       const referenced = haystack.includes(obj.url) || haystack.includes(obj.key);
@@ -293,6 +400,7 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         originalName: obj.originalName,
         referenced,
         referencedIn,
+        status: referenced ? ("referenced" as const) : ("orphan" as const),
       };
     });
 
@@ -300,9 +408,13 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
       bucketPublicUrl: PUBLIC_URL,
       totalObjects: report.length,
       totalBytes: report.reduce((n, r) => n + r.size, 0),
-      orphanCount: report.filter((r) => !r.referenced).length,
-      orphanBytes,
+      orphanCount: metadataHealthy ? report.filter((r) => r.status === "orphan").length : null,
+      orphanBytes: metadataHealthy ? orphanBytes : null,
       scannedAt: new Date().toISOString(),
+      metadataStatus: metadataHealthy ? "healthy" : "Metadata unavailable",
+      metadataHealthy,
+      metadataIssues,
+      deletionEnabled: metadataHealthy,
       objects: report,
     };
   });
@@ -355,7 +467,12 @@ export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
         if (!res.ok) throw new Error(`source fetch failed [${res.status}]`);
         const blob = await res.blob();
         const body = new Uint8Array(await blob.arrayBuffer());
-        await putR2Object(key, body, asset.contentType || blob.type || res.headers.get("content-type") || undefined, asset.name);
+        await putR2Object(
+          key,
+          body,
+          asset.contentType || blob.type || res.headers.get("content-type") || undefined,
+          asset.name,
+        );
         copied++;
         existing.add(key);
         migrated.push({ from: asset.url, to: nextUrl, key });
