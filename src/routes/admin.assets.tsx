@@ -3,7 +3,12 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { deleteMediaAsset, listAllAssets, type SiteAsset } from "@/lib/assets.functions";
+import {
+  deleteMediaAsset,
+  getMediaDiagnostics,
+  listAllAssets,
+  type SiteAsset,
+} from "@/lib/assets.functions";
 import {
   listAssetMeta,
   saveAssetMeta,
@@ -17,10 +22,7 @@ import {
   readR2Object,
   writeR2Variants,
 } from "@/lib/r2.functions";
-import {
-  optimizeImageBlob,
-  blobToBase64 as optBlobToBase64,
-} from "@/lib/optimize-image";
+import { optimizeImageBlob, blobToBase64 as optBlobToBase64 } from "@/lib/optimize-image";
 
 import {
   Sparkles,
@@ -34,7 +36,6 @@ import {
   Pencil,
   UploadCloud,
 } from "lucide-react";
-
 
 export const Route = createFileRoute("/admin/assets")({
   head: () => ({ meta: [{ title: "Assets — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -66,10 +67,25 @@ function humanSize(bytes?: number) {
 function humanDate(iso?: string) {
   if (!iso) return "";
   try {
-    return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+    return new Date(iso).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
   } catch {
     return "";
   }
+}
+
+function extractFilename(value?: string | null) {
+  if (!value) return "";
+  return value.split("/").filter(Boolean).pop() ?? value;
+}
+
+function extractWarningMessages(warnings?: Array<{ message: string }>) {
+  return Array.isArray(warnings) && warnings.length > 0
+    ? warnings.map((warning) => warning.message).join("; ")
+    : "";
 }
 
 // -----------------------------------------------------------------------------
@@ -77,7 +93,7 @@ function humanDate(iso?: string) {
 // -----------------------------------------------------------------------------
 
 type Filter = "all" | "images" | "videos" | "files" | "unused";
-type SortKey = "date-desc" | "date-asc" | "size-desc" | "size-asc" | "name-asc";
+type SortKey = "date-desc" | "date-asc" | "size-desc" | "size-asc" | "name-asc" | "name-desc";
 
 function AdminAssetsPage() {
   const { user, isAdmin, loading } = useAdmin();
@@ -107,6 +123,14 @@ function AdminAssetsPage() {
     staleTime: 30_000,
   });
 
+  const diagnosticsQuery = useServerFn(getMediaDiagnostics);
+  const { data: diagnostics } = useQuery({
+    queryKey: ["admin", "assets", "diagnostics"],
+    queryFn: () => diagnosticsQuery(),
+    enabled: !!isAdmin,
+    staleTime: 5_000,
+  });
+
   const metaMap = useMemo(() => {
     const m: Record<string, AssetMeta> = {};
     for (const r of metas) m[r.url] = r;
@@ -125,7 +149,8 @@ function AdminAssetsPage() {
       if (source && a.source !== source) return false;
       if (q) {
         const m = metaMap[a.url];
-        const hay = `${a.url} ${a.name ?? ""} ${a.alt ?? ""} ${m?.label ?? ""} ${m?.caption ?? ""} ${m?.description ?? ""} ${(m?.tags ?? []).join(" ")}`.toLowerCase();
+        const hay =
+          `${a.url} ${a.name ?? ""} ${a.alt ?? ""} ${m?.label ?? ""} ${m?.caption ?? ""} ${m?.description ?? ""} ${(m?.tags ?? []).join(" ")}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -143,6 +168,8 @@ function AdminAssetsPage() {
           return (b.size ?? 0) - (a.size ?? 0);
         case "name-asc":
           return (a.name ?? a.url).localeCompare(b.name ?? b.url);
+        case "name-desc":
+          return (b.name ?? b.url).localeCompare(a.name ?? a.url);
       }
     });
     return sorted;
@@ -165,7 +192,8 @@ function AdminAssetsPage() {
           <div>
             <h1 className="text-3xl font-serif">Assets library</h1>
             <p className="text-sm text-neutral-600 mt-1">
-              Every image, video and file uploaded or referenced on the site. Rename, tag, describe — or let AI write the metadata.
+              Every image, video and file uploaded or referenced on the site. Rename, tag, describe
+              — or let AI write the metadata.
             </p>
           </div>
           <MigrateToR2Button assets={assets} />
@@ -180,6 +208,53 @@ function AdminAssetsPage() {
           <Stat label="Files" value={stats.files} />
           <Stat label="Unused" value={stats.unused} highlight={stats.unused > 0} />
         </div>
+
+        {diagnostics && (
+          <div className="bg-white border rounded-lg p-4 mb-4 text-xs space-y-2">
+            <div className="font-medium">Temporary diagnostics (admin only)</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <span className="text-neutral-500">R2 objects:</span>{" "}
+                {diagnostics.totalR2Objects ?? "Unavailable"}
+              </div>
+              <div>
+                <span className="text-neutral-500">Metadata records:</span>{" "}
+                {diagnostics.totalMetadataRecords ?? "Unavailable"}
+              </div>
+              <div>
+                <span className="text-neutral-500">Metadata backend:</span>{" "}
+                {diagnostics.metadataBackendStatus}
+              </div>
+              <div>
+                <span className="text-neutral-500">Worker runtime:</span>{" "}
+                {diagnostics.workerEnvironment}
+              </div>
+              <div>
+                <span className="text-neutral-500">R2 binding:</span>{" "}
+                {diagnostics.hasBucketBinding ? diagnostics.bucketBindingName : "Missing"}
+              </div>
+              <div>
+                <span className="text-neutral-500">Supabase env:</span>{" "}
+                {diagnostics.hasSupabaseUrl ? "URL" : "No URL"} /{" "}
+                {diagnostics.hasSupabaseServiceRoleKey ? "Service key" : "No service key"}
+              </div>
+            </div>
+            <div>
+              <span className="text-neutral-500">Last SQL query:</span>{" "}
+              <code className="break-all">{diagnostics.lastSqlQuery ?? "None"}</code>
+            </div>
+            <div>
+              <span className="text-neutral-500">Last SQL error:</span>{" "}
+              <code className="break-all">{diagnostics.lastSqlError ?? "None"}</code>
+            </div>
+            {diagnostics.metadataBackendMessage && (
+              <div>
+                <span className="text-neutral-500">Metadata detail:</span>{" "}
+                {diagnostics.metadataBackendMessage}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="bg-white border rounded-lg p-4 mb-4 flex flex-wrap gap-3 items-center text-sm">
           <div className="flex gap-1">
@@ -203,6 +278,7 @@ function AdminAssetsPage() {
             <option value="size-desc">Largest first</option>
             <option value="size-asc">Smallest first</option>
             <option value="name-asc">Name A→Z</option>
+            <option value="name-desc">Name Z→A</option>
           </select>
           <select
             value={source}
@@ -210,7 +286,11 @@ function AdminAssetsPage() {
             className="border rounded px-2 py-1 text-xs"
           >
             <option value="">All sources</option>
-            {sources.map((s) => <option key={s} value={s}>{s}</option>)}
+            {sources.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
           <input
             placeholder="Search name, url, alt, tags…"
@@ -218,7 +298,9 @@ function AdminAssetsPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="border rounded px-3 py-1 text-xs flex-1 min-w-[180px]"
           />
-          <span className="text-xs text-neutral-500 ml-auto">{shown.length} of {assets.length}</span>
+          <span className="text-xs text-neutral-500 ml-auto">
+            {shown.length} of {assets.length}
+          </span>
         </div>
 
         {isLoading ? (
@@ -282,7 +364,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   }, [meta, asset.alt]);
 
   const parseTags = (v: string) =>
-    v.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 20);
+    v
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 20);
 
   const doSave = async (over?: Partial<AssetMeta>) => {
     setSaving(true);
@@ -311,7 +397,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     setAiBusy(true);
     try {
       const out = await generate({
-        data: { imageUrl: asset.url, context: asset.source, kind: asset.kind === "file" ? "link" : asset.kind },
+        data: {
+          imageUrl: asset.url,
+          context: asset.source,
+          kind: asset.kind === "file" ? "link" : asset.kind,
+        },
       });
       if (out.label) setLabel(out.label);
       if (out.alt) setAlt(out.alt);
@@ -344,7 +434,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
 
   const doRename = async () => {
     if (!asset.r2Key) return;
-    const current = asset.name ?? asset.r2Key.split("/").pop() ?? "";
+    const current = asset.name ?? extractFilename(asset.r2Key) ?? "";
     const next = window.prompt("New file name (extension optional):", current);
     if (!next || next === current) return;
     setRenaming(true);
@@ -405,7 +495,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   };
 
   const doDeleteKey = async (key: string, kind: "original" | "optimized" | "asset") => {
-    if (!window.confirm(`Delete this ${kind} file permanently?\n\n${key}\n\nThis cannot be undone.`)) return;
+    if (
+      !window.confirm(`Delete this ${kind} file permanently?\n\n${key}\n\nThis cannot be undone.`)
+    )
+      return;
     setDeleting(true);
     try {
       await removeAsset({ data: { id: asset.id, key, url: asset.url } });
@@ -424,7 +517,12 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const doDeleteAll = async () => {
     if (!asset.r2Key) return;
     const parts = [asset.r2Key, asset.optimizedKey].filter(Boolean) as string[];
-    if (!window.confirm(`Delete this asset permanently?\n\n${parts.join("\n")}\n\nThis cannot be undone.`)) return;
+    if (
+      !window.confirm(
+        `Delete this asset permanently?\n\n${parts.join("\n")}\n\nThis cannot be undone.`,
+      )
+    )
+      return;
     setDeleting(true);
     try {
       for (const k of parts) {
@@ -439,7 +537,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       setDeleting(false);
     }
   };
-
 
   if (deleted) return null;
 
@@ -471,7 +568,9 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
           </div>
         )}
         {!asset.usedOnSite && (
-          <span className="absolute top-1 left-1 text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded">unused</span>
+          <span className="absolute top-1 left-1 text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded">
+            unused
+          </span>
         )}
         {asset.kind === "image" && naturalSize && (
           <span className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded font-mono">
@@ -482,9 +581,13 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
 
       <div className="p-3 flex flex-col gap-2 text-xs">
         <div className="flex items-center justify-between gap-2 text-[11px] text-neutral-500">
-          <span className="truncate" title={asset.name ?? asset.url}>{asset.name ?? asset.source}</span>
+          <span className="truncate" title={asset.name ?? asset.url}>
+            {asset.name ?? asset.source}
+          </span>
           <span className="shrink-0 flex gap-2 font-mono">
-            {humanSize(asset.size)}{asset.size && asset.lastModified ? " · " : ""}{humanDate(asset.lastModified)}
+            {humanSize(asset.size)}
+            {asset.size && asset.lastModified ? " · " : ""}
+            {humanDate(asset.lastModified)}
           </span>
         </div>
 
@@ -505,7 +608,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded border hover:bg-neutral-50 disabled:opacity-40"
             title={asset.r2Key ? "Rename file in R2" : "Only R2 files can be renamed"}
           >
-            {renaming ? <Loader2 className="w-3 h-3 animate-spin" /> : <Pencil className="w-3 h-3" />}
+            {renaming ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Pencil className="w-3 h-3" />
+            )}
           </button>
           <a
             href={asset.url}
@@ -524,7 +631,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
               className="inline-flex items-center justify-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
               title="Delete asset (original + optimized)"
             >
-              {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+              {deleting ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Trash2 className="w-3 h-3" />
+              )}
             </button>
           )}
         </div>
@@ -533,7 +644,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
           <span className="text-[10px] uppercase tracking-wider text-neutral-500">Label</span>
           <input
             value={label}
-            onChange={(e) => { setLabel(e.target.value); setDirty(true); }}
+            onChange={(e) => {
+              setLabel(e.target.value);
+              setDirty(true);
+            }}
             placeholder="Short title"
             className="border rounded px-2 py-1"
           />
@@ -542,7 +656,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
           <span className="text-[10px] uppercase tracking-wider text-neutral-500">Alt text</span>
           <textarea
             value={alt}
-            onChange={(e) => { setAlt(e.target.value); setDirty(true); }}
+            onChange={(e) => {
+              setAlt(e.target.value);
+              setDirty(true);
+            }}
             placeholder="Descriptive alt text for SEO & accessibility"
             rows={2}
             className="border rounded px-2 py-1 resize-y"
@@ -555,26 +672,39 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
               <span className="text-[10px] uppercase tracking-wider text-neutral-500">Caption</span>
               <input
                 value={caption}
-                onChange={(e) => { setCaption(e.target.value); setDirty(true); }}
+                onChange={(e) => {
+                  setCaption(e.target.value);
+                  setDirty(true);
+                }}
                 placeholder="Short caption shown under the image"
                 className="border rounded px-2 py-1"
               />
             </label>
             <label className="flex flex-col gap-0.5">
-              <span className="text-[10px] uppercase tracking-wider text-neutral-500">Description</span>
+              <span className="text-[10px] uppercase tracking-wider text-neutral-500">
+                Description
+              </span>
               <textarea
                 value={description}
-                onChange={(e) => { setDescription(e.target.value); setDirty(true); }}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setDirty(true);
+                }}
                 placeholder="Longer descriptive text"
                 rows={3}
                 className="border rounded px-2 py-1 resize-y"
               />
             </label>
             <label className="flex flex-col gap-0.5">
-              <span className="text-[10px] uppercase tracking-wider text-neutral-500">Tags (comma separated)</span>
+              <span className="text-[10px] uppercase tracking-wider text-neutral-500">
+                Tags (comma separated)
+              </span>
               <input
                 value={tagsInput}
-                onChange={(e) => { setTagsInput(e.target.value); setDirty(true); }}
+                onChange={(e) => {
+                  setTagsInput(e.target.value);
+                  setDirty(true);
+                }}
                 placeholder="portrait, editorial, studio"
                 className="border rounded px-2 py-1"
               />
@@ -596,7 +726,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             disabled={aiBusy || saving}
             className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded bg-black text-white hover:bg-neutral-800 disabled:opacity-50"
           >
-            {aiBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            {aiBusy ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3" />
+            )}
             AI write all
           </button>
           <button
@@ -614,8 +748,12 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             {/* Original */}
             <div className="p-2 flex items-center gap-2">
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-500">Original</div>
-                <div className="truncate font-mono" title={asset.r2Key}>{asset.r2Key.split("/").pop()}</div>
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500">
+                  Original
+                </div>
+                <div className="truncate font-mono" title={asset.r2Key}>
+                  {extractFilename(asset.r2Key)}
+                </div>
                 <div className="text-neutral-500">{humanSize(asset.size)}</div>
               </div>
               <button
@@ -630,11 +768,13 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             {/* Optimized */}
             <div className="p-2 flex items-center gap-2">
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-500">Optimized (WebP)</div>
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500">
+                  Optimized (WebP)
+                </div>
                 {asset.optimizedKey ? (
                   <>
                     <div className="truncate font-mono" title={asset.optimizedKey}>
-                      {asset.optimizedKey.split("/").pop()}
+                      {extractFilename(asset.optimizedKey)}
                     </div>
                     <div className="text-neutral-500">
                       {humanSize(asset.optimizedSize)}
@@ -655,7 +795,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
                   className="inline-flex items-center gap-1 px-2 py-1 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
                   title="Regenerate optimized WebP from original"
                 >
-                  {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                  {optBusy ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Zap className="w-3 h-3" />
+                  )}
                   {asset.optimizedKey ? "Regenerate" : "Optimize"}
                 </button>
                 {asset.optimizedKey && (
@@ -681,7 +825,11 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             disabled={deleting}
             className="mt-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
           >
-            {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+            {deleting ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Trash2 className="w-3 h-3" />
+            )}
             Delete
           </button>
         )}
@@ -690,7 +838,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             Referenced asset — remove it from its source (gallery / setting).
           </div>
         )}
-
       </div>
     </div>
   );
@@ -719,6 +866,7 @@ type UploadItem = {
   done?: boolean;
   reductionPct?: number;
   optimizedSize?: number;
+  warning?: string;
 };
 
 function DropZoneUploader() {
@@ -766,37 +914,42 @@ function DropZoneUploader() {
                 kind: "image",
               },
             });
+            const uploadWarning = extractWarningMessages(uploaded.warnings);
 
             // 2. Optimize in the browser to a single WebP display file and
             //    upload it under the paired `optimized/<uuid>.webp` key.
             patch(id, { progress: 45, status: "optimizing" });
             const optimized = await optimizeImageBlob(file);
-            const base = uploaded.key.split("/").pop() || uploaded.key;
+            const base = extractFilename(uploaded.key) || uploaded.key;
             const dot = base.lastIndexOf(".");
             const stem = dot > 0 ? base.slice(0, dot) : base;
             const optKey = `optimized/${stem}.webp`;
 
             patch(id, { progress: 75, status: "publishing optimized" });
             const optB64 = await optBlobToBase64(optimized.webp);
-            await writeVariants({
+            const variantResult = await writeVariants({
               data: {
                 main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
               },
             });
+            const variantWarning = extractWarningMessages(variantResult.warnings);
             const pct = file.size > 0 ? Math.round((1 - optimized.webp.size / file.size) * 100) : 0;
+            const warning = [uploadWarning, variantWarning].filter(Boolean).join("; ");
             patch(id, {
               progress: 100,
               done: true,
-              status: `${Math.round(file.size / 1024)} → ${Math.round(optimized.webp.size / 1024)} KB (−${pct}%)`,
+              status: warning
+                ? `${Math.round(file.size / 1024)} → ${Math.round(optimized.webp.size / 1024)} KB (−${pct}%) · warning`
+                : `${Math.round(file.size / 1024)} → ${Math.round(optimized.webp.size / 1024)} KB (−${pct}%)`,
               optimizedSize: optimized.webp.size,
               reductionPct: pct,
+              warning,
             });
-
           } else {
             patch(id, { progress: 20, status: "uploading" });
             const b64 = await optBlobToBase64(file);
             patch(id, { progress: 60, status: "uploading" });
-            await doUploadR2({
+            const uploaded = await doUploadR2({
               data: {
                 filename: file.name,
                 contentType: file.type || "application/octet-stream",
@@ -804,10 +957,15 @@ function DropZoneUploader() {
                 folder,
               },
             });
-            patch(id, { progress: 100, done: true, status: "done" });
+            const warning = extractWarningMessages(uploaded.warnings);
+            patch(id, {
+              progress: 100,
+              done: true,
+              status: warning ? "done with warning" : "done",
+              warning,
+            });
           }
         } catch (e) {
-
           patch(id, {
             error: e instanceof Error ? e.message : String(e),
             progress: 100,
@@ -822,10 +980,12 @@ function DropZoneUploader() {
     [doUploadR2, folder, qc, writeVariants],
   );
 
-
   return (
     <div
-      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
       onDragLeave={() => setDragOver(false)}
       onDrop={(e) => {
         e.preventDefault();
@@ -845,8 +1005,8 @@ function DropZoneUploader() {
             className="underline decoration-dotted hover:text-black"
           >
             browse
-          </button>
-          {" "}to upload to Cloudflare R2
+          </button>{" "}
+          to upload to Cloudflare R2
         </div>
         <div className="flex items-center gap-2 text-xs text-neutral-500">
           Folder:
@@ -880,7 +1040,8 @@ function DropZoneUploader() {
               <div className="flex justify-between gap-2">
                 <span className="truncate">{it.name}</span>
                 <span className="shrink-0 text-neutral-500 font-mono">
-                  {humanSize(it.size)} · {it.error ? "failed" : it.status || (it.done ? "done" : `${it.progress}%`)}
+                  {humanSize(it.size)} ·{" "}
+                  {it.error ? "failed" : it.status || (it.done ? "done" : `${it.progress}%`)}
                 </span>
               </div>
               <div className="h-1 bg-neutral-200 rounded overflow-hidden">
@@ -890,6 +1051,9 @@ function DropZoneUploader() {
                 />
               </div>
               {it.error && <div className="text-red-600 truncate">{it.error}</div>}
+              {!it.error && it.warning && (
+                <div className="text-amber-700 truncate">{it.warning}</div>
+              )}
             </div>
           ))}
         </div>
@@ -912,7 +1076,12 @@ function MigrateToR2Button({ assets }: { assets: SiteAsset[] }) {
         type="button"
         disabled={busy}
         onClick={async () => {
-          if (!confirm("Check the R2 migration status? New uploads already go directly to Cloudflare R2.")) return;
+          if (
+            !confirm(
+              "Check the R2 migration status? New uploads already go directly to Cloudflare R2.",
+            )
+          )
+            return;
           setBusy(true);
           setMsg("Migrating…");
           try {
@@ -920,13 +1089,23 @@ function MigrateToR2Button({ assets }: { assets: SiteAsset[] }) {
               new Map(
                 assets
                   .filter((asset) => !asset.r2Key && /^https?:\/\//.test(asset.url))
-                  .map((asset) => [asset.url, { url: asset.url, name: asset.name, contentType: asset.contentType }]),
+                  .map((asset) => [
+                    asset.url,
+                    { url: asset.url, name: asset.name, contentType: asset.contentType },
+                  ]),
               ).values(),
             );
-            const r = await migrate({ data: { assets: candidates } }) as {
-              totalFiles: number; copied: number; skipped: number; failed: number; rewrites: number; message?: string;
+            const r = (await migrate({ data: { assets: candidates } })) as {
+              totalFiles: number;
+              copied: number;
+              skipped: number;
+              failed: number;
+              rewrites: number;
+              message?: string;
             };
-            setMsg(`${r.copied} copied, ${r.skipped} skipped, ${r.failed} failed${r.message ? ` · ${r.message}` : ""}`);
+            setMsg(
+              `${r.copied} copied, ${r.skipped} skipped, ${r.failed} failed${r.message ? ` · ${r.message}` : ""}`,
+            );
             qc.invalidateQueries({ queryKey: ["admin", "assets"] });
           } catch (e) {
             setMsg(`Migration error: ${e instanceof Error ? e.message : String(e)}`);

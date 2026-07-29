@@ -4,7 +4,10 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
 type ServerEntry = {
-  fetch: (request: Request, opts?: { context?: Record<string, unknown> }) => Promise<Response> | Response;
+  fetch: (
+    request: Request,
+    opts?: { context?: Record<string, unknown> },
+  ) => Promise<Response> | Response;
 };
 
 declare global {
@@ -38,10 +41,16 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : undefined;
 }
 
+function runtimeDiagnosticsEnabled(env: Record<string, unknown> | undefined): boolean {
+  return env?.TEMP_MEDIA_DIAGNOSTICS === "true" || env?.MEDIA_DIAGNOSTICS_ENABLED === "true";
+}
+
 function bindWorkerEnv(request: Request, env: unknown): Record<string, unknown> | undefined {
   const runtimeRequest = request as CloudflareRuntimeRequest;
   const rawEnv =
-    asRecord(env) ?? asRecord(runtimeRequest.runtime?.cloudflare?.env) ?? asRecord(globalThis.__env__);
+    asRecord(env) ??
+    asRecord(runtimeRequest.runtime?.cloudflare?.env) ??
+    asRecord(globalThis.__env__);
 
   if (!rawEnv) return undefined;
 
@@ -66,7 +75,6 @@ function bindWorkerEnv(request: Request, env: unknown): Record<string, unknown> 
   } catch {
     // Ignore — the global mirror above still works as a fallback.
   }
-
 
   try {
     runtimeRequest.runtime = {
@@ -115,13 +123,18 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const directWorkerEnv = asRecord(env);
-      console.log("worker.fetch host", new URL(request.url).host);
-      console.log("worker.fetch env keys", Object.keys(directWorkerEnv ?? {}));
-      console.log("worker.fetch has MY_ASSETS", Boolean(directWorkerEnv?.MY_ASSETS));
+      const logDiagnostics = runtimeDiagnosticsEnabled(directWorkerEnv);
+      if (logDiagnostics) {
+        console.log("worker.fetch host", new URL(request.url).host);
+        console.log("worker.fetch env keys", Object.keys(directWorkerEnv ?? {}));
+        console.log("worker.fetch has MY_ASSETS", Boolean(directWorkerEnv?.MY_ASSETS));
+      }
 
       const cloudflareEnv = bindWorkerEnv(request, env);
-      console.log("server.context cloudflareEnv keys", Object.keys(cloudflareEnv ?? {}));
-      console.log("server.context has MY_ASSETS", Boolean(cloudflareEnv?.MY_ASSETS));
+      if (logDiagnostics) {
+        console.log("server.context cloudflareEnv keys", Object.keys(cloudflareEnv ?? {}));
+        console.log("server.context has MY_ASSETS", Boolean(cloudflareEnv?.MY_ASSETS));
+      }
 
       const runtimeRequest = request as CloudflareRuntimeRequest;
       const cloudflareCtx = ctx ?? runtimeRequest.runtime?.cloudflare?.context;

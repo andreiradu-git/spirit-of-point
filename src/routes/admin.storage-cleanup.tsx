@@ -43,8 +43,15 @@ function StorageCleanupPage() {
 
   const rows = useMemo(() => {
     if (!data) return [];
+    if (!data.metadataHealthy) return data.objects;
     return data.objects
-      .filter((r) => (filter === "orphan" ? !r.referenced : filter === "referenced" ? r.referenced : true))
+      .filter((r) =>
+        filter === "orphan"
+          ? r.status === "orphan"
+          : filter === "referenced"
+            ? r.status === "referenced"
+            : true,
+      )
       .filter((r) =>
         search
           ? r.key.toLowerCase().includes(search.toLowerCase()) ||
@@ -56,7 +63,8 @@ function StorageCleanupPage() {
   const toggle = (key: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
 
@@ -67,11 +75,7 @@ function StorageCleanupPage() {
 
   const deleteSelected = async () => {
     if (selected.size === 0) return;
-    if (
-      !confirm(
-        `Delete ${selected.size} object(s) from R2 permanently? This cannot be undone.`,
-      )
-    )
+    if (!confirm(`Delete ${selected.size} object(s) from R2 permanently? This cannot be undone.`))
       return;
     setDeleting(true);
     try {
@@ -115,7 +119,11 @@ function StorageCleanupPage() {
             disabled={isFetching}
             className="inline-flex items-center gap-2 rounded border px-3 py-1.5 text-sm hover:bg-neutral-50"
           >
-            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {isFetching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             Re-scan
           </button>
         </header>
@@ -124,8 +132,35 @@ function StorageCleanupPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Stat label="Objects" value={data.totalObjects.toString()} />
             <Stat label="Total size" value={fmtBytes(data.totalBytes)} />
-            <Stat label="Orphans" value={data.orphanCount.toString()} tone="warn" />
-            <Stat label="Recoverable" value={fmtBytes(data.orphanBytes)} tone="warn" />
+            <Stat
+              label="Orphans"
+              value={data.metadataHealthy ? String(data.orphanCount ?? 0) : "Metadata unavailable"}
+              tone="warn"
+            />
+            <Stat
+              label="Recoverable"
+              value={
+                data.metadataHealthy ? fmtBytes(data.orphanBytes ?? 0) : "Metadata unavailable"
+              }
+              tone="warn"
+            />
+          </div>
+        )}
+
+        {data && !data.metadataHealthy && (
+          <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            <div className="font-medium">Metadata unavailable</div>
+            <div className="mt-1">
+              R2 objects are shown, but orphan detection and deletion are disabled until metadata
+              lookups are healthy.
+            </div>
+            {data.metadataIssues.length > 0 && (
+              <ul className="mt-2 list-disc pl-5 text-xs">
+                {data.metadataIssues.map((issue: string) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
@@ -157,8 +192,12 @@ function StorageCleanupPage() {
             disabled={selected.size === 0 || deleting}
             className="inline-flex items-center gap-2 rounded bg-red-600 text-white px-3 py-1.5 text-sm disabled:opacity-40"
           >
-            {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            Delete selected ({selected.size})
+            {deleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            {`Delete selected (${selected.size})`}
           </button>
         </div>
 
@@ -208,9 +247,14 @@ function StorageCleanupPage() {
                     {r.originalName && (
                       <div className="text-xs text-neutral-500">orig: {r.originalName}</div>
                     )}
-                    {r.referencedIn.length > 0 && (
+                    {r.status !== "metadata-unavailable" && r.referencedIn.length > 0 && (
                       <div className="text-xs text-neutral-500 mt-0.5">
                         used in: {r.referencedIn.join(", ")}
+                      </div>
+                    )}
+                    {"orphanReason" in r && r.orphanReason && (
+                      <div className="text-xs text-amber-700 mt-0.5 break-words max-w-xs" title={r.orphanReason}>
+                        {r.orphanReason}
                       </div>
                     )}
                   </td>
@@ -219,13 +263,27 @@ function StorageCleanupPage() {
                     {new Date(r.uploaded ?? Date.now()).toLocaleString()}
                   </td>
                   <td className="px-3 py-2 align-top">
-                    {r.referenced ? (
-                      <span className="inline-flex items-center gap-1 text-green-700 text-xs">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Referenced
+                    {r.status === "metadata-unavailable" ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-amber-700 text-xs"
+                        aria-label="Metadata unavailable"
+                      >
+                        <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> Metadata
+                        unavailable
+                      </span>
+                    ) : r.referenced ? (
+                      <span
+                        className="inline-flex items-center gap-1 text-green-700 text-xs"
+                        aria-label="Referenced"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Referenced
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-amber-700 text-xs">
-                        <AlertTriangle className="h-3.5 w-3.5" /> Orphan
+                      <span
+                        className="inline-flex items-center gap-1 text-amber-700 text-xs"
+                        aria-label="Orphan"
+                      >
+                        <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" /> Orphan
                       </span>
                     )}
                   </td>
