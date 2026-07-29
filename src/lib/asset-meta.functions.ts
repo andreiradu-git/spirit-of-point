@@ -44,9 +44,9 @@ export const saveAssetMeta = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
-    const db = getMediaDbClient(true) as unknown as AnyDb;
-    const media = await inferMediaAssetForUrlDirect(data.url, data.alt ?? undefined);
+  .handler(async ({ data, context }) => {
+    const db = (context?.supabase as AnyDb | undefined) ?? (getMediaDbClient(true) as unknown as AnyDb);
+    const media = await inferMediaAssetForUrlDirect(data.url, data.alt ?? undefined, { db });
     const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.label !== undefined) payload.label = data.label;
     if (data.alt !== undefined) payload.alt = data.alt;
@@ -95,4 +95,3 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
       context: data.context,
     });
   });
-

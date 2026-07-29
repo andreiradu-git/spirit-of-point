@@ -70,7 +70,7 @@ export const addGalleryImage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const supabase = context?.supabase as AnyDb | undefined;
     if (!supabase) throw new Error("Admin database client unavailable");
-    const media = await inferMediaAssetForUrlDirect(data.src, data.alt);
+    const media = await inferMediaAssetForUrlDirect(data.src, data.alt, { db: supabase });
     const { data: gallery } = await supabase.from("galleries").select("id").eq("slug", data.gallerySlug).single();
     if (!gallery) throw new Error("Gallery not found");
 

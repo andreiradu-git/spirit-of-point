@@ -44,7 +44,9 @@ function StorageCleanupPage() {
   const rows = useMemo(() => {
     if (!data) return [];
     return data.objects
-      .filter((r) => (filter === "orphan" ? !r.referenced : filter === "referenced" ? r.referenced : true))
+      .filter((r) =>
+        filter === "orphan" ? !r.referenced : filter === "referenced" ? r.referenced : true,
+      )
       .filter((r) =>
         search
           ? r.key.toLowerCase().includes(search.toLowerCase()) ||
@@ -56,7 +58,8 @@ function StorageCleanupPage() {
   const toggle = (key: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
 
@@ -67,11 +70,7 @@ function StorageCleanupPage() {
 
   const deleteSelected = async () => {
     if (selected.size === 0) return;
-    if (
-      !confirm(
-        `Delete ${selected.size} object(s) from R2 permanently? This cannot be undone.`,
-      )
-    )
+    if (!confirm(`Delete ${selected.size} object(s) from R2 permanently? This cannot be undone.`))
       return;
     setDeleting(true);
     try {
@@ -115,7 +114,11 @@ function StorageCleanupPage() {
             disabled={isFetching}
             className="inline-flex items-center gap-2 rounded border px-3 py-1.5 text-sm hover:bg-neutral-50"
           >
-            {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {isFetching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             Re-scan
           </button>
         </header>
@@ -154,13 +157,23 @@ function StorageCleanupPage() {
           />
           <button
             onClick={deleteSelected}
-            disabled={selected.size === 0 || deleting}
+            disabled={selected.size === 0 || deleting || Boolean(data?.deletionBlockedReason)}
             className="inline-flex items-center gap-2 rounded bg-red-600 text-white px-3 py-1.5 text-sm disabled:opacity-40"
           >
-            {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {deleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
             Delete selected ({selected.size})
           </button>
         </div>
+
+        {data?.deletionBlockedReason && (
+          <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {data.deletionBlockedReason}
+          </div>
+        )}
 
         <div className="border rounded overflow-hidden">
           <table className="w-full text-sm">

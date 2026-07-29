@@ -21,6 +21,19 @@ npm i
 npm run dev
 ```
 
+## Cloudflare Worker runtime bindings
+
+Asset uploads and media synchronization require these runtime bindings/secrets in Cloudflare Worker environments (production, preview, and local wrangler dev):
+
+- `MY_ASSETS` (R2 bucket binding) → `pointstudio-assets`
+- `SUPABASE_URL` (or `VITE_SUPABASE_URL`)
+- `SUPABASE_PUBLISHABLE_KEY` (or `VITE_SUPABASE_PUBLISHABLE_KEY`)
+
+Optional:
+
+- `SUPABASE_SERVICE_ROLE_KEY` (used only by service-role fallbacks; authenticated admin server functions now use runtime-injected Supabase context directly)
+- `R2_ONLY_MODE=true` for explicit R2-only local development without Supabase writes
+
 ## Built with
 
 - TanStack Start

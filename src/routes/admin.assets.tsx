@@ -56,6 +56,46 @@ async function blobToBase64(blob: Blob): Promise<string> {
   return btoa(bin);
 }
 
+type MediaDimensions = { ok: boolean; width?: number; height?: number; duration?: number };
+
+async function readImageDimensions(file: File): Promise<MediaDimensions> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ ok: true, width: img.naturalWidth || undefined, height: img.naturalHeight || undefined });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      resolve({ ok: false });
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
+async function readVideoMetadata(file: File): Promise<MediaDimensions> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      resolve({
+        ok: true,
+        width: video.videoWidth || undefined,
+        height: video.videoHeight || undefined,
+        duration: Number.isFinite(video.duration) ? video.duration : undefined,
+      });
+      URL.revokeObjectURL(url);
+    };
+    video.onerror = () => {
+      resolve({ ok: false });
+      URL.revokeObjectURL(url);
+    };
+    video.src = url;
+  });
+}
+
 function humanSize(bytes?: number) {
   if (!bytes) return "";
   if (bytes < 1024) return `${bytes} B`;
@@ -77,7 +117,13 @@ function humanDate(iso?: string) {
 // -----------------------------------------------------------------------------
 
 type Filter = "all" | "images" | "videos" | "files" | "unused";
-type SortKey = "date-desc" | "date-asc" | "size-desc" | "size-asc" | "name-asc";
+type SortKey = "date-desc" | "date-asc" | "size-desc" | "size-asc" | "name-asc" | "name-desc";
+
+function safeLastSegment(value: string | null | undefined, fallback = ""): string {
+  if (typeof value !== "string" || value.length === 0) return fallback;
+  const parts = value.split("/").filter(Boolean);
+  return parts.length > 0 ? parts[parts.length - 1] : value;
+}
 
 function AdminAssetsPage() {
   const { user, isAdmin, loading } = useAdmin();
@@ -88,6 +134,8 @@ function AdminAssetsPage() {
   const [sortKey, setSortKey] = useState<SortKey>("date-desc");
   const [source, setSource] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 24;
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) navigate({ to: "/auth" });
@@ -125,7 +173,7 @@ function AdminAssetsPage() {
       if (source && a.source !== source) return false;
       if (q) {
         const m = metaMap[a.url];
-        const hay = `${a.url} ${a.name ?? ""} ${a.alt ?? ""} ${m?.label ?? ""} ${m?.caption ?? ""} ${m?.description ?? ""} ${(m?.tags ?? []).join(" ")}`.toLowerCase();
+        const hay = `${a.url} ${a.name ?? ""} ${a.originalFilename ?? ""} ${a.alt ?? ""} ${m?.label ?? ""} ${m?.caption ?? ""} ${m?.description ?? ""} ${(m?.tags ?? []).join(" ")} ${(a.tags ?? []).join(" ")}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -143,10 +191,23 @@ function AdminAssetsPage() {
           return (b.size ?? 0) - (a.size ?? 0);
         case "name-asc":
           return (a.name ?? a.url).localeCompare(b.name ?? b.url);
+        case "name-desc":
+          return (b.name ?? b.url).localeCompare(a.name ?? a.url);
       }
     });
     return sorted;
   }, [assets, filter, source, search, sortKey, metaMap]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, source, search, sortKey]);
+
+  const totalPages = Math.max(1, Math.ceil(shown.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pagedShown = useMemo(
+    () => shown.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [shown, currentPage, pageSize],
+  );
 
   if (loading || !isAdmin) return null;
 
@@ -203,6 +264,7 @@ function AdminAssetsPage() {
             <option value="size-desc">Largest first</option>
             <option value="size-asc">Smallest first</option>
             <option value="name-asc">Name A→Z</option>
+            <option value="name-desc">Name Z→A</option>
           </select>
           <select
             value={source}
@@ -225,14 +287,37 @@ function AdminAssetsPage() {
           <div className="text-sm text-neutral-500">Loading assets…</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {shown.map((a, i) => (
+            {pagedShown.map((a, i) => (
               <AssetCard key={a.url + i} asset={a} meta={metaMap[a.url]} />
             ))}
-            {shown.length === 0 && (
+            {pagedShown.length === 0 && (
               <div className="col-span-full text-sm text-neutral-500 text-center py-12">
                 No assets match the filters.
               </div>
             )}
+          </div>
+        )}
+        {shown.length > 0 && (
+          <div className="mt-4 flex items-center justify-end gap-2 text-xs">
+            <button
+              type="button"
+              className="border rounded px-2 py-1 disabled:opacity-40"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Prev
+            </button>
+            <span>
+              Page {currentPage} / {totalPages}
+            </span>
+            <button
+              type="button"
+              className="border rounded px-2 py-1 disabled:opacity-40"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </button>
           </div>
         )}
       </div>
@@ -281,8 +366,10 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     setDirty(false);
   }, [meta, asset.alt]);
 
-  const parseTags = (v: string) =>
-    v.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 20);
+  const parseTags = (v: string | undefined | null) =>
+    typeof v === "string"
+      ? v.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 20)
+      : [];
 
   const doSave = async (over?: Partial<AssetMeta>) => {
     setSaving(true);
@@ -344,7 +431,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
 
   const doRename = async () => {
     if (!asset.r2Key) return;
-    const current = asset.name ?? asset.r2Key.split("/").pop() ?? "";
+    const current = asset.name ?? safeLastSegment(asset.r2Key, "");
     const next = window.prompt("New file name (extension optional):", current);
     if (!next || next === current) return;
     setRenaming(true);
@@ -615,7 +702,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
             <div className="p-2 flex items-center gap-2">
               <div className="flex-1 min-w-0">
                 <div className="text-[10px] uppercase tracking-wider text-neutral-500">Original</div>
-                <div className="truncate font-mono" title={asset.r2Key}>{asset.r2Key.split("/").pop()}</div>
+                <div className="truncate font-mono" title={asset.r2Key}>{safeLastSegment(asset.r2Key)}</div>
                 <div className="text-neutral-500">{humanSize(asset.size)}</div>
               </div>
               <button
@@ -634,7 +721,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
                 {asset.optimizedKey ? (
                   <>
                     <div className="truncate font-mono" title={asset.optimizedKey}>
-                      {asset.optimizedKey.split("/").pop()}
+                      {safeLastSegment(asset.optimizedKey)}
                     </div>
                     <div className="text-neutral-500">
                       {humanSize(asset.optimizedSize)}
@@ -721,6 +808,18 @@ type UploadItem = {
   optimizedSize?: number;
 };
 
+type UploadResponse = {
+  key?: string;
+  url?: string;
+  size?: number;
+  kind?: "image" | "video" | "file";
+  message?: string;
+  code?: string;
+};
+
+const ACCEPTED_UPLOAD_FORMATS =
+  ".jpg,.jpeg,.png,.webp,.avif,.mp4,.mov,.pdf,image/jpeg,image/png,image/webp,image/avif,video/mp4,video/quicktime,application/pdf";
+
 function DropZoneUploader() {
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -752,20 +851,33 @@ function DropZoneUploader() {
         const file = files[i];
         const id = initial[i].id;
         const isImage = (file.type || "").startsWith("image/");
+        const isVideo = (file.type || "").startsWith("video/");
+        const mediaMeta = isImage ? await readImageDimensions(file) : isVideo ? await readVideoMetadata(file) : { ok: false } as MediaDimensions;
         try {
           if (isImage) {
             // 1. Upload the untouched original — server places it under
             //    `originals/<uuid>.<ext>` and returns that key.
             patch(id, { progress: 10, status: "uploading original" });
             const origB64 = await optBlobToBase64(file);
-            const uploaded = await doUploadR2({
+            const uploaded = (await doUploadR2({
               data: {
                 filename: file.name,
+                originalFilename: file.name,
                 contentType: file.type || "application/octet-stream",
                 dataBase64: origB64,
                 kind: "image",
+                width: mediaMeta.ok ? mediaMeta.width : undefined,
+                height: mediaMeta.ok ? mediaMeta.height : undefined,
+                folder,
               },
-            });
+            })) as UploadResponse;
+            if (!uploaded || typeof uploaded.key !== "string" || typeof uploaded.url !== "string") {
+              const message =
+                uploaded && typeof uploaded.message === "string"
+                  ? uploaded.message
+                  : "Upload returned an invalid payload (missing key/url).";
+              throw new Error(message);
+            }
 
             // 2. Optimize in the browser to a single WebP display file and
             //    upload it under the paired `optimized/<uuid>.webp` key.
@@ -796,14 +908,26 @@ function DropZoneUploader() {
             patch(id, { progress: 20, status: "uploading" });
             const b64 = await optBlobToBase64(file);
             patch(id, { progress: 60, status: "uploading" });
-            await doUploadR2({
+            const uploaded = (await doUploadR2({
               data: {
                 filename: file.name,
+                originalFilename: file.name,
                 contentType: file.type || "application/octet-stream",
                 dataBase64: b64,
+                kind: isVideo ? "video" : "file",
+                width: mediaMeta.ok ? mediaMeta.width : undefined,
+                height: mediaMeta.ok ? mediaMeta.height : undefined,
+                duration: mediaMeta.ok ? mediaMeta.duration : undefined,
                 folder,
               },
-            });
+            })) as UploadResponse;
+            if (!uploaded || typeof uploaded.key !== "string" || typeof uploaded.url !== "string") {
+              const message =
+                uploaded && typeof uploaded.message === "string"
+                  ? uploaded.message
+                  : "Upload returned an invalid payload (missing key/url).";
+              throw new Error(message);
+            }
             patch(id, { progress: 100, done: true, status: "done" });
           }
         } catch (e) {
@@ -864,6 +988,7 @@ function DropZoneUploader() {
           ref={inputRef}
           type="file"
           multiple
+          accept={ACCEPTED_UPLOAD_FORMATS}
           className="hidden"
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);
