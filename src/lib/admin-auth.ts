@@ -56,7 +56,7 @@ export const requireAdminAuth = createMiddleware({ type: "function" }).server(as
 
     const userId = "dev-admin";
     const now = Math.floor(Date.now() / 1000);
-    const claims = {
+    const claims: Record<string, unknown> = {
       iss: "pointstudio-dev",
       sub: userId,
       aud: "authenticated",
@@ -94,5 +94,5 @@ export const requireAdminAuth = createMiddleware({ type: "function" }).server(as
   });
   if (roleError || !isAdmin) throw new Error("Forbidden: admin access required");
 
-  return next({ context: { supabase, userId, claims: claimsData.claims } });
+  return next({ context: { supabase, userId, claims: claimsData.claims as Record<string, unknown> } });
 });
