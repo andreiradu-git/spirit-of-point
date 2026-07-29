@@ -26,8 +26,7 @@ export type { R2Object } from "@/lib/r2.server";
 const PUBLIC_URL = "https://images.pointstudio.ro";
 const MEDIA_ASSET_LOOKUP_SQL =
   "SELECT id, object_key, optimized_object_key, url, optimized_url, used_on_site FROM public.media_assets WHERE storage_provider = 'r2'";
-const GALLERY_IMAGES_SQL =
-  "SELECT src, gallery_id, media_asset_id FROM public.gallery_images";
+const GALLERY_IMAGES_SQL = "SELECT src, gallery_id, media_asset_id FROM public.gallery_images";
 const SITE_SETTINGS_SQL = "SELECT key, value FROM public.site_settings";
 const PAGES_SQL = "SELECT slug, body FROM public.pages";
 const PAGE_SEO_SQL = "SELECT path, og_image FROM public.page_seo";
@@ -88,7 +87,7 @@ function findMediaAssetRowForObject(
 }
 
 async function buildStorageCleanupReport(db: AdminDb) {
-  const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
+  const safe = async <T>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
     try {
       return await p;
     } catch (e) {
@@ -123,7 +122,9 @@ async function buildStorageCleanupReport(db: AdminDb) {
       ),
       safe<Array<{ key?: string; value?: unknown }>>(db.from("site_settings").select("key, value")),
       safe<Array<{ slug?: string; body?: unknown }>>(db.from("pages").select("slug, body")),
-      safe<Array<{ path?: string; og_image?: string }>>(db.from("page_seo").select("path, og_image")),
+      safe<Array<{ path?: string; og_image?: string }>>(
+        db.from("page_seo").select("path, og_image"),
+      ),
       safe<Array<{ url?: string }>>(db.from("asset_meta").select("url")),
       getMediaAssetRuntimeSchema({ db }),
     ]);
@@ -238,7 +239,11 @@ async function buildStorageCleanupReport(db: AdminDb) {
 
   const allObjectsMarkedOrphan = report.length > 0 && report.every((row) => !row.referenced);
   const hasAnyTrackedMedia = mediaRows.length > 0;
-  const lookupHealthy = !(allObjectsMarkedOrphan && hasAnyTrackedMedia && matchedMediaAssetCount === 0);
+  const lookupHealthy = !(
+    allObjectsMarkedOrphan &&
+    hasAnyTrackedMedia &&
+    matchedMediaAssetCount === 0
+  );
   const deletionBlockedReason = lookupHealthy
     ? null
     : "Storage cleanup lookup is unhealthy: no R2 objects matched any media_assets rows, so deletion is blocked until the lookup is repaired.";
@@ -296,14 +301,17 @@ export const writeR2Variants = createServerFn({ method: "POST" })
     if (data.backup) {
       const body = b64ToBytes(data.backup.dataBase64);
       const url = await putR2Object(data.backup.key, body, data.backup.contentType);
-      await upsertMediaAssetDirect({
-        key: data.backup.key,
-        url,
-        filename: data.backup.key.split("/").pop() ?? data.backup.key,
-        kind: inferKindFromContentType(data.backup.contentType, data.backup.key),
-        contentType: data.backup.contentType,
-        size: body.byteLength,
-      }, { db });
+      await upsertMediaAssetDirect(
+        {
+          key: data.backup.key,
+          url,
+          filename: data.backup.key.split("/").pop() ?? data.backup.key,
+          kind: inferKindFromContentType(data.backup.contentType, data.backup.key),
+          contentType: data.backup.contentType,
+          size: body.byteLength,
+        },
+        { db },
+      );
       results.push({ key: data.backup.key, size: body.byteLength, url });
     }
     const main = b64ToBytes(data.main.dataBase64);
@@ -311,27 +319,33 @@ export const writeR2Variants = createServerFn({ method: "POST" })
     if (data.main.key.startsWith("optimized/")) {
       await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength, { db });
     } else {
-      await upsertMediaAssetDirect({
-        key: data.main.key,
-        url: mainUrl,
-        filename: data.main.key.split("/").pop() ?? data.main.key,
-        kind: inferKindFromContentType(data.main.contentType, data.main.key),
-        contentType: data.main.contentType,
-        size: main.byteLength,
-      }, { db });
+      await upsertMediaAssetDirect(
+        {
+          key: data.main.key,
+          url: mainUrl,
+          filename: data.main.key.split("/").pop() ?? data.main.key,
+          kind: inferKindFromContentType(data.main.contentType, data.main.key),
+          contentType: data.main.contentType,
+          size: main.byteLength,
+        },
+        { db },
+      );
     }
     results.push({ key: data.main.key, size: main.byteLength, url: mainUrl });
     for (const s of data.siblings) {
       const body = b64ToBytes(s.dataBase64);
       const url = await putR2Object(s.key, body, s.contentType);
-      await upsertMediaAssetDirect({
-        key: s.key,
-        url,
-        filename: s.key.split("/").pop() ?? s.key,
-        kind: inferKindFromContentType(s.contentType, s.key),
-        contentType: s.contentType,
-        size: body.byteLength,
-      }, { db });
+      await upsertMediaAssetDirect(
+        {
+          key: s.key,
+          url,
+          filename: s.key.split("/").pop() ?? s.key,
+          kind: inferKindFromContentType(s.contentType, s.key),
+          contentType: s.contentType,
+          size: body.byteLength,
+        },
+        { db },
+      );
       results.push({ key: s.key, size: body.byteLength, url });
     }
     return { ok: true, results };
@@ -353,7 +367,12 @@ export const renameR2Object = createServerFn({ method: "POST" })
     const source = await readR2ObjectDirect(data.fromKey);
     const clean = sanitizeFileName(data.toName) || "file";
     await putR2Object(data.fromKey, b64ToBytes(source.dataBase64), source.contentType, clean);
-    return { ok: true, key: data.fromKey, url: `${PUBLIC_URL}/${data.fromKey}`, displayName: clean };
+    return {
+      ok: true,
+      key: data.fromKey,
+      url: `${PUBLIC_URL}/${data.fromKey}`,
+      displayName: clean,
+    };
   });
 
 const uploadSchema = z.object({
@@ -364,7 +383,11 @@ const uploadSchema = z.object({
   originalFilename: z.string().max(240).optional(),
   width: z.number().int().positive().max(50000).optional(),
   height: z.number().int().positive().max(50000).optional(),
-  duration: z.number().positive().max(60 * 60 * 12).optional(),
+  duration: z
+    .number()
+    .positive()
+    .max(60 * 60 * 12)
+    .optional(),
   uploadDate: z.string().datetime().optional(),
   // Legacy — ignored, kept for backward compatibility with existing callers.
   folder: z.string().max(120).optional(),
@@ -420,12 +443,13 @@ export const deleteR2Object = createServerFn({ method: "POST" })
     const db = requireAdminDb(context);
     const cleanupReport = await buildStorageCleanupReport(db);
     if (!cleanupReport.lookupHealthy) {
-      throw new Error(cleanupReport.deletionBlockedReason ?? "Storage cleanup lookup is unhealthy.");
+      throw new Error(
+        cleanupReport.deletionBlockedReason ?? "Storage cleanup lookup is unhealthy.",
+      );
     }
     await deleteMediaAssetDirect({ key: data.key }, { db });
     return { ok: true, deleted: [data.key] };
   });
-
 
 export const replaceR2Object = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
@@ -444,21 +468,27 @@ export const replaceR2Object = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = requireAdminDb(context);
     if (data.backupKey && data.origBase64) {
-      await putR2Object(data.backupKey, b64ToBytes(data.origBase64), data.origContentType || data.contentType);
+      await putR2Object(
+        data.backupKey,
+        b64ToBytes(data.origBase64),
+        data.origContentType || data.contentType,
+      );
     }
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(data.key, body, data.contentType);
-    await upsertMediaAssetDirect({
-      key: data.key,
-      url,
-      filename: data.key.split("/").pop() ?? data.key,
-      kind: inferKindFromContentType(data.contentType, data.key),
-      contentType: data.contentType,
-      size: body.byteLength,
-    }, { db });
+    await upsertMediaAssetDirect(
+      {
+        key: data.key,
+        url,
+        filename: data.key.split("/").pop() ?? data.key,
+        kind: inferKindFromContentType(data.contentType, data.key),
+        contentType: data.contentType,
+        size: body.byteLength,
+      },
+      { db },
+    );
     return { ok: true, url, size: body.byteLength };
   });
-
 
 /**
  * Orphan scanner — lists every object in R2 and marks whether the object URL
@@ -520,7 +550,12 @@ export const migrateSupabaseToR2 = createServerFn({ method: "POST" })
         if (!res.ok) throw new Error(`source fetch failed [${res.status}]`);
         const blob = await res.blob();
         const body = new Uint8Array(await blob.arrayBuffer());
-        await putR2Object(key, body, asset.contentType || blob.type || res.headers.get("content-type") || undefined, asset.name);
+        await putR2Object(
+          key,
+          body,
+          asset.contentType || blob.type || res.headers.get("content-type") || undefined,
+          asset.name,
+        );
         copied++;
         existing.add(key);
         migrated.push({ from: asset.url, to: nextUrl, key });
