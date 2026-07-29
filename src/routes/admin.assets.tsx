@@ -82,6 +82,12 @@ function extractFilename(value?: string | null) {
   return value.split("/").filter(Boolean).pop() ?? value;
 }
 
+function extractWarningMessages(warnings?: Array<{ message: string }>) {
+  return Array.isArray(warnings) && warnings.length > 0
+    ? warnings.map((warning) => warning.message).join("; ")
+    : "";
+}
+
 // -----------------------------------------------------------------------------
 // page
 // -----------------------------------------------------------------------------
@@ -908,10 +914,7 @@ function DropZoneUploader() {
                 kind: "image",
               },
             });
-            const uploadWarning =
-              Array.isArray(uploaded.warnings) && uploaded.warnings.length > 0
-                ? uploaded.warnings.map((warning) => warning.message).join("; ")
-                : "";
+            const uploadWarning = extractWarningMessages(uploaded.warnings);
 
             // 2. Optimize in the browser to a single WebP display file and
             //    upload it under the paired `optimized/<uuid>.webp` key.
@@ -929,10 +932,7 @@ function DropZoneUploader() {
                 main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
               },
             });
-            const variantWarning =
-              Array.isArray(variantResult.warnings) && variantResult.warnings.length > 0
-                ? variantResult.warnings.map((warning) => warning.message).join("; ")
-                : "";
+            const variantWarning = extractWarningMessages(variantResult.warnings);
             const pct = file.size > 0 ? Math.round((1 - optimized.webp.size / file.size) * 100) : 0;
             const warning = [uploadWarning, variantWarning].filter(Boolean).join("; ");
             patch(id, {
@@ -957,10 +957,7 @@ function DropZoneUploader() {
                 folder,
               },
             });
-            const warning =
-              Array.isArray(uploaded.warnings) && uploaded.warnings.length > 0
-                ? uploaded.warnings.map((item) => item.message).join("; ")
-                : "";
+            const warning = extractWarningMessages(uploaded.warnings);
             patch(id, {
               progress: 100,
               done: true,

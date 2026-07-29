@@ -269,7 +269,7 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
     const metadataIssues: string[] = [];
     let metadataHealthy = Boolean(db);
 
-    const safeDbQuery = async <T>(
+    const executeDbQueryWithFallback = async <T>(
       label: string,
       p?: PromiseLike<{ data: T | null; error?: { message?: string } | null }>,
     ): Promise<{ data: T | null }> => {
@@ -298,23 +298,26 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         console.error("[storage-cleanup] R2 list failed", e);
         return [] as Awaited<ReturnType<typeof listR2ObjectsDirect>>;
       }),
-      safeDbQuery<Array<{ src?: string; gallery_id?: string }>>(
+      executeDbQueryWithFallback<Array<{ src?: string; gallery_id?: string }>>(
         "gallery_images",
         db?.from("gallery_images").select("src, gallery_id"),
       ),
-      safeDbQuery<Array<{ key?: string; value?: unknown }>>(
+      executeDbQueryWithFallback<Array<{ key?: string; value?: unknown }>>(
         "site_settings",
         db?.from("site_settings").select("key, value"),
       ),
-      safeDbQuery<Array<{ slug?: string; body?: unknown }>>(
+      executeDbQueryWithFallback<Array<{ slug?: string; body?: unknown }>>(
         "pages",
         db?.from("pages").select("slug, body"),
       ),
-      safeDbQuery<Array<{ path?: string; og_image?: string }>>(
+      executeDbQueryWithFallback<Array<{ path?: string; og_image?: string }>>(
         "page_seo",
         db?.from("page_seo").select("path, og_image"),
       ),
-      safeDbQuery<Array<{ url?: string }>>("asset_meta", db?.from("asset_meta").select("url")),
+      executeDbQueryWithFallback<Array<{ url?: string }>>(
+        "asset_meta",
+        db?.from("asset_meta").select("url"),
+      ),
     ]);
 
     // Build one big haystack containing every referenced URL/string in the CMS.

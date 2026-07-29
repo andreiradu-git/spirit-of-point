@@ -207,7 +207,11 @@ export function getMediaDbClient(service = false): Db {
     // used across the media pipeline. Returns empty results or success objects.
     const makeStubQuery = (): QueryChain => {
       const chain: QueryChain = {
-        then: (resolve) => Promise.resolve({ data: [], error: null }).then(resolve),
+        then: ((onfulfilled, onrejected) =>
+          Promise.resolve<QueryResult>({ data: [], error: null }).then(
+            onfulfilled,
+            onrejected,
+          )) as PromiseLike<QueryResult>["then"],
         select: function () {
           return this;
         },
