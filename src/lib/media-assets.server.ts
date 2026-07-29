@@ -325,6 +325,17 @@ function filenameFromUrl(url: string): string {
   }
 }
 
+function r2ObjectKeyFromUrl(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    const publicOrigin = new URL(R2_PUBLIC_URL).origin;
+    if (parsed.origin !== publicOrigin) return undefined;
+    return parsed.pathname.replace(/^\/+/, "") || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function rowToAsset(row: Record<string, unknown>): SiteAsset | null {
   const rawUrl = asString(row.url) ?? asString(row.optimized_url);
   if (!rawUrl) return null;
@@ -627,12 +638,13 @@ export async function inferMediaAssetForUrlDirect(
       url: ((existing.optimized_url as string | null) ?? existing.url) as string,
     };
 
-  const provider = url.startsWith(R2_PUBLIC_URL)
+  const r2ObjectKey = r2ObjectKeyFromUrl(url);
+  const provider = r2ObjectKey
     ? "r2"
     : url.startsWith("/__l5e/assets-v1/")
       ? "lovable_asset"
       : "external";
-  const objectKey = provider === "r2" ? url.replace(`${R2_PUBLIC_URL}/`, "") : url;
+  const objectKey = provider === "r2" ? (r2ObjectKey ?? url) : url;
   const filename = filenameFromUrl(url);
   const kind = kindFromUrl(url);
   const contentType = contentTypeFromUrl(url);
