@@ -393,11 +393,14 @@ function mergeMetadataIntoR2Assets(
   metadataRows: Array<Record<string, unknown>>,
 ): SiteAsset[] {
   const metadataAssets = metadataRows.map(rowToAsset);
-  const metadataByKey = new Map(
-    metadataAssets
-      .filter((asset) => asset.storageProvider === "r2" && asset.r2Key)
-      .map((asset) => [asset.r2Key as string, asset]),
-  );
+  const metadataByKey = new Map<string, SiteAsset>();
+  for (const asset of metadataAssets) {
+    if (asset.storageProvider !== "r2" || !asset.r2Key) continue;
+    if (metadataByKey.has(asset.r2Key)) {
+      console.warn("Duplicate media_assets metadata row for R2 key", asset.r2Key);
+    }
+    metadataByKey.set(asset.r2Key, asset);
+  }
   const merged = r2Assets.map((asset) => {
     const metadata = asset.r2Key ? metadataByKey.get(asset.r2Key) : undefined;
     if (!metadata) return asset;
