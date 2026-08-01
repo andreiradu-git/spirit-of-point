@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { getRequest } from "@tanstack/react-start/server";
 import { readServerEnv } from "@/lib/server-env";
 import { deleteR2ObjectDirect, listR2ObjectsDirect, optimizedKeyFor, type R2Object } from "@/lib/r2.server";
 
