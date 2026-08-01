@@ -123,7 +123,10 @@ export function getMediaDbClient(service = false): Db {
 
   return createClient(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    global: { fetch: dbFetch(key) },
+    global: {
+      fetch: dbFetch(key),
+      ...(userToken ? { headers: { Authorization: `Bearer ${userToken}` } } : {}),
+    },
   });
 }
 
