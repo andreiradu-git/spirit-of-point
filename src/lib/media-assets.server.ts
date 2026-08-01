@@ -42,20 +42,36 @@ function dbFetch(key: string): typeof fetch {
 
 export function getMediaDbClient(service = false): Db {
   const url = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
-  const key = service
-    ? readServerEnv("SUPABASE_SERVICE_ROLE_KEY")
-    : readServerEnv("SUPABASE_PUBLISHABLE_KEY") ?? readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
+  const publishable = readServerEnv("SUPABASE_PUBLISHABLE_KEY") ?? readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
+  const serviceKey = readServerEnv("SUPABASE_SERVICE_ROLE_KEY");
+
+  // Service-role is preferred for privileged writes, but a missing service key
+  // must not take the whole metadata backend down: fall back to the publishable
+  // key (RLS applies) so reads and user-scoped writes keep working.
+  let key = service ? serviceKey ?? publishable : publishable;
+  if (service && !serviceKey && publishable) {
+    console.warn("SUPABASE_SERVICE_ROLE_KEY missing in this runtime — falling back to publishable key (RLS enforced).");
+  }
 
   // If you want to run in an R2-only dev mode (no Supabase), set R2_ONLY_MODE=true in env.
   const r2OnlyFlag = (readServerEnv("R2_ONLY_MODE") || "").toLowerCase() === "true" || readServerEnv("R2_ONLY_MODE") === "1";
 
   if (!url || !key) {
+    const missing = [!url && "SUPABASE_URL", !key && (service ? "SUPABASE_SERVICE_ROLE_KEY/SUPABASE_PUBLISHABLE_KEY" : "SUPABASE_PUBLISHABLE_KEY")]
+      .filter(Boolean)
+      .join(", ");
+
     if (!r2OnlyFlag) {
       // Return an HTTP 500 response to make missing dependency visible to monitoring
-      throw new Response(JSON.stringify({ message: "Media database is not configured in this runtime." }), {
-        status: 500,
-        headers: { "content-type": "application/json; charset=utf-8" },
-      });
+      throw new Response(
+        JSON.stringify({
+          message: `Media database is not configured in this runtime. Missing: ${missing}.`,
+        }),
+        {
+          status: 500,
+          headers: { "content-type": "application/json; charset=utf-8" },
+        },
+      );
     }
 
     // Minimal stub that implements the `.from(...).select/upsert/update/delete/...` chain
@@ -91,6 +107,7 @@ export function getMediaDbClient(service = false): Db {
     global: { fetch: dbFetch(key) },
   });
 }
+
 
 function unsafeDb(service = false): UnsafeDb {
   return getMediaDbClient(service) as unknown as UnsafeDb;
