@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { getRequest } from "@tanstack/react-start/server";
 import { readServerEnv } from "@/lib/server-env";
 import { deleteR2ObjectDirect, listR2ObjectsDirect, optimizedKeyFor, type R2Object } from "@/lib/r2.server";
 
@@ -40,6 +41,20 @@ function dbFetch(key: string): typeof fetch {
   };
 }
 
+// When no service-role key exists in this runtime, privileged writes must still
+// run as the signed-in admin, otherwise PostgREST hits them as `anon` and RLS
+// rejects every insert ("new row violates row-level security policy").
+function currentRequestBearer(): string | undefined {
+  try {
+    const header = getRequest()?.headers.get("authorization") ?? "";
+    if (!header.toLowerCase().startsWith("bearer ")) return undefined;
+    const token = header.slice(7).trim();
+    return token.split(".").length === 3 ? token : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function getMediaDbClient(service = false): Db {
   const url = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
   const publishable = readServerEnv("SUPABASE_PUBLISHABLE_KEY") ?? readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
@@ -47,10 +62,14 @@ export function getMediaDbClient(service = false): Db {
 
   // Service-role is preferred for privileged writes, but a missing service key
   // must not take the whole metadata backend down: fall back to the publishable
-  // key (RLS applies) so reads and user-scoped writes keep working.
+  // key plus the caller's admin bearer token so RLS admin policies still pass.
   let key = service ? serviceKey ?? publishable : publishable;
+  let userToken: string | undefined;
   if (service && !serviceKey && publishable) {
-    console.warn("SUPABASE_SERVICE_ROLE_KEY missing in this runtime — falling back to publishable key (RLS enforced).");
+    userToken = currentRequestBearer();
+    console.warn(
+      `SUPABASE_SERVICE_ROLE_KEY missing in this runtime — falling back to publishable key (RLS enforced${userToken ? ", acting as signed-in admin" : ", anonymous"}).`,
+    );
   }
 
   // If you want to run in an R2-only dev mode (no Supabase), set R2_ONLY_MODE=true in env.
@@ -104,7 +123,10 @@ export function getMediaDbClient(service = false): Db {
 
   return createClient(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    global: { fetch: dbFetch(key) },
+    global: {
+      fetch: dbFetch(key),
+      ...(userToken ? { headers: { Authorization: `Bearer ${userToken}` } } : {}),
+    },
   });
 }
 
