@@ -107,19 +107,12 @@ function Index() {
 
   return (
     <SiteLayout transparentHeader headerTone="light">
-      {/* Hero — fish image at natural aspect ratio, text overlaid and scaled to image width */}
+      {/* Hero — full-width carousel (images + video), CMS-managed */}
       <section className="relative w-full bg-white">
         <div className="relative w-full @container">
-          <EditableImage
-            src={cdn(fish.src, 2400)}
-            alt="Point Studio food photography"
-            imgClassName="block w-full h-auto"
-            onChange={async (url) => {
-              await saveHeroImage("hero", url);
-            }}
-          />
+          <HeroCarousel fallbackSrc={fish.src} fallbackAlt={fish.alt} />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 z-10">
+          <div className="absolute inset-0 z-10 pointer-events-none">
             <div className="mx-auto max-w-7xl h-full px-3 sm:px-6 pt-[max(4.5rem,7cqw)] sm:pt-[max(5.5rem,9cqw)] md:pt-[max(6rem,9cqw)] pb-[2cqw] sm:pb-[3cqw] flex flex-col justify-between">
               <div className="max-w-[70%] sm:max-w-[65%] md:max-w-[60%] text-white">
                 <Editable
