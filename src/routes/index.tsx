@@ -4,11 +4,11 @@ import { Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
 import home from "@/data/home.json";
 import { Editable } from "@/components/Editable";
-import { EditableImage } from "@/components/EditableImage";
+import { HeroCarousel } from "@/components/HeroCarousel";
 import { EditableGallery } from "@/components/EditableGallery";
 import { EditableLogoBand } from "@/components/EditableLogoBand";
 import { EditableTestimonials, type Testimonial } from "@/components/EditableTestimonials";
-import { useImage, useSaveImage } from "@/hooks/use-site-images";
+import { useImage } from "@/hooks/use-site-images";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 
 
@@ -46,7 +46,6 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { settings } = useSiteSettings();
   const heroSrc = useImage("hero", home[1]?.src);
-  const saveHeroImage = useSaveImage();
   const fish = { src: heroSrc, alt: "Point Studio food photography" };
   const fallbackLogos = home
     .filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src))
@@ -163,7 +162,7 @@ function Index() {
                   href="https://www.google.com/search?q=point+studio+bucuresti"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col justify-end group"
+                  className="flex flex-col justify-end group pointer-events-auto"
                   aria-label="See our Google reviews"
                 >
                   <div className="flex items-center gap-[0.6cqw]">
