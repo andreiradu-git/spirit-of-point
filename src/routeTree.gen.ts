@@ -25,6 +25,7 @@ import { Route as AdminStorageCleanupRouteImport } from './routes/admin.storage-
 import { Route as AdminSocialsRouteImport } from './routes/admin.socials'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
+import { Route as AdminHeroRouteImport } from './routes/admin.hero'
 import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
 import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
@@ -112,6 +113,11 @@ const AdminPerformanceRoute = AdminPerformanceRouteImport.update({
   path: '/admin/performance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminHeroRoute = AdminHeroRouteImport.update({
+  id: '/admin/hero',
+  path: '/admin/hero',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminContactsRoute = AdminContactsRouteImport.update({
   id: '/admin/contacts',
   path: '/admin/contacts',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
+  '/admin/hero': typeof AdminHeroRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/socials': typeof AdminSocialsRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
+  '/admin/hero': typeof AdminHeroRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/socials': typeof AdminSocialsRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
+  '/admin/hero': typeof AdminHeroRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/socials': typeof AdminSocialsRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
+    | '/admin/hero'
     | '/admin/performance'
     | '/admin/seo'
     | '/admin/socials'
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
+    | '/admin/hero'
     | '/admin/performance'
     | '/admin/seo'
     | '/admin/socials'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
+    | '/admin/hero'
     | '/admin/performance'
     | '/admin/seo'
     | '/admin/socials'
@@ -294,6 +306,7 @@ export interface RootRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAssetsRoute: typeof AdminAssetsRoute
   AdminContactsRoute: typeof AdminContactsRoute
+  AdminHeroRoute: typeof AdminHeroRoute
   AdminPerformanceRoute: typeof AdminPerformanceRoute
   AdminSeoRoute: typeof AdminSeoRoute
   AdminSocialsRoute: typeof AdminSocialsRoute
@@ -418,6 +431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPerformanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/hero': {
+      id: '/admin/hero'
+      path: '/admin/hero'
+      fullPath: '/admin/hero'
+      preLoaderRoute: typeof AdminHeroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/contacts': {
       id: '/admin/contacts'
       path: '/admin/contacts'
@@ -470,6 +490,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAssetsRoute: AdminAssetsRoute,
   AdminContactsRoute: AdminContactsRoute,
+  AdminHeroRoute: AdminHeroRoute,
   AdminPerformanceRoute: AdminPerformanceRoute,
   AdminSeoRoute: AdminSeoRoute,
   AdminSocialsRoute: AdminSocialsRoute,

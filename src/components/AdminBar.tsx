@@ -32,6 +32,7 @@ export function AdminBar() {
         <Link to="/admin/analytics" className="text-xs hover:underline">Analytics</Link>
         <Link to="/admin/performance" className="text-xs hover:underline">Performance</Link>
         <Link to="/admin/contacts" className="text-xs hover:underline">Messages</Link>
+        <Link to="/admin/hero" className="text-xs hover:underline">Hero</Link>
         <Link to="/admin/assets" className="text-xs hover:underline">Assets</Link>
         <Link to="/admin/storage-cleanup" className="text-xs hover:underline">Cleanup</Link>
         <Link to="/admin/socials" className="text-xs hover:underline">Socials</Link>
