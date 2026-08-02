@@ -113,7 +113,7 @@ function Index() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent pointer-events-none" />
           <div className="absolute inset-0 z-10 pointer-events-none">
             <div className="mx-auto max-w-7xl h-full px-3 sm:px-6 pt-[max(4.5rem,7cqw)] sm:pt-[max(5.5rem,9cqw)] md:pt-[max(6rem,9cqw)] pb-[2cqw] sm:pb-[3cqw] flex flex-col justify-between">
-              <div className="max-w-[70%] sm:max-w-[65%] md:max-w-[60%] text-white">
+              <div className="max-w-[70%] sm:max-w-[65%] md:max-w-[60%] text-white pointer-events-auto">
                 <Editable
                   as="h1"
                   id="hero.title"
