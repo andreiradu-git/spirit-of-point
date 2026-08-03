@@ -1,14 +1,30 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type HeroCrop = {
+  /** Focal point in percent (0-100) used as object-position. */
+  x: number;
+  y: number;
+  /** Zoom multiplier, 1 = fit the 2400x1021 frame. */
+  zoom: number;
+};
+
 export type HeroItem = {
   id: string;
   kind: "image" | "video";
   src: string;
   poster?: string;
   alt?: string;
+  title?: string;
   caption?: string;
+  crop?: HeroCrop;
 };
+
+/** Every hero slide is cropped to this fixed frame. */
+export const HERO_CROP_WIDTH = 2400;
+export const HERO_CROP_HEIGHT = 1021;
+export const HERO_ASPECT = `${HERO_CROP_WIDTH} / ${HERO_CROP_HEIGHT}`;
+export const DEFAULT_HERO_CROP: HeroCrop = { x: 50, y: 50, zoom: 1 };
 
 export type HeroDisplayMode = "static" | "click" | "auto";
 
