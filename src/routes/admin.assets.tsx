@@ -1,3 +1,4 @@
+import { useAiLanguage } from "@/hooks/use-ai-language";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -247,6 +248,7 @@ function AdminAssetsPage() {
 function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
+  const { lang: aiLang } = useAiLanguage();
   const removeAsset = useServerFn(deleteMediaAsset);
   const rename = useServerFn(renameR2Object);
 
@@ -311,7 +313,7 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     setAiBusy(true);
     try {
       const out = await generate({
-        data: { imageUrl: asset.url, context: asset.source, kind: asset.kind === "file" ? "link" : asset.kind },
+        data: { imageUrl: asset.url, context: asset.source, kind: asset.kind === "file" ? "link" : asset.kind, language: aiLang },
       });
       if (out.label) setLabel(out.label);
       if (out.alt) setAlt(out.alt);

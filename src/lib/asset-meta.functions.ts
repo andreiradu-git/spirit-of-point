@@ -65,6 +65,7 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
         imageUrl: z.string().url(),
         context: z.string().max(400).optional(),
         kind: z.enum(["image", "video", "link"]).optional(),
+        language: z.enum(["en", "ro"]).optional(),
       })
       .parse(d),
   )
@@ -75,12 +76,14 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
       return svc.generateVideoMetadata({
         videoUrl: data.imageUrl,
         context: data.context,
+        language: data.language,
       });
     }
     if (data.kind === "link") {
       const l = await svc.generateLinkMetadata({
         url: data.imageUrl,
         context: data.context,
+        language: data.language,
       });
       return {
         label: l.title,
@@ -93,6 +96,7 @@ export const generateAssetMeta = createServerFn({ method: "POST" })
     return svc.generateImageMetadata({
       imageUrl: data.imageUrl,
       context: data.context,
+      language: data.language,
     });
   });
 

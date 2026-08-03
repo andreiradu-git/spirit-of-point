@@ -16,6 +16,7 @@ export const generateSeoContent = createServerFn({ method: "POST" })
         imageUrl: z.string().url().optional(),
         context: z.string().optional(),
         extraKeywords: z.string().optional(),
+        language: z.enum(["en", "ro"]).optional(),
       })
       .parse(data),
   )
@@ -27,6 +28,7 @@ export const generateSeoContent = createServerFn({ method: "POST" })
         path: data.path,
         label: data.label,
         extraKeywords: data.extraKeywords,
+        language: data.language,
       });
       return { ...r, alt: "" } as Record<string, string>;
     }
@@ -35,6 +37,7 @@ export const generateSeoContent = createServerFn({ method: "POST" })
     const r = await svc.generateAltText({
       imageUrl: data.imageUrl,
       context: data.context,
+      language: data.language,
     });
     return { ...r, title: "", description: "", keywords: "" } as Record<string, string>;
   });
