@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cdn, cdnSrcSet } from "@/components/SiteLayout";
-import { useHeroItems, useHeroSettings, type HeroItem } from "@/hooks/use-hero-gallery";
+import {
+  useHeroItems,
+  useHeroSettings,
+  DEFAULT_HERO_CROP,
+  HERO_ASPECT,
+  type HeroItem,
+} from "@/hooks/use-hero-gallery";
+
 
 function embedUrl(url: string) {
   const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/);
