@@ -207,6 +207,8 @@ function Row({
     id: item.id,
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const previewSrc = item.poster || item.src;
+  const canPreview = /^(https?:\/\/|\/)/i.test(previewSrc);
   return (
     <div
       ref={setNodeRef}
@@ -221,12 +223,8 @@ function Row({
         <GripVertical className="w-4 h-4" />
       </button>
       <div className="w-28 h-20 bg-neutral-100 shrink-0 overflow-hidden flex items-center justify-center">
-        {item.kind === "image" || item.poster ? (
-          <img
-            src={cdn(item.poster || item.src, 300)}
-            alt=""
-            className="w-full h-full object-cover"
-          />
+        {canPreview && (item.kind === "image" || item.poster) ? (
+          <img src={cdn(previewSrc, 300)} alt="" className="w-full h-full object-cover" />
         ) : (
           <span className="text-[10px] text-neutral-500 px-1 text-center">Video item</span>
         )}
