@@ -60,10 +60,6 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
     return () => window.clearInterval(t);
   }, [mode, interval, items.length, videoBusy, activeIsEmbed, go, index]);
 
-  // Sizer keeps the section height stable (no layout shift) and preserves the
-  // original hero aspect ratio, including its baked-in rounded corner.
-  const sizerSrc = items[0]?.kind === "image" ? items[0].src : items[0]?.poster || fallbackSrc;
-
   const onClickSlide = () => {
     if (mode === "click" && items.length > 1) go(1);
   };
@@ -71,6 +67,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   return (
     <div
       className="relative w-full select-none"
+      style={{ aspectRatio: HERO_ASPECT }}
       onTouchStart={(e) => {
         touchX.current = e.touches[0]?.clientX ?? null;
       }}
@@ -82,13 +79,6 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
         if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
       }}
     >
-      <img
-        src={cdn(sizerSrc, 2400)}
-        alt=""
-        aria-hidden="true"
-        className="block w-full h-auto invisible"
-      />
-
       <div
         className={`absolute inset-0 overflow-hidden ${mode === "click" && items.length > 1 ? "cursor-pointer" : ""}`}
         onClick={onClickSlide}
@@ -97,10 +87,16 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
           const isActive = i === index;
           const isNext = i === (index + 1) % items.length;
           const embed = item.kind === "video" ? embedUrl(item.src) : null;
+          const crop = { ...DEFAULT_HERO_CROP, ...(item.crop ?? {}) };
+          const mediaStyle = {
+            objectPosition: `${crop.x}% ${crop.y}%`,
+            transform: crop.zoom !== 1 ? `scale(${crop.zoom})` : undefined,
+            transformOrigin: `${crop.x}% ${crop.y}%`,
+          } as const;
           return (
             <div
               key={item.id}
-              className={`absolute inset-0 transition-opacity duration-700 ease-out ${
+              className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ease-out ${
                 isActive ? "opacity-100" : "opacity-0 pointer-events-none"
               }`}
               aria-hidden={!isActive}
@@ -111,16 +107,18 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                   srcSet={cdnSrcSet(item.src, [800, 1200, 1600, 2400])}
                   sizes="100vw"
                   alt={item.alt ?? ""}
+                  title={item.title || undefined}
                   loading={i === 0 ? "eager" : "lazy"}
                   fetchPriority={i === 0 ? "high" : isNext ? "low" : "auto"}
                   decoding="async"
+                  style={mediaStyle}
                   className="w-full h-full object-cover"
                 />
               ) : embed ? (
                 isActive || isNext ? (
                   <iframe
                     src={embed}
-                    title={item.alt || "Hero video"}
+                    title={item.title || item.alt || "Hero video"}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
                     allowFullScreen
                     loading="lazy"
@@ -131,9 +129,11 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                 <video
                   src={item.src}
                   poster={item.poster ? cdn(item.poster, 1600) : undefined}
+                  title={item.title || undefined}
                   controls
                   playsInline
                   preload={isActive || isNext ? "metadata" : "none"}
+                  style={mediaStyle}
                   className="w-full h-full object-cover"
                   onPlay={() => setVideoBusy(true)}
                   onPause={() => setVideoBusy(false)}
@@ -143,6 +143,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                   }}
                 />
               )}
+
               {item.caption && isActive && (
                 <div className="absolute bottom-3 right-4 z-20 text-white/90 text-[clamp(0.5rem,1cqw,0.9rem)] drop-shadow">
                   {item.caption}
