@@ -433,3 +433,58 @@ export async function generateSiteCopy(input: {
   const parsed = parseJsonLoose<{ text?: string }>(raw);
   return { text: (parsed.text ?? "").trim() };
 }
+
+export async function generateGalleryDescriptionHtml(input: {
+  title: string;
+  subtitle?: string;
+  currentHtml?: string;
+  action: "generate" | "rewrite" | "expand" | "shorten" | "seo";
+  language?: Lang;
+  model?: string;
+}): Promise<{ html: string }> {
+  const lang: Lang = input.language ?? "en";
+  const actionInstruction =
+    input.action === "generate"
+      ? lang === "ro"
+        ? "Scrie un text complet nou."
+        : "Write a brand new text."
+      : input.action === "expand"
+        ? lang === "ro"
+          ? "Extinde textul existent cu detalii utile."
+          : "Expand the existing text with useful detail."
+        : input.action === "shorten"
+          ? lang === "ro"
+            ? "Scurtează textul păstrând ideile importante."
+            : "Shorten the text while keeping key ideas."
+          : input.action === "seo"
+            ? lang === "ro"
+              ? "Optimizează pentru SEO natural, fără keyword stuffing."
+              : "Improve natural SEO without keyword stuffing."
+            : lang === "ro"
+              ? "Rescrie textul să fie mai clar și mai fluent."
+              : "Rewrite the text to be clearer and smoother.";
+
+  const system = `${langRuleFor(lang)} You write premium website copy for ${brandFor(
+    lang,
+  )}. Return STRICT JSON only: {"html": string}. The html must use only these tags: <p>, <strong>, <em>, <ul>, <ol>, <li>, <br>. No markdown. 2-6 short paragraphs total.`;
+  const user = [
+    `Category: ${input.title}`,
+    input.subtitle ? `Subtitle: ${input.subtitle}` : "",
+    actionInstruction,
+    input.currentHtml ? `Current text: """${input.currentHtml}"""` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const raw = await aiChat({
+    model: input.model,
+    jsonMode: true,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  });
+
+  const parsed = parseJsonLoose<{ html?: string }>(raw);
+  return { html: (parsed.html ?? "").trim() };
+}

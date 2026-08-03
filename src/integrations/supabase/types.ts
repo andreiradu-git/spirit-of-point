@@ -88,30 +88,65 @@ export type Database = {
       }
       galleries: {
         Row: {
+          cover_image_id: string | null
           created_at: string
+          description_html: string | null
           id: string
+          is_service: boolean
+          meta_description: string | null
+          position: number
+          seo_title: string | null
           slug: string
+          short_description: string | null
+          subtitle: string | null
           tagline: string | null
           title: string
           updated_at: string
+          visible: boolean
         }
         Insert: {
+          cover_image_id?: string | null
           created_at?: string
+          description_html?: string | null
           id?: string
+          is_service?: boolean
+          meta_description?: string | null
+          position?: number
+          seo_title?: string | null
           slug: string
+          short_description?: string | null
+          subtitle?: string | null
           tagline?: string | null
           title: string
           updated_at?: string
+          visible?: boolean
         }
         Update: {
+          cover_image_id?: string | null
           created_at?: string
+          description_html?: string | null
           id?: string
+          is_service?: boolean
+          meta_description?: string | null
+          position?: number
+          seo_title?: string | null
           slug?: string
+          short_description?: string | null
+          subtitle?: string | null
           tagline?: string | null
           title?: string
           updated_at?: string
+          visible?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "galleries_cover_image_id_fkey"
+            columns: ["cover_image_id"]
+            isOneToOne: false
+            referencedRelation: "gallery_images"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gallery_images: {
         Row: {
