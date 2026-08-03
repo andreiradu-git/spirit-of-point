@@ -30,6 +30,7 @@ export function PortfolioPage({
     fallbackImages.filter((i) => !/LOGO_PSP/i.test(i.src));
 
   const stripRef = useRef<HTMLDivElement>(null);
+  const portfolioImageAlt = "Portfolio photograph";
 
   const scrollBy = (dir: 1 | -1) => {
     const el = stripRef.current;
@@ -65,7 +66,7 @@ export function PortfolioPage({
               >
                 <img
                   src={cdn(img.src, 1200)}
-                  alt={img.alt || "Point Studio photograph"}
+                  alt={portfolioImageAlt}
                   loading="lazy"
                   className="h-full w-auto object-cover"
                 />

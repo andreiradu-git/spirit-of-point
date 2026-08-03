@@ -187,13 +187,13 @@ function Row({
         {item.kind === "image" || item.poster ? (
           <img src={cdn(item.poster || item.src, 300)} alt="" className="w-full h-full object-cover" />
         ) : (
-          <span className="text-[10px] text-neutral-500 px-1 break-all text-center">{item.src}</span>
+          <span className="text-[10px] text-neutral-500 px-1 text-center">Video item</span>
         )}
       </div>
       <div className="flex-1 grid gap-2">
         <div className="flex items-center gap-2 text-xs">
           <span className="uppercase tracking-widest text-neutral-500">{item.kind}</span>
-          <span className="truncate text-neutral-400">{item.src}</span>
+          <span className="truncate text-neutral-400">Selected media</span>
         </div>
         <input
           value={item.title ?? ""}

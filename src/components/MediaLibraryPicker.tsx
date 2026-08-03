@@ -87,18 +87,17 @@ export function MediaLibraryPicker({ open, kind = "image", onClose, onPick }: Pr
                     onClose();
                   }}
                   className="group relative aspect-square bg-neutral-100 overflow-hidden border hover:border-black transition"
-                  title={a.name || a.url}
                 >
                   {kind === "image" ? (
                     <img
                       src={cdn(a.url, 400)}
-                      alt={a.alt ?? ""}
+                      alt={a.alt?.trim() || "Library image"}
                       loading="lazy"
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs text-neutral-500 p-2 text-center break-all">
-                      {a.name || a.url}
+                    <div className="w-full h-full flex items-center justify-center text-xs text-neutral-500 p-2 text-center">
+                      Video asset
                     </div>
                   )}
                   <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] px-2 py-1 opacity-0 group-hover:opacity-100 transition">

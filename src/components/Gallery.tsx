@@ -14,6 +14,7 @@ export function Gallery({
 }) {
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
   const [active, setActive] = useState<number | null>(null);
+  const portfolioImageAlt = "Portfolio photograph";
 
   useEffect(() => {
     if (active === null) return;
@@ -41,7 +42,7 @@ export function Gallery({
                 src={cdn(img.src, 1200)}
                 srcSet={cdnSrcSet(img.src, [600, 900, 1200, 1600])}
                 sizes="100vw"
-                alt={img.alt || "Point Studio photograph"}
+                alt={portfolioImageAlt}
                 loading="lazy"
                 decoding="async"
                 className="block w-full h-auto"
@@ -79,7 +80,7 @@ export function Gallery({
                   src={cdn(img.src, 500)}
                   srcSet={cdnSrcSet(img.src, [300, 500, 800])}
                   sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
-                  alt={img.alt || "Point Studio photograph"}
+                  alt={portfolioImageAlt}
                   loading="lazy"
                   decoding="async"
                   className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
@@ -121,7 +122,7 @@ export function Gallery({
               src={cdn(img.src, 500)}
               srcSet={cdnSrcSet(img.src, [300, 500, 800])}
               sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
-              alt={img.alt || "Point Studio photograph"}
+              alt={portfolioImageAlt}
               loading="lazy"
               decoding="async"
               className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
@@ -158,7 +159,7 @@ export function Gallery({
         </button>
         <img
           src={cdn(images[active].src, 2000)}
-          alt={images[active].alt || ""}
+          alt={portfolioImageAlt}
           className="max-h-[90vh] max-w-[90vw] object-contain"
           onClick={(e) => e.stopPropagation()}
         />
@@ -176,4 +177,3 @@ export function Gallery({
     );
   }
 }
-

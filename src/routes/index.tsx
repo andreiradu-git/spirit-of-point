@@ -54,19 +54,13 @@ function Index() {
   const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28], home[19], home[21], home[23]].filter(Boolean);
 
   const serviceFallbacks = [
-    { src: home[22]?.src, title: "Food" },
-    { src: home[24]?.src, title: "People" },
-    { src: home[28]?.src, title: "Editorial" },
-    { src: home[27]?.src, title: "Corporate" },
-    { src: home[29]?.src, title: "Landscape" },
-    { src: home[31]?.src, title: "Industrial" },
-  ].filter((s) => s.src) as Array<{ src: string; title: string }>;
-
-  const serviceSlug = (title: string) =>
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+    { src: home[22]?.src, label: "Food", slug: "food" },
+    { src: home[24]?.src, label: "People", slug: "people" },
+    { src: home[28]?.src, label: "Editorial", slug: "editorial" },
+    { src: home[27]?.src, label: "Corporate", slug: "corporate" },
+    { src: home[29]?.src, label: "Landscape", slug: "landscape" },
+    { src: home[31]?.src, label: "Industrial", slug: "industrial" },
+  ].filter((s) => s.src) as Array<{ src: string; label: string; slug: string }>;
 
   const testimonialFallback: Testimonial[] = [
     {
@@ -265,26 +259,24 @@ function Index() {
             fallbackImages={serviceFallbacks}
             columns={6}
             aspect="portrait"
-            renderItem={(img, { editable }) => (
-              <Link
-                to="/work/$slug"
-                params={{ slug: serviceSlug(img.title || "") }}
-                className="relative aspect-[3/4] overflow-hidden group block bg-muted"
-              >
-                <img
-                  src={cdn(img.src, 700)}
-                  alt={img.alt ?? img.title ?? ""}
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
-                <div className="absolute inset-0 flex items-end p-4">
-                  <div className="text-white font-sans font-medium uppercase tracking-[0.15em] text-xs md:text-sm">
-                    {img.title}
-                  </div>
-                </div>
-              </Link>
-            )}
+            renderItem={(img, { index }) => {
+              const service = serviceFallbacks[index] ?? { label: "Portfolio", slug: "food" };
+              return (
+                <Link
+                  to="/work/$slug"
+                  params={{ slug: service.slug }}
+                  className="relative aspect-[3/4] overflow-hidden group block bg-muted"
+                >
+                  <img
+                    src={cdn(img.src, 700)}
+                    alt={`${service.label} photography`}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
+                </Link>
+              );
+            }}
           />
         </div>
       </section>

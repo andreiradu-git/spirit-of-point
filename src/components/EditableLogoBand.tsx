@@ -74,12 +74,11 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
     }
     setUploading(true);
     try {
-      const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
       const dataBase64 = await fileToBase64(file);
       const res = await upload({
         data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
       });
-      await save([...items, { id: crypto.randomUUID(), src: res.url, alt: base }]);
+      await save([...items, { id: crypto.randomUUID(), src: res.url, alt: "Client logo" }]);
     } catch (e) {
       console.error(e);
       alert("Upload failed");
@@ -138,7 +137,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
               <div key={l.id} className="relative group shrink-0">
                 <img
                   src={l.src}
-                  alt={l.alt ?? "Client logo"}
+                  alt="Client logo"
                   className="h-6 md:h-9 w-auto object-contain opacity-90 hover:opacity-100 transition"
                 />
                 {editable && (
@@ -202,7 +201,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
         kind="image"
         onClose={() => setPickerOpen(false)}
         onPick={(a) =>
-          save([...items, { id: crypto.randomUUID(), src: a.url, alt: a.alt ?? a.name ?? "Client logo" }])
+          save([...items, { id: crypto.randomUUID(), src: a.url, alt: "Client logo" }])
         }
       />
 

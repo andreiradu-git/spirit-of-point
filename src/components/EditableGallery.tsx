@@ -48,7 +48,7 @@ type Props = {
   aspect?: "square" | "landscape" | "portrait" | "auto";
   layout?: "grid" | "stacked" | "masonry";
   className?: string;
-  renderItem?: (img: GalleryImage, props: { onClick: () => void; editable: boolean }) => ReactNode;
+  renderItem?: (img: GalleryImage, props: { onClick: () => void; editable: boolean; index: number }) => ReactNode;
   lightbox?: boolean;
 };
 
@@ -73,6 +73,7 @@ function SortableImage({
     id: image.id,
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const portfolioImageAlt = "Portfolio photograph";
 
   const aspectClass =
     aspect === "square"
@@ -99,19 +100,12 @@ function SortableImage({
           src={cdn(image.src, 500)}
           srcSet={cdnSrcSet(image.src, [300, 500, 800])}
           sizes="(min-width:1024px) 20vw, (min-width:768px) 33vw, 50vw"
-          alt={image.alt ?? ""}
+          alt={portfolioImageAlt}
           loading="lazy"
           decoding="async"
           className={`w-full h-full object-cover ${aspectClass}`}
         />
       </button>
-      {image.title && !editable && (
-        <div className="absolute inset-x-0 bottom-0 p-3 md:p-4 bg-gradient-to-t from-black/70 to-transparent">
-          <span className="text-white text-xs md:text-sm uppercase tracking-widest font-medium">
-            {image.title}
-          </span>
-        </div>
-      )}
       {editable && (
         <>
           <div
@@ -180,6 +174,7 @@ export function EditableGallery({
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const portfolioImageAlt = "Portfolio photograph";
 
 
   const editable = isAdmin && editMode;
@@ -302,7 +297,7 @@ export function EditableGallery({
               src={cdn(img.src, 500)}
               srcSet={cdnSrcSet(img.src, [300, 500, 800])}
               sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
-              alt={img.alt ?? ""}
+              alt={portfolioImageAlt}
               loading="lazy"
               decoding="async"
               className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
@@ -357,7 +352,7 @@ export function EditableGallery({
             </button>
             <img
               src={cdn(images[activeIndex].src, 2000)}
-              alt={images[activeIndex].alt ?? ""}
+              alt={portfolioImageAlt}
               decoding="async"
               className="max-h-[90vh] max-w-[90vw] object-contain"
               onClick={(e) => e.stopPropagation()}
@@ -392,7 +387,7 @@ export function EditableGallery({
             {images.map((img, i) =>
               renderItem ? (
                 <div key={img.id} className="relative group">
-                  {renderItem(img, { onClick: () => lightbox && setActiveIndex(i), editable })}
+                  {renderItem(img, { onClick: () => lightbox && setActiveIndex(i), editable, index: i })}
                   {editable && (
                     <>
                       <div className="absolute top-2 left-2 p-1.5 bg-white/90 rounded cursor-grab opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -501,7 +496,7 @@ export function EditableGallery({
           </button>
           <img
             src={cdn(images[activeIndex].src, 2000)}
-            alt={images[activeIndex].alt ?? ""}
+            alt={portfolioImageAlt}
             decoding="async"
             className="max-h-[90vh] max-w-[90vw] object-contain"
             onClick={(e) => e.stopPropagation()}
