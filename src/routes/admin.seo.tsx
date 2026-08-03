@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSeoContent } from "@/lib/seo-ai.functions";
+import { useAiLanguage } from "@/hooks/use-ai-language";
 
 export const Route = createFileRoute("/admin/seo")({
   head: () => ({ meta: [{ title: "SEO & AI Visibility — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -51,6 +52,7 @@ function AdminSeoPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const runAi = useServerFn(generateSeoContent);
+  const { lang: aiLang } = useAiLanguage();
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) navigate({ to: "/auth" });
@@ -163,6 +165,7 @@ function AdminSeoPage() {
           path,
           label,
           extraKeywords: rows[path]?.keywords || undefined,
+          language: aiLang,
         },
       });
       setRows((prev) => ({
@@ -185,7 +188,7 @@ function AdminSeoPage() {
     setAltBusy(img.id);
     try {
       const out = await runAi({
-        data: { kind: "alt", imageUrl: img.src, context },
+        data: { kind: "alt", imageUrl: img.src, context, language: aiLang },
       });
       const alt = out.alt;
       if (alt) {
@@ -211,7 +214,7 @@ function AdminSeoPage() {
       for (const img of missing) {
         try {
           const out = await runAi({
-            data: { kind: "alt", imageUrl: img.src, context: "Point Studio portfolio" },
+            data: { kind: "alt", imageUrl: img.src, context: "Point Studio portfolio", language: aiLang },
           });
           if (out.alt) {
             await supabase.from("gallery_images").update({ alt: out.alt }).eq("id", img.id);

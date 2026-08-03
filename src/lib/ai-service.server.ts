@@ -200,9 +200,11 @@ export type ImageMetadata = {
 export async function generateImageMetadata(input: {
   imageUrl: string;
   context?: string;
+  language?: Lang;
   model?: string;
 }): Promise<ImageMetadata> {
   const system =
+    langRuleFor(input.language ?? "en") + ' ' +
     'You write metadata for a professional photography studio (Point Studio, Bucharest). Return STRICT JSON only with keys: {"label": string, "alt": string, "caption": string, "description": string, "tags": string[]}. label: 2-6 word title. alt: 8-16 word descriptive alt (no "image of" prefix). caption: 1 short sentence for display under the image. description: 2-3 sentences describing subject, mood, lighting, styling. tags: 4-8 lowercase single-word or short-phrase tags. No markdown.';
   const user = `Context: ${input.context ?? "portfolio asset"}. URL: ${input.imageUrl}. Write all metadata fields.`;
   const raw = await aiChat({
@@ -250,9 +252,11 @@ export type VideoMetadata = {
 export async function generateVideoMetadata(input: {
   videoUrl: string;
   context?: string;
+  language?: Lang;
   model?: string;
 }): Promise<VideoMetadata> {
   const system =
+    langRuleFor(input.language ?? "en") + ' ' +
     'You write metadata for video assets on a professional photo/video studio site (Point Studio, Bucharest). Return STRICT JSON only: {"label": string, "alt": string, "caption": string, "description": string, "tags": string[]}. label: 2-6 word title. alt: 8-16 word descriptive alt. caption: 1 short sentence. description: 2-3 sentences describing likely subject, mood, and production style based on the context. tags: 4-8 short lowercase tags. No markdown.';
   const user = `Video URL: ${input.videoUrl}. Context: ${input.context ?? "portfolio video"}.`;
   const raw = await aiChat({
@@ -286,9 +290,11 @@ export async function generateVideoMetadata(input: {
 export async function generateAltText(input: {
   imageUrl: string;
   context?: string;
+  language?: Lang;
   model?: string;
 }): Promise<{ alt: string }> {
   const system =
+    langRuleFor(input.language ?? "en") + ' ' +
     'You write descriptive, SEO-friendly alt text for photography portfolio images. Return STRICT JSON only: {"alt": string}. Alt text: 8-16 words, describes visible subject, mood, lighting; no "image of" prefix; include category or brand when clear.';
   const user = `Category / context: ${input.context ?? "photography"}. Image URL: ${input.imageUrl}.`;
   const raw = await aiChat({
@@ -317,9 +323,11 @@ export async function generateSeoText(input: {
   path?: string;
   label?: string;
   extraKeywords?: string;
+  language?: Lang;
   model?: string;
 }): Promise<SeoMetadata> {
   const system =
+    langRuleFor(input.language ?? "en") + ' ' +
     'You write concise, high-converting SEO metadata for a professional photography studio (Point Studio, Bucharest). Return STRICT JSON only, no prose, no markdown, matching schema {"title":string,"description":string,"keywords":string}. Title <= 60 chars. Description 140-160 chars. Keywords: 8-14 comma-separated phrases, targeting Google and AI answer engines. Include locale (Bucharest / Romania) where natural.';
   const user = `Page: ${input.label ?? input.path ?? "Home"} (${input.path ?? "/"}).\nExtra keyword hints: ${input.extraKeywords ?? "best professional photography, food photography, product photography, advertising, corporate, portrait, editorial, commercial photographer Bucharest"}.\nWrite metadata for this page.`;
   const raw = await aiChat({
@@ -363,10 +371,12 @@ async function fetchPageHints(url: string): Promise<string> {
 export async function generateLinkMetadata(input: {
   url: string;
   context?: string;
+  language?: Lang;
   model?: string;
 }): Promise<LinkMetadata> {
   const pageInfo = await fetchPageHints(input.url);
   const system =
+    langRuleFor(input.language ?? "en") + ' ' +
     'You write link metadata for the Point Studio (Bucharest photo/video studio) website. Return STRICT JSON only: {"title": string, "description": string, "category": string}. title: 2-6 word display label. description: 1 short sentence. category: one of "social", "portfolio", "press", "shop", "resource", "other". No markdown.';
   const user = `URL: ${input.url}\nContext: ${input.context ?? "external link"}\n${pageInfo}`;
   const raw = await aiChat({

@@ -8,6 +8,7 @@ import { useAssetMeta, useInvalidateAssetMeta } from "@/hooks/use-asset-meta";
 import { useSiteList } from "@/hooks/use-site-list";
 import { useServerFn } from "@tanstack/react-start";
 import { saveAssetMeta, generateAssetMeta } from "@/lib/asset-meta.functions";
+import { useAiLanguage } from "@/hooks/use-ai-language";
 import { uploadToR2 } from "@/lib/r2.functions";
 import { derivePoster, DEFAULT_VIDEO_POSTER } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
@@ -598,6 +599,7 @@ function VideoMetaEditor({
 }) {
   const save = useServerFn(saveAssetMeta);
   const generate = useServerFn(generateAssetMeta);
+  const { lang: aiLang } = useAiLanguage();
   const invalidate = useInvalidateAssetMeta();
   const [label, setLabel] = useState(initialLabel);
   const [alt, setAlt] = useState(initialAlt);
@@ -630,7 +632,7 @@ function VideoMetaEditor({
     setAiBusy(true);
     try {
       const out = (await generate({
-        data: { imageUrl: url, context: "Video showreel poster", kind: "image" },
+        data: { imageUrl: url, context: "Video showreel poster", kind: "image", language: aiLang },
       })) as { label?: string; alt?: string; caption?: string };
       if (out.label) setLabel(out.label);
       if (out.alt) setAlt(out.alt);

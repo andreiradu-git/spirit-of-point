@@ -2,10 +2,12 @@ import { useNavigate, Link } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { useEditMode } from "@/hooks/use-edit-mode";
+import { useAiLanguage } from "@/hooks/use-ai-language";
 
 export function AdminBar() {
   const { user, isAdmin, loading } = useAdmin();
   const { editMode, setEditMode } = useEditMode();
+  const { lang: aiLang, setLang: setAiLang } = useAiLanguage();
   const navigate = useNavigate();
 
   if (loading || !user || !isAdmin) return null;
@@ -38,6 +40,18 @@ export function AdminBar() {
         <Link to="/admin/socials" className="text-xs hover:underline">Socials</Link>
         
         <Link to="/admin/theme" className="text-xs hover:underline">Theme</Link>
+        <label className="flex items-center gap-1 select-none">
+          <span className="text-xs">AI</span>
+          <select
+            value={aiLang}
+            onChange={(e) => setAiLang(e.target.value === "ro" ? "ro" : "en")}
+            title="Language used by all AI text features"
+            className="text-xs bg-black border border-white/30 rounded px-1 py-0.5"
+          >
+            <option value="en">EN</option>
+            <option value="ro">RO</option>
+          </select>
+        </label>
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <span className="text-xs">Edit mode</span>
           <input

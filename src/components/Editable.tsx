@@ -4,6 +4,7 @@ import { useEditMode } from "@/hooks/use-edit-mode";
 import { useText, useSaveText } from "@/hooks/use-site-texts";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSiteText } from "@/lib/text-ai.functions";
+import { useAiLanguage } from "@/hooks/use-ai-language";
 
 type Props = {
   id: string;
@@ -33,6 +34,8 @@ export function Editable({
   const value = useText(id, children);
   const save = useSaveText();
   const runAi = useServerFn(generateSiteText);
+  const { lang: globalLang } = useAiLanguage();
+  const aiLang = lang ?? globalLang;
   const ref = useRef<HTMLElement>(null);
   const [saving, setSaving] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
@@ -63,7 +66,7 @@ export function Editable({
   };
 
   const aiRewrite = async () => {
-    const promptLabel = lang === "ro"
+    const promptLabel = aiLang === "ro"
       ? "Cum vrei ca AI-ul să rescrie textul? (Lasă gol pentru îmbunătățire generală în română.)"
       : "How should the AI rewrite this? (Leave blank for a general improvement.)";
     const instruction = window.prompt(promptLabel, "");
@@ -76,7 +79,7 @@ export function Editable({
           instruction: instruction || undefined,
           current: value,
           maxChars: multiline ? 1200 : 240,
-          language: lang,
+          language: aiLang,
         },
       });
       if (out.text) {

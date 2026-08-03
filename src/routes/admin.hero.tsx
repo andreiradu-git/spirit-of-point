@@ -15,14 +15,21 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Loader2, Trash2, Upload, Images, RefreshCw } from "lucide-react";
+import { GripVertical, Loader2, Trash2, Upload, Images, RefreshCw, Crop as CropIcon, Sparkles } from "lucide-react";
+import { generateAssetMeta } from "@/lib/asset-meta.functions";
+import { useAiLanguage } from "@/hooks/use-ai-language";
 import {
   useHeroItems,
   useHeroSettings,
   useSaveHeroGallery,
   isVideoUrl,
   DEFAULT_HERO_SETTINGS,
+  DEFAULT_HERO_CROP,
+  HERO_ASPECT,
+  HERO_CROP_WIDTH,
+  HERO_CROP_HEIGHT,
   type HeroItem,
+  type HeroCrop,
   type HeroSettings,
 } from "@/hooks/use-hero-gallery";
 
@@ -53,16 +60,117 @@ function newId() {
   return `hero-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
 }
 
+function CropEditor({
+  item,
+  onCancel,
+  onSave,
+}: {
+  item: HeroItem;
+  onCancel: () => void;
+  onSave: (crop: HeroCrop) => void;
+}) {
+  const [crop, setCrop] = useState<HeroCrop>({ ...DEFAULT_HERO_CROP, ...(item.crop ?? {}) });
+  const frameRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
+  const src = item.kind === "image" ? item.src : item.poster || item.src;
+
+  const applyPointer = (clientX: number, clientY: number) => {
+    const el = frameRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const x = Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100));
+    const y = Math.min(100, Math.max(0, ((clientY - r.top) / r.height) * 100));
+    setCrop((c) => ({ ...c, x: Math.round(x), y: Math.round(y) }));
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center p-4" onClick={onCancel}>
+      <div className="bg-white rounded max-w-3xl w-full p-4" onClick={(e) => e.stopPropagation()}>
+        <div className="text-sm font-medium mb-1">
+          Crop to {HERO_CROP_WIDTH}×{HERO_CROP_HEIGHT}
+        </div>
+        <p className="text-xs text-neutral-500 mb-3">
+          Drag inside the frame to choose the focal point, then zoom in if you want a tighter crop.
+        </p>
+        <div
+          ref={frameRef}
+          style={{ aspectRatio: HERO_ASPECT }}
+          className="relative w-full overflow-hidden bg-neutral-100 cursor-crosshair"
+          onPointerDown={(e) => {
+            dragging.current = true;
+            (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            applyPointer(e.clientX, e.clientY);
+          }}
+          onPointerMove={(e) => dragging.current && applyPointer(e.clientX, e.clientY)}
+          onPointerUp={() => (dragging.current = false)}
+        >
+          <img
+            src={cdn(src, 1600)}
+            alt=""
+            draggable={false}
+            className="w-full h-full object-cover pointer-events-none"
+            style={{
+              objectPosition: `${crop.x}% ${crop.y}%`,
+              transform: crop.zoom !== 1 ? `scale(${crop.zoom})` : undefined,
+              transformOrigin: `${crop.x}% ${crop.y}%`,
+            }}
+          />
+          <div
+            className="absolute w-4 h-4 -ml-2 -mt-2 rounded-full border-2 border-white shadow pointer-events-none"
+            style={{ left: `${crop.x}%`, top: `${crop.y}%` }}
+          />
+        </div>
+        <div className="flex items-center gap-3 mt-3 text-xs">
+          <span className="w-12">Zoom</span>
+          <input
+            type="range"
+            min={1}
+            max={2.5}
+            step={0.01}
+            value={crop.zoom}
+            onChange={(e) => setCrop((c) => ({ ...c, zoom: Number(e.target.value) }))}
+            className="flex-1"
+          />
+          <span className="w-10 text-right">{crop.zoom.toFixed(2)}×</span>
+        </div>
+        <div className="flex justify-between mt-4">
+          <button
+            onClick={() => setCrop({ ...DEFAULT_HERO_CROP })}
+            className="text-xs border rounded px-3 py-1.5 hover:bg-neutral-50"
+          >
+            Reset
+          </button>
+          <div className="flex gap-2">
+            <button onClick={onCancel} className="text-xs border rounded px-3 py-1.5 hover:bg-neutral-50">
+              Cancel
+            </button>
+            <button onClick={() => onSave(crop)} className="text-xs bg-black text-white rounded px-3 py-1.5">
+              Save crop
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Row({
   item,
   onChange,
   onRemove,
   onReplace,
+  onCrop,
+  onAi,
+  aiBusy,
 }: {
   item: HeroItem;
   onChange: (patch: Partial<HeroItem>) => void;
   onRemove: () => void;
   onReplace: () => void;
+  onCrop: () => void;
+  onAi: () => void;
+  aiBusy: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
@@ -88,6 +196,12 @@ function Row({
           <span className="truncate text-neutral-400">{item.src}</span>
         </div>
         <input
+          value={item.title ?? ""}
+          onChange={(e) => onChange({ title: e.target.value })}
+          placeholder="Title"
+          className="border rounded px-2 py-1 text-sm"
+        />
+        <input
           value={item.alt ?? ""}
           onChange={(e) => onChange({ alt: e.target.value })}
           placeholder="Alt text"
@@ -109,6 +223,12 @@ function Row({
         )}
       </div>
       <div className="flex flex-col gap-2">
+        <button onClick={onAi} disabled={aiBusy} className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1 disabled:opacity-50">
+          {aiBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} AI text
+        </button>
+        <button onClick={onCrop} className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1">
+          <CropIcon className="w-3 h-3" /> Crop
+        </button>
         <button onClick={onReplace} className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1">
           <RefreshCw className="w-3 h-3" /> Replace
         </button>
@@ -126,6 +246,8 @@ function AdminHero() {
   const { data: storedSettings } = useHeroSettings();
   const { saveItems, saveSettings } = useSaveHeroGallery();
   const upload = useServerFn(uploadToR2);
+  const genMeta = useServerFn(generateAssetMeta);
+  const { lang: aiLang, setLang: setAiLang } = useAiLanguage();
 
   const [items, setItems] = useState<HeroItem[]>([]);
   const [settings, setSettings] = useState<HeroSettings>(DEFAULT_HERO_SETTINGS);
@@ -133,6 +255,8 @@ function AdminHero() {
   const [status, setStatus] = useState("");
   const [picker, setPicker] = useState<null | { replaceId?: string }>(null);
   const [urlInput, setUrlInput] = useState("");
+  const [cropTarget, setCropTarget] = useState<HeroItem | null>(null);
+  const [aiBusyId, setAiBusyId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const replaceTarget = useRef<string | null>(null);
 
@@ -185,6 +309,36 @@ function AdminHero() {
     }
   };
 
+  const runAi = async (item: HeroItem) => {
+    setAiBusyId(item.id);
+    try {
+      const out = (await genMeta({
+        data: {
+          imageUrl: item.kind === "image" ? item.src : item.poster || item.src,
+          context: "Point Studio homepage hero slide",
+          kind: item.kind === "video" && !item.poster ? "video" : "image",
+          language: aiLang,
+        },
+      })) as { label?: string; alt?: string; caption?: string };
+      await persist(
+        items.map((it) =>
+          it.id === item.id
+            ? {
+                ...it,
+                title: out.label || it.title,
+                alt: out.alt || it.alt,
+                caption: out.caption || it.caption,
+              }
+            : it,
+        ),
+      );
+    } catch (e) {
+      alert("AI error: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setAiBusyId(null);
+    }
+  };
+
   const onDragEnd = async (e: DragEndEvent) => {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
@@ -201,7 +355,7 @@ function AdminHero() {
       <div className="mx-auto max-w-4xl p-6">
         <h1 className="text-2xl font-semibold mb-1">Hero Gallery</h1>
         <p className="text-sm text-neutral-500 mb-6">
-          Images and videos shown in the homepage hero carousel. Media is stored on Cloudflare R2.
+          Images and videos shown in the homepage hero carousel, cropped to {HERO_CROP_WIDTH}×{HERO_CROP_HEIGHT}. Media is stored on Cloudflare R2.
         </p>
 
         <div className="bg-white border rounded p-4 mb-6 grid gap-4">
@@ -222,6 +376,22 @@ function AdminHero() {
                   }}
                   className={`text-sm px-3 py-1.5 border rounded ${
                     settings.mode === value ? "bg-black text-white border-black" : "hover:bg-neutral-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm font-medium mb-2">AI text language</div>
+            <div className="flex gap-2">
+              {([["en", "English"], ["ro", "Română"]] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => setAiLang(value)}
+                  className={`text-sm px-3 py-1.5 border rounded ${
+                    aiLang === value ? "bg-black text-white border-black" : "hover:bg-neutral-50"
                   }`}
                 >
                   {label}
@@ -328,6 +498,9 @@ function AdminHero() {
                       replaceTarget.current = item.id;
                       fileRef.current?.click();
                     }}
+                    onCrop={() => setCropTarget(item)}
+                    onAi={() => void runAi(item)}
+                    aiBusy={aiBusyId === item.id}
                   />
                 ))}
               </div>
@@ -335,6 +508,17 @@ function AdminHero() {
           </DndContext>
         )}
       </div>
+
+      {cropTarget && (
+        <CropEditor
+          item={cropTarget}
+          onCancel={() => setCropTarget(null)}
+          onSave={(crop) => {
+            void persist(items.map((i) => (i.id === cropTarget.id ? { ...i, crop } : i)));
+            setCropTarget(null);
+          }}
+        />
+      )}
 
       <MediaLibraryPicker
         open={!!picker}
