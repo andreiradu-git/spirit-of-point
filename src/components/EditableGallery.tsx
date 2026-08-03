@@ -20,13 +20,15 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Upload, X, GripVertical, Loader2, Images } from "lucide-react";
+import { Upload, X, GripVertical, Loader2, Images, Sparkles } from "lucide-react";
 import {
   addGalleryImage,
   removeGalleryImage,
   reorderGalleryImages,
   updateImageMeta,
 } from "@/lib/media.functions";
+import { generateAssetMeta } from "@/lib/asset-meta.functions";
+import { useAiLanguage } from "@/hooks/use-ai-language";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
 
 
@@ -73,6 +75,32 @@ function SortableImage({
     id: image.id,
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
+
+  const [altVal, setAltVal] = useState(image.alt ?? "");
+  const [titleVal, setTitleVal] = useState(image.title ?? "");
+  const [aiBusy, setAiBusy] = useState(false);
+  const generate = useServerFn(generateAssetMeta);
+  const { lang: aiLang } = useAiLanguage();
+
+  const doAi = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAiBusy(true);
+    try {
+      const out = await generate({ data: { imageUrl: image.src, kind: "image", language: aiLang } });
+      const newAlt = out.alt || altVal;
+      const newTitle = out.label || titleVal;
+      setAltVal(newAlt);
+      setTitleVal(newTitle);
+      await Promise.all([
+        onAltChange(image.id, newAlt),
+        onTitleChange ? onTitleChange(image.id, newTitle) : Promise.resolve(),
+      ]);
+    } catch (err) {
+      alert("AI error: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setAiBusy(false);
+    }
+  };
 
   const aspectClass =
     aspect === "square"
@@ -133,10 +161,22 @@ function SortableImage({
             <X className="w-4 h-4" />
           </button>
 
+          <button
+            type="button"
+            onClick={doAi}
+            disabled={aiBusy}
+            className="absolute top-2 right-10 p-1.5 bg-black/80 text-white rounded shadow-lg z-10 hover:bg-black disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
+            title={aiLang === "ro" ? "Scrie cu AI (RO)" : "AI write (EN)"}
+            aria-label="AI write alt & title"
+          >
+            {aiBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          </button>
+
           {onTitleChange && (
             <input
               type="text"
-              defaultValue={image.title ?? ""}
+              value={titleVal}
+              onChange={(e) => setTitleVal(e.target.value)}
               onBlur={(e) => onTitleChange(image.id, e.target.value)}
               placeholder="Label"
               className="absolute bottom-8 left-0 right-0 px-2 py-1 text-xs bg-white/90 border-0 outline-none opacity-0 group-hover:opacity-100 transition-opacity z-10"
@@ -144,7 +184,8 @@ function SortableImage({
           )}
           <input
             type="text"
-            defaultValue={image.alt ?? ""}
+            value={altVal}
+            onChange={(e) => setAltVal(e.target.value)}
             onBlur={(e) => onAltChange(image.id, e.target.value)}
             placeholder="Alt text"
             className="absolute bottom-0 left-0 right-0 px-2 py-1.5 text-xs bg-white/90 border-0 outline-none opacity-0 group-hover:opacity-100 transition-opacity z-10"
