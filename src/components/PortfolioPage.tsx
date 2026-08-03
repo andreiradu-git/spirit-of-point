@@ -4,6 +4,7 @@ import { EditableGallery } from "./EditableGallery";
 import { EditableLogoBand } from "./EditableLogoBand";
 import { useGallery } from "@/hooks/use-gallery";
 import { Editable } from "./Editable";
+import { sanitizeInformativeAlt } from "@/lib/image-text";
 
 type Img = { src: string; alt?: string };
 
@@ -65,7 +66,7 @@ export function PortfolioPage({
               >
                 <img
                   src={cdn(img.src, 1200)}
-                  alt={img.alt || "Point Studio photograph"}
+                  alt={sanitizeInformativeAlt(img.alt, "Point Studio photograph")}
                   loading="lazy"
                   className="h-full w-auto object-cover"
                 />

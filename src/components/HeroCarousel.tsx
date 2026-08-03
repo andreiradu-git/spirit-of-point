@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cdn, cdnSrcSet } from "@/components/SiteLayout";
+import { sanitizeInformativeAlt } from "@/lib/image-text";
 import {
   useHeroItems,
   useHeroSettings,
@@ -106,8 +107,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                   src={cdn(item.src, 2400)}
                   srcSet={cdnSrcSet(item.src, [800, 1200, 1600, 2400])}
                   sizes="100vw"
-                  alt={item.alt ?? ""}
-                  title={item.title || undefined}
+                  alt=""
                   loading={i === 0 ? "eager" : "lazy"}
                   fetchPriority={i === 0 ? "high" : isNext ? "low" : "auto"}
                   decoding="async"
@@ -118,7 +118,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                 isActive || isNext ? (
                   <iframe
                     src={embed}
-                    title={item.title || item.alt || "Hero video"}
+                    title={sanitizeInformativeAlt(item.alt, "Hero video")}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
                     allowFullScreen
                     loading="lazy"
@@ -129,7 +129,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                 <video
                   src={item.src}
                   poster={item.poster ? cdn(item.poster, 1600) : undefined}
-                  title={item.title || undefined}
+                  aria-label="Hero video"
                   controls
                   playsInline
                   preload={isActive || isNext ? "metadata" : "none"}
@@ -144,11 +144,6 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                 />
               )}
 
-              {item.caption && isActive && (
-                <div className="absolute bottom-3 right-4 z-20 text-white/90 text-[clamp(0.5rem,1cqw,0.9rem)] drop-shadow">
-                  {item.caption}
-                </div>
-              )}
             </div>
           );
         })}
