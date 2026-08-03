@@ -32,11 +32,12 @@ export function MediaLibraryPicker({ open, kind = "image", onClose, onPick }: Pr
         seen.add(a.url);
         return true;
       })
-      .filter((a) =>
-        !q ||
-        `${a.url} ${a.name ?? ""} ${a.alt ?? ""} ${a.source}`
-          .toLowerCase()
-          .includes(q.toLowerCase()),
+      .filter(
+        (a) =>
+          !q ||
+          `${a.url} ${a.name ?? ""} ${a.alt ?? ""} ${a.source}`
+            .toLowerCase()
+            .includes(q.toLowerCase()),
       );
   }, [assets, kind, q]);
 

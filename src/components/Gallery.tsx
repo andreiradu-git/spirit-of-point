@@ -67,7 +67,10 @@ export function Gallery({
     };
 
     const renderCols = (n: number, cls: string) => (
-      <div className={`${cls} grid gap-3`} style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
+      <div
+        className={`${cls} grid gap-3`}
+        style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
+      >
         {distribute(n).map((col, ci) => (
           <div key={ci} className="flex flex-col gap-3">
             {col.map(({ img, i }) => (
@@ -102,12 +105,7 @@ export function Gallery({
     );
   }
 
-
-
-  const colClass =
-    columns === 2
-      ? "grid-cols-2"
-      : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
+  const colClass = columns === 2 ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
 
   return (
     <>

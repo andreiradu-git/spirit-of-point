@@ -95,12 +95,7 @@ export function PortfolioPage({
       {/* Full gallery */}
       {galleryLayout === "stacked" ? (
         <div className="w-full pt-6 md:pt-10 pb-24">
-          <EditableGallery
-            slug={slug}
-            fallbackImages={fallbackImages}
-            layout="stacked"
-            lightbox
-          />
+          <EditableGallery slug={slug} fallbackImages={fallbackImages} layout="stacked" lightbox />
         </div>
       ) : (
         <div className="mx-auto max-w-7xl px-6 pt-10 md:pt-14 pb-24">

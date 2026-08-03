@@ -8,7 +8,6 @@ import {
   type HeroItem,
 } from "@/hooks/use-hero-gallery";
 
-
 function embedUrl(url: string) {
   const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/);
   if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
@@ -145,7 +144,6 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                   }}
                 />
               )}
-
             </div>
           );
         })}

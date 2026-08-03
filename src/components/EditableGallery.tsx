@@ -13,12 +13,7 @@ import {
   useSensors,
   DragOverlay,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  rectSortingStrategy,
-} from "@dnd-kit/sortable";
+import { arrayMove, SortableContext, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Upload, X, GripVertical, Loader2, Images } from "lucide-react";
 import {
@@ -29,7 +24,6 @@ import {
 } from "@/lib/media.functions";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
 
-
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -37,7 +31,8 @@ async function fileToBase64(file: File): Promise<string> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   let bin = "";
   const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  for (let i = 0; i < bytes.length; i += chunk)
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return btoa(bin);
 }
 
@@ -48,7 +43,10 @@ type Props = {
   aspect?: "square" | "landscape" | "portrait" | "auto";
   layout?: "grid" | "stacked" | "masonry";
   className?: string;
-  renderItem?: (img: GalleryImage, props: { onClick: () => void; editable: boolean; index: number }) => ReactNode;
+  renderItem?: (
+    img: GalleryImage,
+    props: { onClick: () => void; editable: boolean; index: number },
+  ) => ReactNode;
   lightbox?: boolean;
 };
 
@@ -79,10 +77,10 @@ function SortableImage({
     aspect === "square"
       ? "aspect-square"
       : aspect === "landscape"
-      ? "aspect-[4/3]"
-      : aspect === "portrait"
-      ? "aspect-[3/4]"
-      : "";
+        ? "aspect-[4/3]"
+        : aspect === "portrait"
+          ? "aspect-[3/4]"
+          : "";
 
   return (
     <div
@@ -176,7 +174,6 @@ export function EditableGallery({
   const inputRef = useRef<HTMLInputElement>(null);
   const portfolioImageAlt = "Portfolio photograph";
 
-
   const editable = isAdmin && editMode;
 
   const images: GalleryImage[] =
@@ -189,9 +186,7 @@ export function EditableGallery({
       position: i + 1,
     }));
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const handleUpload = async (file: File) => {
     if (!ACCEPTED.includes(file.type)) {
@@ -244,7 +239,6 @@ export function EditableGallery({
     }
   };
 
-
   const onAltChange = async (id: string, alt: string) => {
     await updateMeta({ data: { imageId: id, alt } });
     invalidate(slug);
@@ -270,16 +264,16 @@ export function EditableGallery({
     layout === "stacked"
       ? "grid-cols-1"
       : layout === "masonry"
-      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-      : columns === 2
-      ? "grid-cols-2"
-      : columns === 4
-      ? "grid-cols-2 md:grid-cols-4"
-      : columns === 5
-      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
-      : columns === 6
-      ? "grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
-      : "grid-cols-2 md:grid-cols-3";
+        ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        : columns === 2
+          ? "grid-cols-2"
+          : columns === 4
+            ? "grid-cols-2 md:grid-cols-4"
+            : columns === 5
+              ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+              : columns === 6
+                ? "grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+                : "grid-cols-2 md:grid-cols-3";
 
   // Masonry (non-editable): flex columns with tops aligned at the first row
   if (layout === "masonry" && !editable) {
@@ -373,7 +367,6 @@ export function EditableGallery({
     );
   }
 
-
   return (
     <div className={className}>
       <DndContext
@@ -387,7 +380,11 @@ export function EditableGallery({
             {images.map((img, i) =>
               renderItem ? (
                 <div key={img.id} className="relative group">
-                  {renderItem(img, { onClick: () => lightbox && setActiveIndex(i), editable, index: i })}
+                  {renderItem(img, {
+                    onClick: () => lightbox && setActiveIndex(i),
+                    editable,
+                    index: i,
+                  })}
                   {editable && (
                     <>
                       <div className="absolute top-2 left-2 p-1.5 bg-white/90 rounded cursor-grab opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -404,7 +401,6 @@ export function EditableGallery({
                       >
                         <X className="w-4 h-4" />
                       </button>
-
                     </>
                   )}
                 </div>
@@ -431,7 +427,11 @@ export function EditableGallery({
                     layout === "stacked" ? "py-8" : "aspect-square"
                   }`}
                 >
-                  {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+                  {uploading ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <Upload className="w-6 h-6" />
+                  )}
                   <span className="text-xs">{uploading ? "Uploading..." : "Upload new"}</span>
                 </button>
                 <button
@@ -520,6 +520,5 @@ export function EditableGallery({
         onPick={(a) => pickFromLibrary(a.url)}
       />
     </div>
-
   );
 }

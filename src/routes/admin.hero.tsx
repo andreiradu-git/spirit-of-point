@@ -13,9 +13,23 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Loader2, Trash2, Upload, Images, RefreshCw, Crop as CropIcon, Sparkles } from "lucide-react";
+import {
+  GripVertical,
+  Loader2,
+  Trash2,
+  Upload,
+  Images,
+  RefreshCw,
+  Crop as CropIcon,
+  Sparkles,
+} from "lucide-react";
 import { generateAssetMeta } from "@/lib/asset-meta.functions";
 import { useAiLanguage } from "@/hooks/use-ai-language";
 import {
@@ -38,9 +52,16 @@ export const Route = createFileRoute("/admin/hero")({
   head: () => ({
     meta: [
       { title: "Hero Gallery — Point Studio CMS" },
-      { name: "description", content: "Manage the Point Studio homepage hero carousel: media, order, alt text, captions and display mode." },
+      {
+        name: "description",
+        content:
+          "Manage the Point Studio homepage hero carousel: media, order, alt text, captions and display mode.",
+      },
       { property: "og:title", content: "Hero Gallery — Point Studio CMS" },
-      { property: "og:description", content: "Manage the homepage hero carousel media and display settings." },
+      {
+        property: "og:description",
+        content: "Manage the homepage hero carousel media and display settings.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -52,7 +73,8 @@ async function fileToBase64(file: File): Promise<string> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   let bin = "";
   const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  for (let i = 0; i < bytes.length; i += chunk)
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return btoa(bin);
 }
 
@@ -85,7 +107,10 @@ function CropEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center p-4" onClick={onCancel}>
+    <div
+      className="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center p-4"
+      onClick={onCancel}
+    >
       <div className="bg-white rounded max-w-3xl w-full p-4" onClick={(e) => e.stopPropagation()}>
         <div className="text-sm font-medium mb-1">
           Crop to {HERO_CROP_WIDTH}×{HERO_CROP_HEIGHT}
@@ -142,10 +167,16 @@ function CropEditor({
             Reset
           </button>
           <div className="flex gap-2">
-            <button onClick={onCancel} className="text-xs border rounded px-3 py-1.5 hover:bg-neutral-50">
+            <button
+              onClick={onCancel}
+              className="text-xs border rounded px-3 py-1.5 hover:bg-neutral-50"
+            >
               Cancel
             </button>
-            <button onClick={() => onSave(crop)} className="text-xs bg-black text-white rounded px-3 py-1.5">
+            <button
+              onClick={() => onSave(crop)}
+              className="text-xs bg-black text-white rounded px-3 py-1.5"
+            >
               Save crop
             </button>
           </div>
@@ -172,7 +203,9 @@ function Row({
   onAi: () => void;
   aiBusy: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  });
   const style = { transform: CSS.Transform.toString(transform), transition };
   return (
     <div
@@ -180,12 +213,20 @@ function Row({
       style={style}
       className={`flex gap-4 items-start border rounded p-3 bg-white ${isDragging ? "opacity-60" : ""}`}
     >
-      <button {...attributes} {...listeners} className="mt-1 p-1 cursor-grab active:cursor-grabbing text-neutral-400">
+      <button
+        {...attributes}
+        {...listeners}
+        className="mt-1 p-1 cursor-grab active:cursor-grabbing text-neutral-400"
+      >
         <GripVertical className="w-4 h-4" />
       </button>
       <div className="w-28 h-20 bg-neutral-100 shrink-0 overflow-hidden flex items-center justify-center">
         {item.kind === "image" || item.poster ? (
-          <img src={cdn(item.poster || item.src, 300)} alt="" className="w-full h-full object-cover" />
+          <img
+            src={cdn(item.poster || item.src, 300)}
+            alt=""
+            className="w-full h-full object-cover"
+          />
         ) : (
           <span className="text-[10px] text-neutral-500 px-1 text-center">Video item</span>
         )}
@@ -223,16 +264,30 @@ function Row({
         )}
       </div>
       <div className="flex flex-col gap-2">
-        <button onClick={onAi} disabled={aiBusy} className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1 disabled:opacity-50">
-          {aiBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} AI text
+        <button
+          onClick={onAi}
+          disabled={aiBusy}
+          className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1 disabled:opacity-50"
+        >
+          {aiBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}{" "}
+          AI text
         </button>
-        <button onClick={onCrop} className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1">
+        <button
+          onClick={onCrop}
+          className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1"
+        >
           <CropIcon className="w-3 h-3" /> Crop
         </button>
-        <button onClick={onReplace} className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1">
+        <button
+          onClick={onReplace}
+          className="text-xs border rounded px-2 py-1 hover:bg-neutral-50 flex items-center gap-1"
+        >
           <RefreshCw className="w-3 h-3" /> Replace
         </button>
-        <button onClick={onRemove} className="text-xs border border-red-300 text-red-600 rounded px-2 py-1 hover:bg-red-50 flex items-center gap-1">
+        <button
+          onClick={onRemove}
+          className="text-xs border border-red-300 text-red-600 rounded px-2 py-1 hover:bg-red-50 flex items-center gap-1"
+        >
           <Trash2 className="w-3 h-3" /> Delete
         </button>
       </div>
@@ -294,7 +349,9 @@ function AdminHero() {
       for (const file of Array.from(files)) {
         const kind = file.type.startsWith("video/") ? "video" : "image";
         const dataBase64 = await fileToBase64(file);
-        const res = await upload({ data: { filename: file.name, contentType: file.type, dataBase64, kind } });
+        const res = await upload({
+          data: { filename: file.name, contentType: file.type, dataBase64, kind },
+        });
         if (replaceId) {
           next = next.map((it) => (it.id === replaceId ? { ...it, src: res.url, kind } : it));
         } else {
@@ -355,18 +412,21 @@ function AdminHero() {
       <div className="mx-auto max-w-4xl p-6">
         <h1 className="text-2xl font-semibold mb-1">Hero Gallery</h1>
         <p className="text-sm text-neutral-500 mb-6">
-          Images and videos shown in the homepage hero carousel, cropped to {HERO_CROP_WIDTH}×{HERO_CROP_HEIGHT}. Media is stored on Cloudflare R2.
+          Images and videos shown in the homepage hero carousel, cropped to {HERO_CROP_WIDTH}×
+          {HERO_CROP_HEIGHT}. Media is stored on Cloudflare R2.
         </p>
 
         <div className="bg-white border rounded p-4 mb-6 grid gap-4">
           <div>
             <div className="text-sm font-medium mb-2">Display mode</div>
             <div className="flex flex-wrap gap-2">
-              {([
-                ["static", "Static (first item)"],
-                ["click", "Change on click"],
-                ["auto", "Auto rotate"],
-              ] as const).map(([value, label]) => (
+              {(
+                [
+                  ["static", "Static (first item)"],
+                  ["click", "Change on click"],
+                  ["auto", "Auto rotate"],
+                ] as const
+              ).map(([value, label]) => (
                 <button
                   key={value}
                   onClick={async () => {
@@ -375,7 +435,9 @@ function AdminHero() {
                     await saveSettings(next);
                   }}
                   className={`text-sm px-3 py-1.5 border rounded ${
-                    settings.mode === value ? "bg-black text-white border-black" : "hover:bg-neutral-50"
+                    settings.mode === value
+                      ? "bg-black text-white border-black"
+                      : "hover:bg-neutral-50"
                   }`}
                 >
                   {label}
@@ -386,7 +448,12 @@ function AdminHero() {
           <div>
             <div className="text-sm font-medium mb-2">AI text language</div>
             <div className="flex gap-2">
-              {([["en", "English"], ["ro", "Română"]] as const).map(([value, label]) => (
+              {(
+                [
+                  ["en", "English"],
+                  ["ro", "Română"],
+                ] as const
+              ).map(([value, label]) => (
                 <button
                   key={value}
                   onClick={() => setAiLang(value)}
@@ -412,7 +479,9 @@ function AdminHero() {
                       await saveSettings(next);
                     }}
                     className={`text-sm px-3 py-1.5 border rounded ${
-                      settings.interval === s ? "bg-black text-white border-black" : "hover:bg-neutral-50"
+                      settings.interval === s
+                        ? "bg-black text-white border-black"
+                        : "hover:bg-neutral-50"
                     }`}
                   >
                     {s}s
@@ -432,7 +501,8 @@ function AdminHero() {
             disabled={busy}
             className="text-sm px-3 py-1.5 bg-black text-white rounded flex items-center gap-2 disabled:opacity-50"
           >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Upload media
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}{" "}
+            Upload media
           </button>
           <button
             onClick={() => setPicker({})}
