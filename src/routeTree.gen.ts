@@ -26,6 +26,7 @@ import { Route as AdminSocialsRouteImport } from './routes/admin.socials'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminPerformanceRouteImport } from './routes/admin.performance'
 import { Route as AdminHeroRouteImport } from './routes/admin.hero'
+import { Route as AdminGalleriesRouteImport } from './routes/admin.galleries'
 import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
 import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
@@ -118,6 +119,11 @@ const AdminHeroRoute = AdminHeroRouteImport.update({
   path: '/admin/hero',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminGalleriesRoute = AdminGalleriesRouteImport.update({
+  id: '/admin/galleries',
+  path: '/admin/galleries',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminContactsRoute = AdminContactsRouteImport.update({
   id: '/admin/contacts',
   path: '/admin/contacts',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
+  '/admin/galleries': typeof AdminGalleriesRoute
   '/admin/hero': typeof AdminHeroRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
+  '/admin/galleries': typeof AdminGalleriesRoute
   '/admin/hero': typeof AdminHeroRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
+  '/admin/galleries': typeof AdminGalleriesRoute
   '/admin/hero': typeof AdminHeroRoute
   '/admin/performance': typeof AdminPerformanceRoute
   '/admin/seo': typeof AdminSeoRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
+    | '/admin/galleries'
     | '/admin/hero'
     | '/admin/performance'
     | '/admin/seo'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
+    | '/admin/galleries'
     | '/admin/hero'
     | '/admin/performance'
     | '/admin/seo'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
+    | '/admin/galleries'
     | '/admin/hero'
     | '/admin/performance'
     | '/admin/seo'
@@ -306,6 +318,7 @@ export interface RootRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAssetsRoute: typeof AdminAssetsRoute
   AdminContactsRoute: typeof AdminContactsRoute
+  AdminGalleriesRoute: typeof AdminGalleriesRoute
   AdminHeroRoute: typeof AdminHeroRoute
   AdminPerformanceRoute: typeof AdminPerformanceRoute
   AdminSeoRoute: typeof AdminSeoRoute
@@ -431,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPerformanceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/galleries': {
+      id: '/admin/galleries'
+      path: '/admin/galleries'
+      fullPath: '/admin/galleries'
+      preLoaderRoute: typeof AdminGalleriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/hero': {
       id: '/admin/hero'
       path: '/admin/hero'
@@ -490,6 +510,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAssetsRoute: AdminAssetsRoute,
   AdminContactsRoute: AdminContactsRoute,
+  AdminGalleriesRoute: AdminGalleriesRoute,
   AdminHeroRoute: AdminHeroRoute,
   AdminPerformanceRoute: AdminPerformanceRoute,
   AdminSeoRoute: AdminSeoRoute,

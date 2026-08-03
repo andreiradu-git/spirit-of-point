@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import { Link } from "@tanstack/react-router";
-import { Star } from "lucide-react";
 import home from "@/data/home.json";
 import { Editable } from "@/components/Editable";
 import { HeroCarousel } from "@/components/HeroCarousel";
@@ -10,6 +9,7 @@ import { EditableLogoBand } from "@/components/EditableLogoBand";
 import { EditableTestimonials, type Testimonial } from "@/components/EditableTestimonials";
 import { useImage } from "@/hooks/use-site-images";
 import { useSiteSettings } from "@/hooks/use-site-settings";
+import { useGallery, useGalleries } from "@/hooks/use-gallery";
 
 
 
@@ -46,13 +46,14 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { settings } = useSiteSettings();
   const heroSrc = useImage("hero", home[1]?.src);
-  const fish = { src: heroSrc, alt: "Point Studio food photography" };
   const fallbackLogos = home
     .filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src))
     .map((l, i) => ({ id: `fallback-${i}`, src: cdn(l.src, 200), alt: "Client logo" }));
 
   const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28], home[19], home[21], home[23]].filter(Boolean);
 
+  // Services: use the "services" gallery from DB when available;
+  // otherwise fall back to static images for initial display.
   const serviceFallbacks = [
     { src: home[22]?.src, title: "Food" },
     { src: home[24]?.src, title: "People" },
@@ -62,11 +63,38 @@ function Index() {
     { src: home[31]?.src, title: "Industrial" },
   ].filter((s) => s.src) as Array<{ src: string; title: string }>;
 
-  const serviceSlug = (title: string) =>
-    title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+  // "What We Do" cards — driven by all visible galleries (excluding internal ones)
+  const { data: servicesGallery } = useGallery("services");
+  const { data: allGalleries } = useGalleries();
+
+  // Build service cards: prefer DB galleries (visible, sorted), fall back to services gallery images
+  const INTERNAL_SLUGS = new Set(["services", "studio", "hero"]);
+  const serviceCards = (() => {
+    const dbCards = (allGalleries ?? [])
+      .filter((g) => g.visible && !INTERNAL_SLUGS.has(g.slug))
+      .map((g) => ({
+        slug: g.slug,
+        title: g.title,
+        subtitle: g.subtitle,
+        coverUrl: g.cover_image_url,
+      }));
+    if (dbCards.length > 0) return dbCards;
+
+    // Fall back to services gallery images
+    const serviceImages = servicesGallery?.images ?? serviceFallbacks.map((s, i) => ({
+      id: `fb-${i}`,
+      src: s.src,
+      alt: null,
+      title: s.title,
+      position: i + 1,
+    }));
+    return serviceImages.map((img) => ({
+      slug: (img.title ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+      title: img.title ?? "",
+      subtitle: null as string | null,
+      coverUrl: img.src,
+    }));
+  })();
 
   const testimonialFallback: Testimonial[] = [
     {
@@ -241,7 +269,7 @@ function Index() {
 
       </section>
 
-      {/* What We Do */}
+      {/* What We Do — dynamic from galleries DB */}
       <section className="bg-[#e5e5e5]">
         <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
           <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
@@ -260,32 +288,76 @@ function Index() {
             </div>
           </div>
 
-          <EditableGallery
-            slug="services"
-            fallbackImages={serviceFallbacks}
-            columns={6}
-            aspect="portrait"
-            renderItem={(img, { editable }) => (
-              <Link
-                to="/work/$slug"
-                params={{ slug: serviceSlug(img.title || "") }}
-                className="relative aspect-[3/4] overflow-hidden group block bg-muted"
-              >
-                <img
-                  src={cdn(img.src, 700)}
-                  alt={img.alt ?? img.title ?? ""}
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
-                <div className="absolute inset-0 flex items-end p-4">
-                  <div className="text-white font-sans font-medium uppercase tracking-[0.15em] text-xs md:text-sm">
-                    {img.title}
+          {serviceCards.length > 0 ? (
+            <div className={`grid gap-3 ${
+              serviceCards.length <= 3
+                ? "grid-cols-1 sm:grid-cols-3"
+                : serviceCards.length === 4
+                ? "grid-cols-2 sm:grid-cols-4"
+                : serviceCards.length === 5
+                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+            }`}>
+              {serviceCards.map((card) => (
+                <Link
+                  key={card.slug}
+                  to="/work/$slug"
+                  params={{ slug: card.slug }}
+                  className="relative aspect-[3/4] overflow-hidden group block bg-muted"
+                >
+                  {card.coverUrl ? (
+                    <img
+                      src={cdn(card.coverUrl, 700)}
+                      alt={card.title}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-neutral-300" />
+                  )}
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
+                  <div className="absolute inset-0 flex items-end p-4">
+                    <div>
+                      <div className="text-white font-sans font-medium uppercase tracking-[0.15em] text-xs md:text-sm">
+                        {card.title}
+                      </div>
+                      {card.subtitle && (
+                        <div className="text-white/70 text-[11px] mt-0.5 line-clamp-1">{card.subtitle}</div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            )}
-          />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            /* Fallback: use the editable "services" gallery if no other galleries exist */
+            <EditableGallery
+              slug="services"
+              fallbackImages={serviceFallbacks}
+              columns={6}
+              aspect="portrait"
+              renderItem={(img) => (
+                <Link
+                  to="/work/$slug"
+                  params={{ slug: (img.title ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") }}
+                  className="relative aspect-[3/4] overflow-hidden group block bg-muted"
+                >
+                  <img
+                    src={cdn(img.src, 700)}
+                    alt={img.alt ?? img.title ?? ""}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
+                  <div className="absolute inset-0 flex items-end p-4">
+                    <div className="text-white font-sans font-medium uppercase tracking-[0.15em] text-xs md:text-sm">
+                      {img.title}
+                    </div>
+                  </div>
+                </Link>
+              )}
+            />
+          )}
         </div>
       </section>
 

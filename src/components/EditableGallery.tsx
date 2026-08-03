@@ -20,12 +20,13 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Upload, X, GripVertical, Loader2, Images, Sparkles } from "lucide-react";
+import { Upload, X, GripVertical, Loader2, Images, Sparkles, Star } from "lucide-react";
 import {
   addGalleryImage,
   removeGalleryImage,
   reorderGalleryImages,
   updateImageMeta,
+  setGalleryCover,
 } from "@/lib/media.functions";
 import { generateAssetMeta } from "@/lib/asset-meta.functions";
 import { useAiLanguage } from "@/hooks/use-ai-language";
@@ -57,17 +58,21 @@ type Props = {
 function SortableImage({
   image,
   editable,
+  isCover,
   onRemove,
   onAltChange,
   onTitleChange,
+  onSetCover,
   onClick,
   aspect,
 }: {
   image: GalleryImage;
   editable: boolean;
+  isCover?: boolean;
   onRemove: (id: string) => void;
   onAltChange: (id: string, alt: string) => void;
   onTitleChange?: (id: string, title: string) => void;
+  onSetCover?: (id: string) => void;
   onClick: () => void;
   aspect: Props["aspect"];
 }) {
@@ -140,6 +145,9 @@ function SortableImage({
           </span>
         </div>
       )}
+      {isCover && !editable && (
+        <span className="absolute top-1 left-1 text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-medium">cover</span>
+      )}
       {editable && (
         <>
           <div
@@ -171,6 +179,26 @@ function SortableImage({
           >
             {aiBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           </button>
+
+          {onSetCover && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onSetCover(image.id); }}
+              className={`absolute top-2 right-[4.5rem] p-1.5 rounded shadow-lg z-10 opacity-0 group-hover:opacity-100 transition-opacity ${
+                isCover
+                  ? "bg-yellow-400 text-black"
+                  : "bg-black/70 text-white hover:bg-yellow-400 hover:text-black"
+              }`}
+              title={isCover ? "Current cover" : "Set as cover image"}
+              aria-label="Set as cover image"
+            >
+              <Star className={`w-4 h-4 ${isCover ? "fill-current" : ""}`} />
+            </button>
+          )}
+
+          {isCover && (
+            <span className="absolute top-1 left-8 text-[10px] bg-yellow-400 text-black px-1.5 py-0.5 rounded font-medium pointer-events-none">cover</span>
+          )}
 
           {onTitleChange && (
             <input
@@ -214,6 +242,7 @@ export function EditableGallery({
   const removeImage = useServerFn(removeGalleryImage);
   const reorder = useServerFn(reorderGalleryImages);
   const updateMeta = useServerFn(updateImageMeta);
+  const setCover = useServerFn(setGalleryCover);
   const upload = useServerFn(uploadToR2);
 
   const [uploading, setUploading] = useState(false);
@@ -278,6 +307,16 @@ export function EditableGallery({
     } catch (e) {
       console.error("Delete failed", e);
       alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
+  const onSetCover = async (imageId: string) => {
+    if (!gallery?.id || imageId.startsWith("fallback-")) return;
+    try {
+      await setCover({ data: { galleryId: gallery.id, imageId } });
+      invalidate(slug);
+    } catch (e) {
+      alert("Set cover failed: " + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -459,9 +498,11 @@ export function EditableGallery({
                   key={img.id}
                   image={img}
                   editable={editable}
+                  isCover={gallery?.cover_image_id === img.id}
                   onRemove={onRemove}
                   onAltChange={onAltChange}
                   onTitleChange={onTitleChange}
+                  onSetCover={gallery ? onSetCover : undefined}
                   onClick={() => lightbox && setActiveIndex(i)}
                   aspect={aspect}
                 />

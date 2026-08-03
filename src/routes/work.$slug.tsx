@@ -1,6 +1,7 @@
 import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
 import { PortfolioPage } from "@/components/PortfolioPage";
+import { getGalleryMeta } from "@/lib/media.functions";
 import foodData from "@/data/food.json";
 import peopleData from "@/data/people.json";
 import editorialData from "@/data/editorial.json";
@@ -10,7 +11,8 @@ import industrialData from "@/data/work/industrial.json";
 
 type Img = { src: string; alt: string };
 
-const WORK: Record<string, { title: string; data: Img[] }> = {
+// Fallback data for built-in slugs that have JSON datasets
+const STATIC_FALLBACKS: Record<string, { title: string; data: Img[] }> = {
   food: { title: "Food", data: foodData as Img[] },
   people: { title: "People", data: peopleData as Img[] },
   editorial: { title: "Editorial", data: editorialData as Img[] },
@@ -21,10 +23,18 @@ const WORK: Record<string, { title: string; data: Img[] }> = {
 
 export const Route = createFileRoute("/work/$slug")({
   component: WorkPage,
-  loader: ({ params }) => {
-    const w = WORK[params.slug];
-    if (!w) throw notFound();
-    return w;
+  loader: async ({ params }) => {
+    // Prefer DB gallery metadata; fall back to static definitions
+    const dbMeta = await getGalleryMeta({ data: { slug: params.slug } });
+    const staticDef = STATIC_FALLBACKS[params.slug];
+    if (!dbMeta && !staticDef) throw notFound();
+    return {
+      title: dbMeta?.title ?? staticDef?.title ?? params.slug,
+      tagline: dbMeta?.tagline ?? staticDef?.title ?? params.slug,
+      fallbackData: staticDef?.data ?? [],
+      seoTitle: dbMeta?.seo_title ?? null,
+      metaDescription: dbMeta?.meta_description ?? null,
+    };
   },
   notFoundComponent: () => (
     <SiteLayout>
@@ -56,27 +66,35 @@ export const Route = createFileRoute("/work/$slug")({
   },
   head: ({ loaderData }) => ({
     meta: [
-      { title: `${loaderData?.title ?? "Work"} — Point Studio` },
+      { title: `${loaderData?.seoTitle ?? loaderData?.title ?? "Work"} — Point Studio` },
       {
         name: "description",
-        content: `${loaderData?.title ?? "Work"} photography portfolio by Point Studio.`,
+        content:
+          loaderData?.metaDescription ??
+          `${loaderData?.title ?? "Work"} photography portfolio by Point Studio.`,
       },
-      { property: "og:title", content: `${loaderData?.title ?? "Work"} — Point Studio` },
+      {
+        property: "og:title",
+        content: `${loaderData?.seoTitle ?? loaderData?.title ?? "Work"} — Point Studio`,
+      },
       {
         property: "og:description",
-        content: `${loaderData?.title ?? "Work"} photography by Point Studio.`,
+        content:
+          loaderData?.metaDescription ??
+          `${loaderData?.title ?? "Work"} photography by Point Studio.`,
       },
     ],
   }),
 });
 
 function WorkPage() {
-  const { title, data } = Route.useLoaderData();
+  const { title, tagline, fallbackData } = Route.useLoaderData();
   return (
     <PortfolioPage
       slug={Route.useParams().slug}
-      tagline={title}
-      fallbackImages={data}
+      tagline={tagline}
+      fallbackImages={fallbackData}
     />
   );
 }
+
