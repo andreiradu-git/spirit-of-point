@@ -4,9 +4,17 @@ import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
 import { useServerFn } from "@tanstack/react-start";
 import { uploadToR2 } from "@/lib/r2.functions";
-import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X, Image as ImageIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  MoveLeft,
+  MoveRight,
+  Plus,
+  X,
+  Image as ImageIcon,
+} from "lucide-react";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
-
 
 type Logo = { id: string; src: string; alt?: string };
 
@@ -17,7 +25,8 @@ async function fileToBase64(file: File): Promise<string> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   let bin = "";
   const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  for (let i = 0; i < bytes.length; i += chunk)
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return btoa(bin);
 }
 
@@ -33,8 +42,6 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
   const [canRight, setCanRight] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const upload = useServerFn(uploadToR2);
-
-
 
   const updateArrows = () => {
     const el = scrollRef.current;
@@ -62,7 +69,6 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
     el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.7), behavior: "smooth" });
   };
 
-
   const handleUpload = async (file: File) => {
     if (!ACCEPTED.includes(file.type)) {
       alert("Only JPG, PNG, WebP, SVG or GIF images are allowed");
@@ -74,12 +80,11 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
     }
     setUploading(true);
     try {
-      const base = file.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-");
       const dataBase64 = await fileToBase64(file);
       const res = await upload({
         data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
       });
-      await save([...items, { id: crypto.randomUUID(), src: res.url, alt: base }]);
+      await save([...items, { id: crypto.randomUUID(), src: res.url, alt: "Client logo" }]);
     } catch (e) {
       console.error(e);
       alert("Upload failed");
@@ -138,7 +143,7 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
               <div key={l.id} className="relative group shrink-0">
                 <img
                   src={l.src}
-                  alt={l.alt ?? "Client logo"}
+                  alt="Client logo"
                   className="h-6 md:h-9 w-auto object-contain opacity-90 hover:opacity-100 transition"
                 />
                 {editable && (
@@ -181,7 +186,11 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
                   disabled={uploading}
                   className="shrink-0 h-8 px-3 border-2 border-dashed border-border rounded flex items-center gap-1 text-xs text-muted-foreground hover:bg-accent"
                 >
-                  {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                  {uploading ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Plus className="w-3 h-3" />
+                  )}
                   Upload
                 </button>
                 <button
@@ -202,11 +211,9 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
         kind="image"
         onClose={() => setPickerOpen(false)}
         onPick={(a) =>
-          save([...items, { id: crypto.randomUUID(), src: a.url, alt: a.alt ?? a.name ?? "Client logo" }])
+          save([...items, { id: crypto.randomUUID(), src: a.url, alt: "Client logo" }])
         }
       />
-
-
 
       <input
         ref={inputRef}
