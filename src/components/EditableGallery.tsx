@@ -136,6 +136,25 @@ function SortableImage({
           >
             <X className="w-4 h-4" />
           </button>
+          {onSetCover && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetCover(image.src);
+              }}
+              title={isCover ? "Current cover image" : "Set as cover"}
+              className={`absolute top-2 right-11 p-1.5 rounded shadow-lg z-10 transition-opacity ${
+                isCover
+                  ? "bg-yellow-400 text-black opacity-100"
+                  : "bg-white/90 text-foreground opacity-0 group-hover:opacity-100 hover:bg-white"
+              }`}
+              aria-label="Set as cover"
+            >
+              <Star className={`w-4 h-4 ${isCover ? "fill-black" : ""}`} />
+            </button>
+          )}
+
 
           {onTitleChange && (
             <input
