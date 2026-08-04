@@ -10,6 +10,7 @@ import { EditableLogoBand } from "@/components/EditableLogoBand";
 import { EditableTestimonials, type Testimonial } from "@/components/EditableTestimonials";
 import { useImage } from "@/hooks/use-site-images";
 import { useSiteSettings } from "@/hooks/use-site-settings";
+import { useGalleryCovers } from "@/hooks/use-gallery-covers";
 
 
 
@@ -61,6 +62,8 @@ function Index() {
     { src: home[29]?.src, title: "Landscape" },
     { src: home[31]?.src, title: "Industrial" },
   ].filter((s) => s.src) as Array<{ src: string; title: string }>;
+
+  const { data: galleryCovers } = useGalleryCovers();
 
   const serviceSlug = (title: string) =>
     title
@@ -272,7 +275,7 @@ function Index() {
                 className="relative aspect-[3/4] overflow-hidden group block bg-muted"
               >
                 <img
-                  src={cdn(img.src, 700)}
+                  src={cdn(galleryCovers?.[serviceSlug(img.title || "")] ?? img.src, 700)}
                   alt={img.alt ?? img.title ?? ""}
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
