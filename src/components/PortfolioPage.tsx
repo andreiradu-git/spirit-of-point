@@ -4,6 +4,8 @@ import { EditableGallery } from "./EditableGallery";
 import { EditableLogoBand } from "./EditableLogoBand";
 import { useGallery } from "@/hooks/use-gallery";
 import { Editable } from "./Editable";
+import { GallerySeoSection } from "./GallerySeoSection";
+import { useGalleryCover } from "@/hooks/use-gallery-covers";
 
 type Img = { src: string; alt?: string };
 
@@ -25,9 +27,14 @@ export function PortfolioPage({
   galleryLayout?: "grid" | "masonry" | "stacked";
 }) {
   const { data: gallery } = useGallery(slug);
-  const images: Img[] =
+  const cover = useGalleryCover(slug);
+  const rawImages: Img[] =
     gallery?.images.map((img) => ({ src: img.src, alt: img.alt ?? undefined })) ??
     fallbackImages.filter((i) => !/LOGO_PSP/i.test(i.src));
+  // The chosen cover leads the page; otherwise the first uploaded image does.
+  const images: Img[] = cover
+    ? [...rawImages].sort((a, b) => Number(b.src === cover) - Number(a.src === cover))
+    : rawImages;
 
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -112,6 +119,8 @@ export function PortfolioPage({
           />
         </div>
       )}
+
+      <GallerySeoSection slug={slug} title={tagline} />
     </SiteLayout>
   );
 }
