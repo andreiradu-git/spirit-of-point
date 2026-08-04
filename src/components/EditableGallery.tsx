@@ -60,6 +60,8 @@ function SortableImage({
   onTitleChange,
   onClick,
   aspect,
+  isCover,
+  onSetCover,
 }: {
   image: GalleryImage;
   editable: boolean;
@@ -68,6 +70,8 @@ function SortableImage({
   onTitleChange?: (id: string, title: string) => void;
   onClick: () => void;
   aspect: Props["aspect"];
+  isCover?: boolean;
+  onSetCover?: (src: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: image.id,
