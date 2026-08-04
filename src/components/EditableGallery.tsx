@@ -20,7 +20,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Upload, X, GripVertical, Loader2, Images } from "lucide-react";
+import { Upload, X, GripVertical, Loader2, Images, Star } from "lucide-react";
 import {
   addGalleryImage,
   removeGalleryImage,
@@ -28,6 +28,7 @@ import {
   updateImageMeta,
 } from "@/lib/media.functions";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
+import { useGalleryCovers, useSetGalleryCover } from "@/hooks/use-gallery-covers";
 
 
 const MAX_SIZE = 20 * 1024 * 1024;
@@ -197,6 +198,17 @@ export function EditableGallery({
   const reorder = useServerFn(reorderGalleryImages);
   const updateMeta = useServerFn(updateImageMeta);
   const upload = useServerFn(uploadToR2);
+  const { data: covers } = useGalleryCovers();
+  const setCover = useSetGalleryCover();
+  const coverSrc = covers?.[slug];
+
+  const onSetCover = async (src: string) => {
+    try {
+      await setCover(slug, coverSrc === src ? null : src);
+    } catch (e) {
+      alert("Could not set cover: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
 
   const [uploading, setUploading] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -432,6 +444,23 @@ export function EditableGallery({
                       >
                         <X className="w-4 h-4" />
                       </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onSetCover(img.src);
+                        }}
+                        title={coverSrc === img.src ? "Current cover image" : "Set as cover"}
+                        className={`absolute top-2 right-11 p-1.5 rounded shadow-lg z-10 ${
+                          coverSrc === img.src
+                            ? "bg-yellow-400 text-black"
+                            : "bg-white/90 text-foreground opacity-0 group-hover:opacity-100"
+                        }`}
+                        aria-label="Set as cover"
+                      >
+                        <Star className={`w-4 h-4 ${coverSrc === img.src ? "fill-black" : ""}`} />
+                      </button>
 
                     </>
                   )}
@@ -446,6 +475,8 @@ export function EditableGallery({
                   onTitleChange={onTitleChange}
                   onClick={() => lightbox && setActiveIndex(i)}
                   aspect={aspect}
+                  isCover={coverSrc === img.src}
+                  onSetCover={onSetCover}
                 />
               ),
             )}
