@@ -433,3 +433,43 @@ export async function generateSiteCopy(input: {
   const parsed = parseJsonLoose<{ text?: string }>(raw);
   return { text: (parsed.text ?? "").trim() };
 }
+
+// ---------- gallery SEO article ----------
+
+export async function generateGallerySeoArticle(input: {
+  gallerySlug: string;
+  galleryTitle?: string;
+  location?: string;
+  keywords?: string;
+  current?: string;
+  language?: Lang;
+  model?: string;
+}): Promise<{ html: string }> {
+  const lang: Lang = input.language ?? "en";
+  const location = input.location || (lang === "ro" ? "București" : "Bucharest");
+  const topic = input.galleryTitle || input.gallerySlug;
+  const system = `You write SEO articles for ${brandFor(lang)} ${langRuleFor(lang)} Return STRICT JSON only: {"html": string}. The html value is a self-contained HTML fragment (no <html>, <head>, <body>, no markdown, no code fences) using only <h2>, <h3>, <p>, <ul>, <li> and <strong>. Structure: one <h2> headline, then 3-5 short sections with <h3> subheadings and 1-2 paragraphs each, plus one short list. Total 350-550 words. Write naturally for humans: include relevant keywords for this photography category and city organically, never stuff them, never repeat the same phrase more than a few times. No pricing claims, no fake statistics.`;
+  const user = [
+    `Gallery / category: ${topic} (slug: ${input.gallerySlug}).`,
+    `Location: ${location}.`,
+    input.keywords ? `Keyword hints: ${input.keywords}` : "",
+    input.current ? `Existing text to improve upon (write a fresh, better version): """${input.current.slice(0, 1500)}"""` : "",
+    lang === "ro"
+      ? `Scrie un articol SEO unic despre fotografia de tip "${topic}" în ${location}, adaptat acestei categorii.`
+      : `Write a unique SEO article about ${topic} photography in ${location}, specific to this category.`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const raw = await aiChat({
+    model: input.model,
+    jsonMode: true,
+    maxTokens: 1600,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  });
+  const parsed = parseJsonLoose<{ html?: string }>(raw);
+  return { html: (parsed.html ?? "").trim() };
+}
