@@ -406,18 +406,14 @@ function VideoCard({
             </div>
           </div>
           <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-            <div className="font-serif text-2xl">{label}</div>
+            {editable && <div className="font-serif text-2xl">{label}</div>}
             {!v.src && (
               <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
                 Coming soon
               </div>
             )}
-            {v.src && embed.kind !== "file" && (
-              <div className="text-[10px] uppercase tracking-widest text-white/70 mt-1">
-                {embed.kind}
-              </div>
-            )}
           </div>
+
         </button>
         {editable && (
           <>

@@ -110,13 +110,6 @@ function SortableImage({
           className={`w-full h-full object-cover ${aspectClass}`}
         />
       </button>
-      {image.title && !editable && (
-        <div className="absolute inset-x-0 bottom-0 p-3 md:p-4 bg-gradient-to-t from-black/70 to-transparent">
-          <span className="text-white text-xs md:text-sm uppercase tracking-widest font-medium">
-            {image.title}
-          </span>
-        </div>
-      )}
       {editable && (
         <>
           <div
