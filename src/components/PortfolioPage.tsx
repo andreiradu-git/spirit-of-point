@@ -120,7 +120,7 @@ export function PortfolioPage({
         </div>
       )}
 
-      <GallerySeoSection slug={slug} title={tagline} />
+      <GallerySeoSection slug={slug} title={gallery?.title || tagline} images={images} />
     </SiteLayout>
   );
 }
