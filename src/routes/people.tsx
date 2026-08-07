@@ -22,7 +22,9 @@ export const Route = createFileRoute("/people")({
       { property: "og:description", content: "Portraits, fashion and business photography." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
+      { property: "og:url", content: "https://www.pointstudio.ro/people" },
     ],
+    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/people" }],
   }),
 });
 

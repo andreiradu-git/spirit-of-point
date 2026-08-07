@@ -24,7 +24,9 @@ export const Route = createFileRoute("/food")({
       { property: "og:description", content: "Professional food, product and tabletop photography." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
+      { property: "og:url", content: "https://www.pointstudio.ro/food" },
     ],
+    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/food" }],
   }),
 });
 

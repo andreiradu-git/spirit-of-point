@@ -22,7 +22,9 @@ export const Route = createFileRoute("/editorial")({
       { property: "og:description", content: "Our editorial and printed portfolio." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
+      { property: "og:url", content: "https://www.pointstudio.ro/editorial" },
     ],
+    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/editorial" }],
   }),
 });
 

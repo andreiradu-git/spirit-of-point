@@ -18,6 +18,13 @@ const STATIC_ENTRIES: Entry[] = [
   { path: "/patterns", changefreq: "monthly", priority: "0.6" },
   { path: "/video", changefreq: "monthly", priority: "0.7" },
   { path: "/contact", changefreq: "yearly", priority: "0.6" },
+  // Work categories (/work/$slug)
+  { path: "/work/food", changefreq: "monthly", priority: "0.7" },
+  { path: "/work/people", changefreq: "monthly", priority: "0.7" },
+  { path: "/work/editorial", changefreq: "monthly", priority: "0.7" },
+  { path: "/work/corporate", changefreq: "monthly", priority: "0.7" },
+  { path: "/work/landscape", changefreq: "monthly", priority: "0.7" },
+  { path: "/work/industrial", changefreq: "monthly", priority: "0.7" },
   // SEO landing — always included, even when hidden from nav.
   { path: "/fotografie-culinara-bucuresti", changefreq: "monthly", priority: "0.9" },
 ];

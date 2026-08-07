@@ -61,7 +61,9 @@ export const Route = createFileRoute("/video")({
       { property: "og:description", content: "Motion, reels and video productions by Point Studio." },
       { property: "og:image", content: cdn(fallbackVideos[0].poster, 1600) },
       { name: "twitter:image", content: cdn(fallbackVideos[0].poster, 1600) },
+      { property: "og:url", content: "https://www.pointstudio.ro/video" },
     ],
+    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/video" }],
   }),
 });
 
