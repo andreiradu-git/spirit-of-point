@@ -20,7 +20,9 @@ export const Route = createFileRoute("/patterns")({
       { property: "og:description", content: "Textures, backgrounds and closeups." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
+      { property: "og:url", content: "https://www.pointstudio.ro/patterns" },
     ],
+    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/patterns" }],
   }),
 });
 

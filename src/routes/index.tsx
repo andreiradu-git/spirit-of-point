@@ -40,7 +40,9 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:image", content: cdn(home[1].src, 1600) },
       { name: "twitter:image", content: cdn(home[1].src, 1600) },
+      { property: "og:url", content: "https://www.pointstudio.ro/" },
     ],
+    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/" }],
   }),
 });
 

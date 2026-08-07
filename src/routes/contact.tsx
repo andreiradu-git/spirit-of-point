@@ -21,7 +21,9 @@ export const Route = createFileRoute("/contact")({
       },
       { property: "og:title", content: "Contact — Point Studio" },
       { property: "og:description", content: "Contact Point Studio, Bucharest." },
+      { property: "og:url", content: "https://www.pointstudio.ro/contact" },
     ],
+    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/contact" }],
   }),
 });
 
