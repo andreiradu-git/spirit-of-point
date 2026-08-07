@@ -111,9 +111,48 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Canonical host + legacy Squarespace query params.
+// Collapses apex -> www and strips indexable duplicate URLs like /?itemId=abc.
+const LEGACY_PARAMS = ["itemId", "itemid", "format", "category", "tag", "author", "month", "view"];
+
+function canonicalRedirect(request: Request): Response | undefined {
+  let url: URL;
+  try {
+    url = new URL(request.url);
+  } catch {
+    return undefined;
+  }
+  if (request.method !== "GET" && request.method !== "HEAD") return undefined;
+
+  const host = url.hostname;
+  const isProdDomain = host === "pointstudio.ro" || host === "www.pointstudio.ro";
+  let changed = false;
+
+  if (host === "pointstudio.ro") {
+    url.hostname = "www.pointstudio.ro";
+    url.protocol = "https:";
+    changed = true;
+  }
+
+  if (isProdDomain) {
+    for (const p of LEGACY_PARAMS) {
+      if (url.searchParams.has(p)) {
+        url.searchParams.delete(p);
+        changed = true;
+      }
+    }
+  }
+
+  if (!changed) return undefined;
+  return Response.redirect(url.toString(), 301);
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const redirect = canonicalRedirect(request);
+      if (redirect) return redirect;
+
       const directWorkerEnv = asRecord(env);
       console.log("worker.fetch host", new URL(request.url).host);
       console.log("worker.fetch env keys", Object.keys(directWorkerEnv ?? {}));
