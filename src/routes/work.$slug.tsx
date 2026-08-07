@@ -54,7 +54,7 @@ export const Route = createFileRoute("/work/$slug")({
       </SiteLayout>
     );
   },
-  head: ({ loaderData }) => ({
+  head: ({ params, loaderData }) => ({
     meta: [
       { title: `${loaderData?.title ?? "Work"} — Point Studio` },
       {
@@ -66,7 +66,18 @@ export const Route = createFileRoute("/work/$slug")({
         property: "og:description",
         content: `${loaderData?.title ?? "Work"} photography by Point Studio.`,
       },
+      ...(loaderData
+        ? [
+            {
+              property: "og:url",
+              content: `https://www.pointstudio.ro/work/${params.slug}`,
+            },
+          ]
+        : [{ name: "robots", content: "noindex" }]),
     ],
+    links: loaderData
+      ? [{ rel: "canonical", href: `https://www.pointstudio.ro/work/${params.slug}` }]
+      : [],
   }),
 });
 
