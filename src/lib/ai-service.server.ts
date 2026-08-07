@@ -436,6 +436,17 @@ export async function generateSiteCopy(input: {
 
 // ---------- gallery SEO article ----------
 
+export type GallerySeoBundle = {
+  html: string;
+  faqs: Array<{ q: string; a: string }>;
+  seoTitle: string;
+  metaDescription: string;
+  ogTitle: string;
+  ogDescription: string;
+  altTemplate: string;
+  keywords: string;
+};
+
 export async function generateGallerySeoArticle(input: {
   gallerySlug: string;
   galleryTitle?: string;
@@ -444,19 +455,32 @@ export async function generateGallerySeoArticle(input: {
   current?: string;
   language?: Lang;
   model?: string;
-}): Promise<{ html: string }> {
+  category?: string;
+  tags?: string[];
+  description?: string;
+  relatedGalleries?: string[];
+}): Promise<GallerySeoBundle> {
   const lang: Lang = input.language ?? "en";
   const location = input.location || (lang === "ro" ? "București" : "Bucharest");
   const topic = input.galleryTitle || input.gallerySlug;
-  const system = `You write SEO articles for ${brandFor(lang)} ${langRuleFor(lang)} Return STRICT JSON only: {"html": string}. The html value is a self-contained HTML fragment (no <html>, <head>, <body>, no markdown, no code fences) using only <h2>, <h3>, <p>, <ul>, <li> and <strong>. Structure: one <h2> headline, then 3-5 short sections with <h3> subheadings and 1-2 paragraphs each, plus one short list. Total 350-550 words. Write naturally for humans: include relevant keywords for this photography category and city organically, never stuff them, never repeat the same phrase more than a few times. No pricing claims, no fake statistics.`;
+  const system = `You write editorial SEO pages for ${brandFor(lang)} ${langRuleFor(lang)} Return STRICT JSON only with keys: html, faqs, seoTitle, metaDescription, ogTitle, ogDescription, altTemplate, keywords.
+- html: a self-contained HTML fragment (no <html>/<head>/<body>, no markdown, no code fences) using only <h2>, <h3>, <p>, <ul>, <li>, <strong>. Start with ONE <h2> built from the gallery title. Then sections with <h3> subheadings covering, when relevant: our approach, why professional photography matters, industries we work with, typical projects. 500-900 words total, unique to THIS gallery's subject, never generic homepage boilerplate. Human, professional, editorial tone — no AI clichés ("in today's fast-paced world", "unlock", "elevate your brand"), no fake statistics, no pricing claims. Include relevant keywords naturally, never stuffed. Write concise, factual answers that AI search engines can quote.
+- faqs: array of 3-6 objects {q, a}; each a is 2-4 factual sentences. Do NOT repeat the FAQ content inside html.
+- seoTitle: max 60 chars. metaDescription: max 155 chars. ogTitle/ogDescription: share-friendly variants.
+- altTemplate: a short reusable ALT pattern containing the placeholder {n}, e.g. "${topic} photography in ${location} — frame {n}".
+- keywords: 6-10 comma-separated keywords.`;
   const user = [
     `Gallery / category: ${topic} (slug: ${input.gallerySlug}).`,
+    input.category ? `Category: ${input.category}` : "",
+    input.tags?.length ? `Tags: ${input.tags.join(", ")}` : "",
+    input.description ? `Short description: ${input.description}` : "",
     `Location: ${location}.`,
     input.keywords ? `Keyword hints: ${input.keywords}` : "",
-    input.current ? `Existing text to improve upon (write a fresh, better version): """${input.current.slice(0, 1500)}"""` : "",
+    input.relatedGalleries?.length ? `Other galleries on the site (for context, do not link): ${input.relatedGalleries.join(", ")}` : "",
+    input.current ? `Existing text to improve upon (write a fresh, better version): """${input.current.slice(0, 2000)}"""` : "",
     lang === "ro"
-      ? `Scrie un articol SEO unic despre fotografia de tip "${topic}" în ${location}, adaptat acestei categorii.`
-      : `Write a unique SEO article about ${topic} photography in ${location}, specific to this category.`,
+      ? `Scrie o pagină SEO unică despre fotografia de tip "${topic}" în ${location}, specifică acestei galerii.`
+      : `Write a unique SEO page about ${topic} photography in ${location}, specific to this gallery.`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -464,12 +488,26 @@ export async function generateGallerySeoArticle(input: {
   const raw = await aiChat({
     model: input.model,
     jsonMode: true,
-    maxTokens: 1600,
+    maxTokens: 3200,
     messages: [
       { role: "system", content: system },
       { role: "user", content: user },
     ],
   });
-  const parsed = parseJsonLoose<{ html?: string }>(raw);
-  return { html: (parsed.html ?? "").trim() };
+  const p = parseJsonLoose<Partial<GallerySeoBundle>>(raw);
+  const faqs = Array.isArray(p.faqs)
+    ? p.faqs
+        .filter((f): f is { q: string; a: string } => !!f && typeof f.q === "string" && typeof f.a === "string")
+        .slice(0, 6)
+    : [];
+  return {
+    html: (p.html ?? "").trim(),
+    faqs,
+    seoTitle: (p.seoTitle ?? "").trim(),
+    metaDescription: (p.metaDescription ?? "").trim(),
+    ogTitle: (p.ogTitle ?? "").trim(),
+    ogDescription: (p.ogDescription ?? "").trim(),
+    altTemplate: (p.altTemplate ?? "").trim(),
+    keywords: (p.keywords ?? "").trim(),
+  };
 }
