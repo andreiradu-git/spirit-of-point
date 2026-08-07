@@ -23,9 +23,16 @@ export const Route = createFileRoute("/work/$slug")({
   component: WorkPage,
   loader: ({ params }) => {
     const w = WORK[params.slug];
-    if (!w) throw notFound();
-    return w;
+    if (w) return w;
+    // Any gallery created in the CMS resolves here without code changes.
+    if (!/^[a-z0-9-]{1,120}$/.test(params.slug)) throw notFound();
+    const title = params.slug
+      .split("-")
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(" ");
+    return { title, data: [] as Img[] };
   },
+
   notFoundComponent: () => (
     <SiteLayout>
       <div className="mx-auto max-w-3xl px-6 py-24 text-center">
