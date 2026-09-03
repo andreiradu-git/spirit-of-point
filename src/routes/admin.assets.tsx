@@ -11,19 +11,8 @@ import {
   generateAssetMeta,
   type AssetMeta,
 } from "@/lib/asset-meta.functions";
-import {
-  uploadToR2,
-  migrateSupabaseToR2,
-  renameR2Object,
-  readR2Object,
-  writeR2Variants,
-} from "@/lib/r2.functions";
-import {
-  optimizeImageBlob,
-  blobToBase64 as optBlobToBase64,
-  isWorthStoring,
-  NOT_SMALLER_MESSAGE,
-} from "@/lib/optimize-image";
+import { uploadToR2, migrateSupabaseToR2, renameR2Object } from "@/lib/r2.functions";
+import { uploadImageWithProtection } from "@/lib/image-upload";
 
 import {
   Sparkles,
