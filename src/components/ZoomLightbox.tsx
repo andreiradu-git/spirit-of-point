@@ -212,16 +212,16 @@ export function ZoomLightbox({
       >
         <img
           key={img.src}
-          src={cdn(img.src, zoom > 1 ? 2400 : 1600, IMAGE_QUALITY_LARGE)}
-          srcSet={
-            zoom > 1
-              ? undefined
-              : cdnSrcSet(img.src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)
-          }
-          sizes={zoom > 1 ? undefined : "(min-width:1024px) 90vw, 100vw"}
+          // One request only: the largest useful web variant (<= 3200px long
+          // edge, quality 88, format=auto, fit=scale-down so never upscaled).
+          // Zooming reuses this already-loaded source.
+          src={cdnFixed(img.src, LIGHTBOX_MAX_WIDTH, IMAGE_QUALITY_LARGE)}
           alt={img.alt ?? caption}
           decoding="async"
+          fetchPriority="high"
           draggable={false}
+          onLoad={onCurrentLoaded}
+
           className="max-h-[calc(100vh-9rem)] max-w-[88vw] object-contain"
           style={{
             transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`,
