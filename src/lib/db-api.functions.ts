@@ -41,7 +41,9 @@ const TABLES: Record<string, TableRule> = {
   menu_items: { read: "public", write: "admin", bool: ["visible"], pk: "id", generateId: true, timestamps: ["updated_at"] },
   pages: { read: "public", write: "admin", json: ["body"], bool: ["published"], pk: "id", generateId: true, timestamps: ["updated_at"] },
   page_seo: { read: "public", write: "admin", pk: "path", timestamps: ["updated_at"] },
-  page_views: { read: "admin", write: "public", pk: "id", generateId: true },
+  // Page views are written server-side only (see /api/public/track, which
+  // validates and enriches the payload). No public write surface here.
+  page_views: { read: "admin", write: "admin", pk: "id", generateId: true },
   contact_messages: { read: "admin", write: "admin", bool: ["archived"], pk: "id", generateId: true },
 };
 
