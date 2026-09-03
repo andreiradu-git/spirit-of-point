@@ -5,7 +5,7 @@ const PREFIX = "gallery.cover.";
 
 /** Map of gallery slug -> chosen cover image src. */
 async function fetchCovers(): Promise<Record<string, string>> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("site_settings")
     .select("key, value")
     .like("key", `${PREFIX}%`);
@@ -40,7 +40,7 @@ export function useSetGalleryCover() {
       const { error } = await db.from("site_settings").delete().eq("key", key);
       if (error) throw error;
     } else {
-      const { error } = await supabase
+      const { error } = await db
         .from("site_settings")
         .upsert({ key, value: { src } }, { onConflict: "key" });
       if (error) throw error;

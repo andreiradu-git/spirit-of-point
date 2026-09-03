@@ -49,7 +49,7 @@ function PerformancePage() {
     queryKey: ["admin", "performance", "views"],
     queryFn: async () => {
       const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("page_views")
         .select("path, referrer, country, city, session_id, created_at")
         .gte("created_at", since)

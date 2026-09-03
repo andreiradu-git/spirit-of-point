@@ -46,7 +46,7 @@ export function useHeroItems() {
   return useQuery({
     queryKey: ["hero-gallery", "items"],
     queryFn: async (): Promise<HeroItem[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("site_settings")
         .select("value")
         .eq("key", HERO_ITEMS_KEY)
@@ -68,7 +68,7 @@ export function useHeroSettings() {
   return useQuery({
     queryKey: ["hero-gallery", "settings"],
     queryFn: async (): Promise<HeroSettings> => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("site_settings")
         .select("value")
         .eq("key", HERO_SETTINGS_KEY)
@@ -85,14 +85,14 @@ export function useSaveHeroGallery() {
   const qc = useQueryClient();
   return {
     saveItems: async (items: HeroItem[]) => {
-      const { error } = await supabase
+      const { error } = await db
         .from("site_settings")
         .upsert({ key: HERO_ITEMS_KEY, value: { items } as never }, { onConflict: "key" });
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["hero-gallery"] });
     },
     saveSettings: async (settings: HeroSettings) => {
-      const { error } = await supabase
+      const { error } = await db
         .from("site_settings")
         .upsert({ key: HERO_SETTINGS_KEY, value: settings as never }, { onConflict: "key" });
       if (error) throw error;

@@ -93,7 +93,7 @@ export function usePageSeoAndTrack() {
     const searchQuery = params.get("q") || params.get("s") || params.get("search") || null;
 
     geoPromise.then((geo) => {
-      supabase
+      db
         .from("page_views")
         .insert({
           path,

@@ -37,7 +37,7 @@ function AdminAnalyticsPage() {
     queryKey: ["page_views", range],
     queryFn: async () => {
       const since = new Date(Date.now() - range * 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("page_views")
         .select("*")
         .gte("created_at", since)

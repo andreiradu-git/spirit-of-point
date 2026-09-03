@@ -4,7 +4,7 @@ import { db } from "@/lib/cms-client";
 const IMAGE_PREFIX = "image.";
 
 async function fetchImages(): Promise<Record<string, string>> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("site_settings")
     .select("key, value")
     .like("key", `${IMAGE_PREFIX}%`);
@@ -39,7 +39,7 @@ export function useSaveImage() {
   const qc = useQueryClient();
   return async (id: string, url: string) => {
     const key = `${IMAGE_PREFIX}${id}`;
-    const { error } = await supabase
+    const { error } = await db
       .from("site_settings")
       .upsert({ key, value: { url } }, { onConflict: "key" });
     if (error) throw error;

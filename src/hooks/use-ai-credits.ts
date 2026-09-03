@@ -11,7 +11,7 @@ function today(): string {
 }
 
 async function fetchCredits(): Promise<CreditState> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("site_settings")
     .select("value")
     .eq("key", KEY)
@@ -40,7 +40,7 @@ export function useAiCredits() {
       );
     }
     const next: CreditState = { date: current.date, used: current.used + 1 };
-    const { error } = await supabase
+    const { error } = await db
       .from("site_settings")
       .upsert({ key: KEY, value: next }, { onConflict: "key" });
     if (error) throw error;

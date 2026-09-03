@@ -77,7 +77,7 @@ function coerce(value: unknown): GallerySeoData {
 
 /** All gallery SEO records, keyed by slug — used for related-gallery linking too. */
 async function fetchAll(): Promise<Record<string, GallerySeoData>> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("site_settings")
     .select("key, value")
     .like("key", `${PREFIX}%`);
@@ -102,7 +102,7 @@ export function useSaveGallerySeo() {
   const qc = useQueryClient();
   return async (slug: string, next: GallerySeoData) => {
     const value = { ...next, updatedAt: new Date().toISOString() };
-    const { error } = await supabase
+    const { error } = await db
       .from("site_settings")
       .upsert({ key: `${PREFIX}${slug}`, value }, { onConflict: "key" });
     if (error) throw error;

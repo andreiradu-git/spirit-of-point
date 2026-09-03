@@ -71,7 +71,7 @@ function AdminSeoPage() {
   const { data: galleryImages } = useQuery({
     queryKey: ["gallery_images", "seo-audit"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("gallery_images")
         .select("id, src, alt, gallery_id");
       if (error) throw error;

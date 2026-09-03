@@ -18,7 +18,7 @@ export type Gallery = {
 };
 
 async function fetchGallery(slug: string): Promise<Gallery | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("galleries")
     .select("*, gallery_images(*)")
     .eq("slug", slug)

@@ -13,7 +13,7 @@ type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table:
 
 export const getGalleries = createServerFn({ method: "GET" }).handler(async () => {
   const db = getMediaDbClient(false) as unknown as AnyDb;
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("galleries")
     .select("*, gallery_images(*)")
     .order("position", { referencedTable: "gallery_images" });
@@ -25,7 +25,7 @@ export const getGalleryBySlug = createServerFn({ method: "GET" })
   .validator((data) => z.object({ slug: z.string() }).parse(data))
   .handler(async ({ data }) => {
     const db = getMediaDbClient(false) as unknown as AnyDb;
-    const { data: gallery, error } = await supabase
+    const { data: gallery, error } = await db
       .from("galleries")
       .select("*, gallery_images(*)")
       .eq("slug", data.slug)
@@ -48,7 +48,7 @@ export const upsertGallery = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const db = serverDb() as unknown as AnyDb;
-    const { error } = await supabase
+    const { error } = await db
       .from("galleries")
       .upsert({ slug: data.slug, title: data.title, tagline: data.tagline }, { onConflict: "slug" });
     if (error) throw error;
@@ -73,7 +73,7 @@ export const addGalleryImage = createServerFn({ method: "POST" })
     const { data: gallery } = await db.from("galleries").select("id").eq("slug", data.gallerySlug).single();
     if (!gallery) throw new Error("Gallery not found");
 
-    const { count } = await supabase
+    const { count } = await db
       .from("gallery_images")
       .select("*", { count: "exact", head: true })
       .eq("gallery_id", gallery.id);

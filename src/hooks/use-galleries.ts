@@ -8,7 +8,7 @@ export function useGalleries() {
   return useQuery({
     queryKey: ["galleries", "all"],
     queryFn: async (): Promise<GallerySummary[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("galleries")
         .select("id, slug, title, tagline")
         .order("title");

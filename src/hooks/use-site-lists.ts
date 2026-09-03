@@ -6,7 +6,7 @@ const LIST_PREFIX = "list.";
 type SettingRow = { key: string; value: unknown };
 
 async function fetchLists(): Promise<Record<string, unknown[]>> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("site_settings")
     .select("key, value")
     .like("key", `${LIST_PREFIX}%`);
@@ -41,7 +41,7 @@ export function useSaveList() {
   return async <T,>(id: string, items: T[]) => {
     const key = `${LIST_PREFIX}${id}`;
     const value = { items } as unknown as Record<string, unknown>;
-    const { error } = await supabase
+    const { error } = await db
       .from("site_settings")
       .upsert({ key, value: value as never }, { onConflict: "key" });
     if (error) throw error;
