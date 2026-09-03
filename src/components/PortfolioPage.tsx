@@ -129,7 +129,7 @@ export function PortfolioPage({
           />
         </div>
       ) : galleryLayout === "archive" ? (
-        <div className="mx-auto max-w-7xl px-6 pt-2 md:pt-6 pb-24">
+        <div className="mx-auto max-w-[1100px] px-6 pt-2 md:pt-6 pb-24">
           <EditableGallery
             slug={slug}
             fallbackImages={fallbackImages}
