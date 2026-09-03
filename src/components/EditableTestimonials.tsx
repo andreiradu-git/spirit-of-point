@@ -239,16 +239,8 @@ function TestimonialCard({
     if (file.size > MAX_SIZE) return alert("Max 20 MB");
     setUploading(true);
     try {
-      const dataBase64 = await fileToBase64(file);
-      const { url } = await upload({
-        data: {
-          filename: file.name,
-          contentType: file.type,
-          dataBase64,
-          folder: "testimonials",
-        },
-      });
-      await onChange({ poster: url });
+      const result = await uploadImageWithProtection(file, async (input) => upload(input));
+      await onChange({ poster: result.deliveryUrl });
     } catch (e) {
       console.error(e);
       alert("Upload failed: " + (e instanceof Error ? e.message : String(e)));
