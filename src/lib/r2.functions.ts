@@ -2,11 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { serverDb } from "@/lib/db-client.server";
 import { requireAdminAuth } from "@/lib/admin-auth";
-import {
-  deleteMediaAssetDirect,
-  markOptimizedMediaAssetDirect,
-  upsertMediaAssetDirect,
-} from "@/lib/media-assets.server";
+import { deleteMediaAssetDirect, upsertMediaAssetDirect } from "@/lib/media-assets.server";
 import {
   b64ToBytes,
   deleteR2ObjectDirect,
@@ -26,107 +22,9 @@ const PUBLIC_URL = "https://images.pointstudio.ro";
 
 type AdminDb = { from: (table: string) => any };
 
-// -----------------------------------------------------------------------------
-// R2-only image pipeline (no Supabase). Image upload / optimize / delete only
-// depend on the Cloudflare R2 binding.
-// -----------------------------------------------------------------------------
+// R2-only image and media storage. Public image variants are generated on
+// demand by Cloudflare Image Transformations, never by this Worker.
 
-export const readR2Object = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ key: z.string().min(1).max(600) }).parse(input))
-  .handler(async ({ data }) => readR2ObjectDirect(data.key));
-
-const variantSchema = z.object({
-  key: z.string().min(1).max(700),
-  contentType: z.string().min(1).max(160),
-  dataBase64: z.string().min(1),
-});
-
-/** True when the buffer starts with RIFF....WEBP. */
-export function looksLikeWebp(bytes: Uint8Array): boolean {
-  if (bytes.byteLength < 12) return false;
-  const ascii = (start: number, end: number) =>
-    String.fromCharCode(...bytes.subarray(start, end));
-  return ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP";
-}
-
-/** Rejects non-WebP payloads written under a `.webp` key. */
-export function assertWebpBytes(key: string, contentType: string, bytes: Uint8Array): void {
-  if (!key.toLowerCase().endsWith(".webp")) return;
-  if (contentType !== "image/webp") {
-    throw new Error(
-      `Refusing to store "${key}": content type is "${contentType}", expected image/webp.`,
-    );
-  }
-  if (!looksLikeWebp(bytes)) {
-    throw new Error(
-      `Refusing to store "${key}": payload is not WebP (missing RIFF/WEBP signature).`,
-    );
-  }
-}
-
-// Writes the single optimized display file, plus an optional backup of the
-// untouched original. `siblings` is kept for backward compatibility but the
-// current pipeline never sends any.
-export const writeR2Variants = createServerFn({ method: "POST" })
-  .middleware([requireAdminAuth])
-  .inputValidator((input) =>
-    z
-      .object({
-        main: variantSchema,
-        siblings: z.array(variantSchema).max(6).optional().default([]),
-        backup: variantSchema.optional(),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
-    const results: Array<{ key: string; size: number; url: string }> = [];
-    if (data.backup) {
-      const body = b64ToBytes(data.backup.dataBase64);
-      const url = await putR2Object(data.backup.key, body, data.backup.contentType);
-      await upsertMediaAssetDirect({
-        key: data.backup.key,
-        url,
-        filename: data.backup.key.split("/").pop() ?? data.backup.key,
-        kind: inferKindFromContentType(data.backup.contentType, data.backup.key),
-        contentType: data.backup.contentType,
-        size: body.byteLength,
-      });
-      results.push({ key: data.backup.key, size: body.byteLength, url });
-    }
-    const main = b64ToBytes(data.main.dataBase64);
-    // Safety net: a `.webp` key must contain real WebP bytes. A browser without
-    // a WebP canvas encoder (Safari) silently returns PNG, which previously got
-    // stored as a bogus "optimized" file several times larger than its source.
-    assertWebpBytes(data.main.key, data.main.contentType, main);
-    const mainUrl = await putR2Object(data.main.key, main, data.main.contentType);
-    if (data.main.key.startsWith("optimized/")) {
-      await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength);
-    } else {
-      await upsertMediaAssetDirect({
-        key: data.main.key,
-        url: mainUrl,
-        filename: data.main.key.split("/").pop() ?? data.main.key,
-        kind: inferKindFromContentType(data.main.contentType, data.main.key),
-        contentType: data.main.contentType,
-        size: main.byteLength,
-      });
-    }
-    results.push({ key: data.main.key, size: main.byteLength, url: mainUrl });
-    for (const s of data.siblings) {
-      const body = b64ToBytes(s.dataBase64);
-      const url = await putR2Object(s.key, body, s.contentType);
-      await upsertMediaAssetDirect({
-        key: s.key,
-        url,
-        filename: s.key.split("/").pop() ?? s.key,
-        kind: inferKindFromContentType(s.contentType, s.key),
-        contentType: s.contentType,
-        size: body.byteLength,
-      });
-      results.push({ key: s.key, size: body.byteLength, url });
-    }
-    return { ok: true, results };
-  });
 
 export const renameR2Object = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
@@ -152,6 +50,10 @@ const uploadSchema = z.object({
   contentType: z.string().max(160).optional().default("application/octet-stream"),
   dataBase64: z.string().min(1),
   kind: z.enum(["image", "video", "file"]).optional(),
+  width: z.number().int().positive().max(50000).optional(),
+  height: z.number().int().positive().max(50000).optional(),
+  originalObjectKey: z.string().min(1).max(700).optional(),
+  originalUrl: z.string().url().max(1000).optional(),
   // Legacy — ignored, kept for backward compatibility with existing callers.
   folder: z.string().max(120).optional(),
 });
@@ -164,7 +66,18 @@ export const uploadToR2 = createServerFn({ method: "POST" })
     const key = makeR2Key(kind, data.filename);
     const body = b64ToBytes(data.dataBase64);
     const url = await putR2Object(key, body, data.contentType, data.filename);
-    await upsertMediaAssetDirect({ key, url, filename: data.filename, kind, contentType: data.contentType, size: body.byteLength });
+    await upsertMediaAssetDirect({
+      key,
+      url,
+      filename: data.filename,
+      kind,
+      contentType: data.contentType,
+      size: body.byteLength,
+      width: data.width,
+      height: data.height,
+      originalObjectKey: data.originalObjectKey,
+      originalUrl: data.originalUrl,
+    });
     return { url, key, size: body.byteLength, kind };
   });
 

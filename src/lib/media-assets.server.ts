@@ -152,6 +152,10 @@ export async function upsertMediaAssetDirect(input: {
   kind: SiteAsset["kind"];
   contentType?: string;
   size?: number;
+  width?: number;
+  height?: number;
+  originalObjectKey?: string;
+  originalUrl?: string;
 }): Promise<void> {
   const db = unsafeDb(true);
   const { error } = await db.from("media_assets").upsert(
@@ -164,6 +168,11 @@ export async function upsertMediaAssetDirect(input: {
       kind: input.kind,
       content_type: input.contentType,
       size: input.size,
+      width: input.width,
+      height: input.height,
+      mime_type: input.contentType,
+      original_object_key: input.originalObjectKey,
+      original_url: input.originalUrl,
     },
     { onConflict: "url" },
   );
