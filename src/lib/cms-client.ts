@@ -11,6 +11,26 @@ export type DbResult<T> = { data: T; error: { message: string; code?: string } |
 
 type Filter = DbDescriptor["filters"][number];
 
+/** "galleries" -> "gallery", "menu_items" -> "menu_item". */
+function singularize(table: string): string {
+  return table.replace(/ies$/, "y").replace(/([^s])s$/, "$1");
+}
+
+/**
+ * Foreign key a child table uses to point at its parent.
+ *
+ * This must match the server-side builder exactly: deriving it with a naive
+ * `replace(/s$/, "")` produced `gallerie_id` for `galleries`, so EVERY embedded
+ * gallery read failed with "no such column" and every gallery in the CMS silently
+ * fell back to bundled source data with synthetic ids.
+ */
+export function embedForeignKey(parentTable: string, childTable: string): string {
+  const base = singularize(parentTable);
+  if (childTable.startsWith(`${base}_`)) return `${base}_id`;
+  return `${base}_id`;
+}
+
+
 class QueryBuilder<T = any> implements PromiseLike<DbResult<T>> {
   private descriptor: {
     table: string;
@@ -42,10 +62,11 @@ class QueryBuilder<T = any> implements PromiseLike<DbResult<T>> {
       const childTable = embedMatch[1]!;
       this.descriptor.embed = {
         table: childTable,
-        foreignKey: `${this.descriptor.table.replace(/s$/, "")}_id`,
+        foreignKey: embedForeignKey(this.descriptor.table, childTable),
         orderBy: "position",
       };
     }
+
     return this;
   }
 

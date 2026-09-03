@@ -23,11 +23,12 @@ async function fetchGallery(slug: string): Promise<Gallery | null> {
     .select("*, gallery_images(*)")
     .eq("slug", slug)
     .order("position", { referencedTable: "gallery_images" })
-    .single();
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw error;
-  }
+    .maybeSingle();
+  // `null` means "this gallery has not been created yet" and is the ONLY case
+  // in which a page may fall back to its bundled source images. A transport or
+  // SQL failure must surface as an error, never as an uninitialised gallery.
+  if (error) throw new Error(error.message);
+  if (!data) return null;
   return {
     ...data,
     images: ((data.gallery_images ?? []) as GalleryImage[]).sort((a, b) => a.position - b.position),
@@ -39,6 +40,7 @@ export function useGallery(slug: string) {
     queryKey: ["gallery", slug],
     queryFn: () => fetchGallery(slug),
     staleTime: 60_000,
+    retry: 1,
   });
 }
 
