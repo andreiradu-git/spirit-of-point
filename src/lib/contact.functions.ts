@@ -28,34 +28,106 @@ const submitSchema = z.object({
   source_path: z.string().max(500).optional(),
 });
 
+// Verified sender domain in Resend. The resend.dev test sender can only deliver
+// to the Resend account owner, which silently broke admin notifications.
+const DEFAULT_FROM = "Point Studio <noreply@pointstudio.ro>";
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 }
 
-/** Best-effort email notification through Resend; never blocks the submission. */
-async function notifyByEmail(data: z.infer<typeof submitSchema>): Promise<void> {
+/** Public, secret-free view of the notification configuration (used by /api/debug/email). */
+export function contactEmailConfigStatus() {
   const apiKey = readServerEnv("RESEND_API_KEY");
   const to = readServerEnv("CONTACT_NOTIFY_EMAIL");
-  if (!apiKey || !to) return;
-  const from = readServerEnv("CONTACT_FROM_EMAIL") || "Point Studio <onboarding@resend.dev>";
+  const from = readServerEnv("CONTACT_FROM_EMAIL");
+  return {
+    provider: "resend",
+    hasApiKey: Boolean(apiKey),
+    apiKeyLooksValid: Boolean(apiKey?.startsWith("re_")),
+    hasRecipient: Boolean(to),
+    recipientDomain: to?.split("@")[1] ?? null,
+    hasFromOverride: Boolean(from),
+    fromDomain: (from ?? DEFAULT_FROM).split("@").pop()?.replace(/>$/, "") ?? null,
+    usingResendTestSender: (from ?? DEFAULT_FROM).includes("resend.dev"),
+    ready: Boolean(apiKey && to),
+  };
+}
+
+/**
+ * Notification email through Resend. Never blocks or reverts the stored message.
+ * Returns a structured result so the handler can log precisely why a send did not happen.
+ */
+async function notifyByEmail(
+  data: z.infer<typeof submitSchema>,
+  idempotencyKey: string,
+): Promise<{ sent: boolean; reason?: string; id?: string }> {
+  const apiKey = readServerEnv("RESEND_API_KEY");
+  const to = readServerEnv("CONTACT_NOTIFY_EMAIL");
+  if (!apiKey) return { sent: false, reason: "RESEND_API_KEY is not set in the Worker environment" };
+  if (!to) return { sent: false, reason: "CONTACT_NOTIFY_EMAIL is not set in the Worker environment" };
+
+  // Authenticated sender on our own domain. The visitor's address is only ever
+  // used as Reply-To so SPF/DMARC stay intact.
+  const from = readServerEnv("CONTACT_FROM_EMAIL") || DEFAULT_FROM;
+
+  const rows: Array<[string, string | undefined]> = [
+    ["Name", data.name],
+    ["Email", data.email],
+    ["Phone", data.phone || undefined],
+    ["Subject", data.subject || undefined],
+    ["Sent from", data.source_path || undefined],
+  ];
+
+  const html = `<h2 style="font-family:Georgia,serif">New website inquiry — Point Studio</h2>
+    <table style="font-family:Arial,sans-serif;font-size:14px;border-collapse:collapse">
+      ${rows
+        .filter(([, v]) => Boolean(v))
+        .map(
+          ([k, v]) =>
+            `<tr><td style="padding:4px 12px 4px 0;color:#666">${k}</td><td style="padding:4px 0"><strong>${escapeHtml(v!)}</strong></td></tr>`,
+        )
+        .join("")}
+    </table>
+    <p style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap;margin-top:16px">${escapeHtml(
+      data.message,
+    ).replace(/\n/g, "<br />")}</p>`;
+
+  const text = [
+    ...rows.filter(([, v]) => Boolean(v)).map(([k, v]) => `${k}: ${v}`),
+    "",
+    data.message,
+  ].join("\n");
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      // Guarantees one email per stored submission even if the request is retried.
+      "Idempotency-Key": idempotencyKey,
+    },
     body: JSON.stringify({
       from,
       to: [to],
       reply_to: data.email,
-      subject: `New message from ${data.name}${data.subject ? ` — ${data.subject}` : ""}`,
-      html: `<h2>New contact message</h2>
-        <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
-        ${data.phone ? `<p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>` : ""}
-        ${data.subject ? `<p><strong>Subject:</strong> ${escapeHtml(data.subject)}</p>` : ""}
-        <p>${escapeHtml(data.message).replace(/\n/g, "<br />")}</p>
-        ${data.source_path ? `<p style="color:#888">Sent from ${escapeHtml(data.source_path)}</p>` : ""}`,
+      subject: `New website inquiry - Point Studio${data.subject ? ` — ${data.subject}` : ""}`,
+      html,
+      text,
     }),
   });
-  if (!res.ok) console.error("[contact] Resend notification failed", res.status, await res.text());
+
+  const body = await res.text();
+  if (!res.ok) {
+    return { sent: false, reason: `Resend responded ${res.status}: ${body}` };
+  }
+  let id: string | undefined;
+  try {
+    id = (JSON.parse(body) as { id?: string }).id;
+  } catch {
+    /* non-JSON success body */
+  }
+  return { sent: true, id };
 }
 
 export const submitContactMessage = createServerFn({ method: "POST" })
@@ -75,14 +147,19 @@ export const submitContactMessage = createServerFn({ method: "POST" })
       throw new Error(insertRes.error.message);
     }
 
+    // The stored message is authoritative; notification failures are logged only.
     try {
-      await notifyByEmail(data);
+      const key = `contact-${data.email}-${Date.now()}`;
+      const result = await notifyByEmail(data, key);
+      if (result.sent) console.info("[contact] notification sent", { id: result.id });
+      else console.error("[contact] notification NOT sent:", result.reason);
     } catch (error) {
       console.error("[contact] notification error", error);
     }
 
     return { ok: true, rows: insertRes.data ?? null };
   });
+
 
 
 export const listContactMessages = createServerFn({ method: "GET" })
