@@ -10,6 +10,7 @@ import { EditableTestimonials, type Testimonial } from "@/components/EditableTes
 import { useImage } from "@/hooks/use-site-images";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { useGalleryCovers } from "@/hooks/use-gallery-covers";
+import { useLang, useTr } from "@/i18n";
 
 
 
@@ -19,11 +20,13 @@ import { useGalleryCovers } from "@/hooks/use-gallery-covers";
 
 export function Index() {
   const { settings } = useSiteSettings();
+  const lang = useLang();
+  const t = useTr();
   const heroSrc = useImage("hero", home[1]?.src);
-  const fish = { src: heroSrc, alt: "Point Studio food photography" };
+  const fish = { src: heroSrc, alt: t("Point Studio food photography") };
   const fallbackLogos = home
     .filter((i) => /logo|Kaufland/i.test(i.src) && !/LOGO_PSP/i.test(i.src))
-    .map((l, i) => ({ id: `fallback-${i}`, src: cdn(l.src, 200), alt: "Client logo" }));
+    .map((l, i) => ({ id: `fallback-${i}`, src: cdn(l.src, 200), alt: t("Client logo") }));
 
   const studioShots = [home[20], home[24], home[26], home[30], home[18], home[22], home[28], home[19], home[21], home[23]].filter(Boolean);
 
@@ -139,7 +142,7 @@ export function Index() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex flex-col justify-end group pointer-events-auto"
-                  aria-label="See our Google reviews"
+                  aria-label={t("See our Google reviews")}
                 >
                   <div className="flex items-center gap-[0.6cqw]">
                     <svg viewBox="0 0 48 48" className="w-[clamp(0.9rem,2.4cqw,2rem)] h-[clamp(0.9rem,2.4cqw,2rem)]" aria-hidden="true">
@@ -155,7 +158,7 @@ export function Index() {
                         ))}
                       </div>
                       <div className="uppercase tracking-widest text-white/70 mt-[0.35cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] group-hover:text-white transition-colors">
-                        Google<br />Reviews
+                        Google<br />{t("Reviews")}
                       </div>
                     </div>
                   </div>
@@ -243,7 +246,7 @@ export function Index() {
             aspect="portrait"
             renderItem={(img, { editable }) => (
               <Link
-                to="/work/$slug"
+                to={(lang === "ro" ? "/ro/work/$slug" : "/work/$slug") as "/work/$slug"}
                 params={{ slug: serviceSlug(img.title || "") }}
                 className="relative aspect-[3/4] overflow-hidden group block bg-muted"
               >
@@ -256,7 +259,7 @@ export function Index() {
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
                 <div className="absolute inset-0 flex items-end p-4">
                   <div className="text-white font-sans font-medium uppercase tracking-[0.15em] text-xs md:text-sm">
-                    {img.title}
+                    {t(img.title ?? "")}
                   </div>
                 </div>
               </Link>
