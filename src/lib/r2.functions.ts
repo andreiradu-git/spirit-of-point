@@ -71,6 +71,10 @@ export const writeR2Variants = createServerFn({ method: "POST" })
       results.push({ key: data.backup.key, size: body.byteLength, url });
     }
     const main = b64ToBytes(data.main.dataBase64);
+    // Safety net: a `.webp` key must contain real WebP bytes. A browser without
+    // a WebP canvas encoder (Safari) silently returns PNG, which previously got
+    // stored as a bogus "optimized" file several times larger than its source.
+    assertWebpBytes(data.main.key, data.main.contentType, main);
     const mainUrl = await putR2Object(data.main.key, main, data.main.contentType);
     if (data.main.key.startsWith("optimized/")) {
       await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength);
