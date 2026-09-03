@@ -25,13 +25,16 @@ const STATIC_ENTRIES: Entry[] = [
   { path: "/work/corporate", changefreq: "monthly", priority: "0.7" },
   { path: "/work/landscape", changefreq: "monthly", priority: "0.7" },
   { path: "/work/industrial", changefreq: "monthly", priority: "0.7" },
-  // SEO landing — always included, even when hidden from nav.
+  // SEO landings — always included, even when hidden from nav.
   { path: "/fotografie-culinara-bucuresti", changefreq: "monthly", priority: "0.9" },
+  { path: "/food-photography-bucharest", changefreq: "monthly", priority: "0.9" },
 ];
 
 // Romanian equivalents of every public page (English keeps the bare URL).
 const RO_ENTRIES: Entry[] = STATIC_ENTRIES.filter(
-  (e) => e.path !== "/fotografie-culinara-bucuresti",
+  (e) =>
+    e.path !== "/fotografie-culinara-bucuresti" &&
+    e.path !== "/food-photography-bucharest",
 ).map((e) => ({
   ...e,
   path: e.path === "/" ? "/ro" : `/ro${e.path}`,
