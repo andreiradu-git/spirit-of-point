@@ -3,7 +3,7 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { WorkPage, resolveWork } from "@/pages/Work";
 import { altLinks, tr } from "@/i18n";
 
-const LANG = "en" as const;
+const LANG: "en" | "ro" = "en";
 
 export const Route = createFileRoute("/work/$slug")({
   component: WorkRoute,
