@@ -8,7 +8,9 @@ import { fotografieCulinaraContent } from "@/data/fotografie-culinara";
 import { useLang, useTr, localizePath, tr } from "@/i18n";
 
 function FotografieCulinaraFooterLink({ visible }: { visible: boolean }) {
-  if (!visible || !fotografieCulinaraContent.isVisibleInNav) return null;
+  const linkLang = useLang();
+  // Romanian-language landing page: only surfaced on the Romanian site.
+  if (linkLang !== "ro" || !visible || !fotografieCulinaraContent.isVisibleInNav) return null;
   return (
     <Link
       to="/fotografie-culinara-bucuresti"
