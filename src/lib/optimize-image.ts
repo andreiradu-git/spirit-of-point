@@ -94,16 +94,27 @@ export async function optimizeImageBlob(input: Blob): Promise<OptimizedImage> {
   let webp: Blob | null = null;
   let usedQuality = qualities[0];
   for (const q of qualities) {
-    const attempt = await encode(canvas, "image/webp", q);
+    const attempt = await encode(canvas, OPTIMIZED_MIME, q);
     if (!attempt) continue;
+    // Fail fast on the very first attempt if the browser silently substituted
+    // another format (Safari returns image/png here).
+    assertWebpBlob(attempt);
     webp = attempt;
     usedQuality = q;
     if (attempt.size <= TARGET_BYTES) break;
   }
   bmp.close?.();
   if (!webp) throw new Error("Browser could not encode WebP");
+  assertWebpBlob(webp);
 
-  return { width: w, height: h, webp, originalSize: input.size, quality: usedQuality };
+  return {
+    width: w,
+    height: h,
+    webp,
+    mimeType: webp.type,
+    originalSize: input.size,
+    quality: usedQuality,
+  };
 }
 
 export async function blobToBase64(blob: Blob): Promise<string> {
