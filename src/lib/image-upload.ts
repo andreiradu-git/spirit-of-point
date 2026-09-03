@@ -9,7 +9,7 @@ export type UploadedOriginal = {
   url: string;
   key: string;
   size: number;
-  kind: "image";
+  kind: "image" | "video" | "file";
 };
 
 export type ProtectedImageUpload = UploadedOriginal & {
