@@ -34,6 +34,9 @@ export function useAllPageSeo() {
   });
 }
 
+/** Guards against duplicate page views from rerenders within one navigation. */
+let lastTracked: string | null = null;
+
 /** Applies DB SEO overrides to <head> for current route, and logs a pageview. */
 export function usePageSeoAndTrack() {
   const path = useRouterState({ select: (s) => s.location.pathname });

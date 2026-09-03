@@ -16,6 +16,7 @@ import { ContentProtection } from "@/components/ContentProtection";
 import { usePageSeoAndTrack } from "@/hooks/use-page-seo";
 import { ThemeInjector } from "@/hooks/use-theme";
 import { useLang, useTr } from "@/i18n";
+import { WebVitalsReporter } from "@/components/WebVitalsReporter";
 
 function SeoAndAnalytics() {
   usePageSeoAndTrack();
@@ -141,6 +142,7 @@ function RootComponent() {
       <ContentProtection />
       <AdminBar />
       <SeoAndAnalytics />
+      <WebVitalsReporter />
       <Outlet />
     </QueryClientProvider>
   );
