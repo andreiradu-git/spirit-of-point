@@ -59,6 +59,12 @@ export const UI_RO: Record<string, string> = {
   "Please fill in the required fields.": "Te rugăm să completezi câmpurile obligatorii.",
   "Please enter a valid email address.": "Te rugăm să introduci o adresă de email validă.",
 
+  "Message sent": "Mesaj trimis",
+  Reviews: "Recenzii",
+  "Point Studio food photography": "Fotografie culinară Point Studio",
+  "Tell us about your project…": "Spune-ne despre proiectul tău…",
+  "Photo-Video Studio and Creative Workspace": "Studio foto-video și spațiu creativ",
+
   // Gallery SEO block
   "Frequently asked questions": "Întrebări frecvente",
   "Related galleries": "Galerii înrudite",
