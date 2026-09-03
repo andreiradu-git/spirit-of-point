@@ -144,9 +144,9 @@ function canonicalRedirect(request: Request): Response | undefined {
   }
 
   if (isProdDomain) {
-    // Cloudflare terminates TLS, so trust the forwarded protocol when present.
-    const proto = request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
-    if (proto === "http") {
+    // Only upgrade when the request URL itself is plain http, so a proxy that
+    // already terminated TLS can never produce a redirect loop.
+    if (url.protocol === "http:") {
       url.protocol = "https:";
       changed = true;
     }
