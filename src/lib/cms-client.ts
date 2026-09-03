@@ -124,9 +124,11 @@ class QueryBuilder<T = any> implements PromiseLike<DbResult<T>> {
 
   private async run(): Promise<DbResult<any>> {
     try {
-      const { rows } = (await dbExec({ data: { ...this.descriptor, returning: true } as never })) as {
+      const { rows, error } = (await dbExec({ data: { ...this.descriptor, returning: true } as never })) as {
         rows: any[];
+        error: string | null;
       };
+      if (error) return { data: this.mode === "many" ? [] : null, error: { message: error } };
       if (this.mode === "many") return { data: rows, error: null };
       if (rows.length) return { data: rows[0], error: null };
       if (this.mode === "maybeSingle") return { data: null, error: null };
