@@ -612,7 +612,16 @@ export function EditableGallery({
           e.target.value = "";
         }}
       />
-      {lightbox && activeIndex !== null && (
+      {lightbox && activeIndex !== null && archive && (
+        <ZoomLightbox
+          images={images}
+          index={activeIndex}
+          onClose={() => setActiveIndex(null)}
+          onIndexChange={setActiveIndex}
+        />
+      )}
+      {lightbox && activeIndex !== null && !archive && (
+
         <div
           className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 md:p-8"
           onClick={() => setActiveIndex(null)}
