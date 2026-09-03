@@ -171,7 +171,8 @@ export const db = {
     },
     async signInWithPassword(credentials: { email: string; password: string }) {
       try {
-        const user = await signIn({ data: credentials });
+        const { user, error } = await signIn({ data: credentials });
+        if (error) return { data: { user: null }, error: { message: error } };
         emit(user ?? null);
         return { data: { user }, error: null };
       } catch (error) {
@@ -180,7 +181,10 @@ export const db = {
     },
     async signUp(credentials: { email: string; password: string }) {
       try {
-        const user = await signUpFirstAdmin({ data: { email: credentials.email, password: credentials.password } });
+        const { user, error } = await signUpFirstAdmin({
+          data: { email: credentials.email, password: credentials.password },
+        });
+        if (error) return { data: { user: null }, error: { message: error } };
         emit(user ?? null);
         return { data: { user }, error: null };
       } catch (error) {
