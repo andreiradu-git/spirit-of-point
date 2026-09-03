@@ -135,12 +135,8 @@ export function ZoomLightbox({
     if (pinchRef.current.size === 2 && pinchStartRef.current) {
       const [a, b] = [...pinchRef.current.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
-      const rect = containerRef.current?.getBoundingClientRect();
-      zoomAt(
-        pinchStartRef.current.zoom * (dist / pinchStartRef.current.dist),
-        (a.x + b.x) / 2 - (rect?.left ?? 0),
-        (a.y + b.y) / 2 - (rect?.top ?? 0),
-      );
+      const [ax, ay] = anchor((a.x + b.x) / 2, (a.y + b.y) / 2);
+      zoomAt(pinchStartRef.current.zoom * (dist / pinchStartRef.current.dist), ax, ay);
       return;
     }
     const d = draggingRef.current;
@@ -164,9 +160,8 @@ export function ZoomLightbox({
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       lastTapRef.current = 0;
-      const rect = containerRef.current?.getBoundingClientRect();
       if (zoom > 1) reset();
-      else zoomAt(2.5, e.clientX - (rect?.left ?? 0), e.clientY - (rect?.top ?? 0));
+      else zoomAt(2.5, ...anchor(e.clientX, e.clientY));
     } else {
       lastTapRef.current = now;
     }
@@ -211,9 +206,8 @@ export function ZoomLightbox({
         onPointerUp={endPointer}
         onPointerCancel={endPointer}
         onDoubleClick={(e) => {
-          const rect = containerRef.current?.getBoundingClientRect();
           if (zoom > 1) reset();
-          else zoomAt(2.5, e.clientX - (rect?.left ?? 0), e.clientY - (rect?.top ?? 0));
+          else zoomAt(2.5, ...anchor(e.clientX, e.clientY));
         }}
       >
         <img
