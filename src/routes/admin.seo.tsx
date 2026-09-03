@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/hooks/use-admin";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/lib/cms-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSeoContent } from "@/lib/seo-ai.functions";

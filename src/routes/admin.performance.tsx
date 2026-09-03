@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/lib/cms-client";
 
 export const Route = createFileRoute("/admin/performance")({
   head: () => ({ meta: [{ title: "Performance — Admin" }, { name: "robots", content: "noindex" }] }),

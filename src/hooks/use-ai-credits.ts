@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/lib/cms-client";
 
 export const AI_DAILY_LIMIT = 5;
 const KEY = "ai.credits";

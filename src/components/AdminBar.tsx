@@ -1,6 +1,6 @@
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/lib/cms-client";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useAiLanguage } from "@/hooks/use-ai-language";
 
