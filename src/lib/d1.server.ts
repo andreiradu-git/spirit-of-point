@@ -31,6 +31,16 @@ function bindingFromEnv(): D1Binding | undefined {
   return undefined;
 }
 
+/** True when the native Cloudflare D1 binding (`env.DB`) is reachable right now. */
+export function hasD1Binding(): boolean {
+  return Boolean(bindingFromEnv());
+}
+
+/** Which transport a query would use at this moment. */
+export function d1Transport(): "binding" | "http" {
+  return bindingFromEnv() ? "binding" : "http";
+}
+
 async function httpQuery<T>(sql: string, params: SqlValue[]): Promise<T[]> {
   const accountId = readServerEnv("CLOUDFLARE_ACCOUNT_ID");
   const apiToken = readServerEnv("CLOUDFLARE_API_TOKEN");
