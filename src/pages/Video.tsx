@@ -215,7 +215,7 @@ export function VideoPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto max-w-2xl px-6 pt-16 pb-24">
+      <div className="mx-auto max-w-5xl px-6 pt-16 pb-24">
         {editable && (
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
             <span className="inline-flex items-center gap-1 text-neutral-500 uppercase tracking-widest">
@@ -230,7 +230,7 @@ export function VideoPage() {
         )}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={ids} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {videos.map((v, i) => (
                 <VideoCard
                   key={ids[i]}
