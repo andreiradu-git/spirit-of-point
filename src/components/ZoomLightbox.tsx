@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "@/components/SiteLayout";
+import {
+  cdnFixed,
+  IMAGE_QUALITY_LARGE,
+  LIGHTBOX_MAX_WIDTH,
+  onTransformError,
+} from "@/components/SiteLayout";
 import { useTr } from "@/i18n";
 
 export type ZoomLightboxImage = { src: string; alt?: string | null; title?: string | null };
@@ -112,6 +117,23 @@ export function ZoomLightbox({
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
+  // Neighbour prefetch happens only after the opened photograph has finished
+  // loading, and is skipped on Save-Data / slow connections.
+  const onCurrentLoaded = useCallback(() => {
+    const nav = navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    };
+    const c = nav.connection;
+    if (c?.saveData || (c?.effectiveType && !/4g/.test(c.effectiveType))) return;
+    for (const d of [1, -1]) {
+      const n = images[(index + d + images.length) % images.length];
+      if (!n || n === images[index]) continue;
+      const pre = new Image();
+      pre.decoding = "async";
+      pre.src = cdnFixed(n.src, LIGHTBOX_MAX_WIDTH, IMAGE_QUALITY_LARGE);
+    }
+  }, [images, index]);
+
   const img = images[index];
   if (!img) return null;
   const caption = img.title || img.alt || "";
@@ -212,16 +234,16 @@ export function ZoomLightbox({
       >
         <img
           key={img.src}
-          src={cdn(img.src, zoom > 1 ? 2400 : 1600, IMAGE_QUALITY_LARGE)}
-          srcSet={
-            zoom > 1
-              ? undefined
-              : cdnSrcSet(img.src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)
-          }
-          sizes={zoom > 1 ? undefined : "(min-width:1024px) 90vw, 100vw"}
+          // One request only: the largest useful web variant (<= 3200px long
+          // edge, quality 88, format=auto, fit=scale-down so never upscaled).
+          // Zooming reuses this already-loaded source.
+          src={cdnFixed(img.src, LIGHTBOX_MAX_WIDTH, IMAGE_QUALITY_LARGE)}
           alt={img.alt ?? caption}
           decoding="async"
+          fetchPriority="high"
           draggable={false}
+          onLoad={onCurrentLoaded}
+
           className="max-h-[calc(100vh-9rem)] max-w-[88vw] object-contain"
           style={{
             transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`,

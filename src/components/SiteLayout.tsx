@@ -341,8 +341,11 @@ export const RESPONSIVE_WIDTHS = [400, 800, 1200, 1600, 2400] as const;
 export const IMAGE_QUALITY = 85;
 /** Quality for large presentation surfaces (hero, lightbox, fullscreen). */
 export const IMAGE_QUALITY_LARGE = 88;
-/** Hard ceiling — never request more than the ladder's top rung. */
+/** Hard ceiling for the responsive grid ladder — never request more. */
 export const MAX_IMAGE_WIDTH = 2400;
+/** Ceiling for a single opened fullscreen photograph (Wanders viewer). */
+export const LIGHTBOX_MAX_WIDTH = 3200;
+
 
 const R2_HOST = /(^|\/\/)images\.pointstudio\.ro\//;
 /** Formats Cloudflare Image Transformations must not touch. */
@@ -404,3 +407,20 @@ export function cdnSrcSet(
   return uniq.map((w) => `${cdn(url, w, quality)} ${w}w`).join(", ");
 }
 
+
+/**
+ * Exact-width delivery variant for a single large presentation image
+ * (the Wanders fullscreen viewer). Bypasses the responsive ladder so one
+ * request can go up to `LIGHTBOX_MAX_WIDTH`; `fit=scale-down` still means an
+ * image smaller than the requested width is served at its native size and is
+ * never upscaled. Not used by grids — thumbnails keep the ladder.
+ */
+export function cdnFixed(url: string, w: number, quality = IMAGE_QUALITY_LARGE) {
+  if (!url) return url;
+  if (isTransformable(url)) {
+    const width = Math.min(Math.round(w), LIGHTBOX_MAX_WIDTH);
+    const opts = `width=${width},quality=${quality},format=auto,fit=scale-down`;
+    return url.replace(R2_HOST, (m) => `${m.replace(/\/$/, "")}/cdn-cgi/image/${opts}/`);
+  }
+  return cdn(url, w, quality);
+}
