@@ -65,17 +65,15 @@ export const foodPhotographyContent: FotografieCulinaraContent = {
     },
   ],
 
-  pretPornireDeLa: "[AMOUNT]",
+  pretPornireDeLa: "",
   pretDetalii:
     "The final price depends on the number of dishes, the location (our studio or yours) and whether a food stylist is needed. Write to us for a tailored quote.",
 
   faq: [
-    { q: "How long does a shoot take?", a: "[TO BE COMPLETED]" },
     {
       q: "Can you come to our restaurant, or is it studio only?",
       a: "Both options work — either in our studio in Piața Presei Libere or on location at your venue.",
     },
-    { q: "How soon do we receive the edited photos?", a: "[TO BE COMPLETED]" },
   ],
 
   cta: {

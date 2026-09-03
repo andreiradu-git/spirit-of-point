@@ -108,17 +108,15 @@ export const fotografieCulinaraContent: FotografieCulinaraContent = {
     },
   ],
 
-  pretPornireDeLa: "[SUMA]",
+  pretPornireDeLa: "",
   pretDetalii:
     "Prețul final depinde de numărul de preparate, locație (studio sau la tine) și dacă e nevoie de food stylist. Scrie-ne pentru o ofertă personalizată.",
 
   faq: [
-    { q: "Cât durează o ședință foto?", a: "[DE COMPLETAT]" },
     {
       q: "Puteți veni la restaurantul nostru sau doar în studio?",
       a: "Ambele variante sunt posibile — atât în studioul nostru din Piața Presei Libere, cât și la locația ta.",
     },
-    { q: "În cât timp primim pozele editate?", a: "[DE COMPLETAT]" },
   ],
 
   cta: {
