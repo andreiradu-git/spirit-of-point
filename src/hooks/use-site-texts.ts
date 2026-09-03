@@ -1,12 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/cms-client";
 
 const TEXT_PREFIX = "text.";
 
 type SettingRow = { key: string; value: unknown };
 
 async function fetchTexts(): Promise<Record<string, string>> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("site_settings")
     .select("key, value")
     .like("key", `${TEXT_PREFIX}%`);
@@ -41,7 +41,7 @@ export function useSaveText() {
   const qc = useQueryClient();
   return async (id: string, text: string) => {
     const key = `${TEXT_PREFIX}${id}`;
-    const { error } = await supabase
+    const { error } = await db
       .from("site_settings")
       .upsert({ key, value: { text } }, { onConflict: "key" });
     if (error) throw error;

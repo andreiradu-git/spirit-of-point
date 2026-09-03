@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/hooks/use-admin";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/cms-client";
 import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/admin/analytics")({
@@ -37,7 +37,7 @@ function AdminAnalyticsPage() {
     queryKey: ["page_views", range],
     queryFn: async () => {
       const since = new Date(Date.now() - range * 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("page_views")
         .select("*")
         .gte("created_at", since)

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { serverDb } from "@/lib/db-client.server";
 import { requireAdminAuth } from "@/lib/admin-auth";
 import { getMediaDbClient, inferMediaAssetForUrlDirect } from "@/lib/media-assets.server";
 type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
@@ -11,8 +12,8 @@ type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table:
 
 
 export const getGalleries = createServerFn({ method: "GET" }).handler(async () => {
-  const supabase = getMediaDbClient(false) as unknown as AnyDb;
-  const { data, error } = await supabase
+  const db = getMediaDbClient(false) as unknown as AnyDb;
+  const { data, error } = await db
     .from("galleries")
     .select("*, gallery_images(*)")
     .order("position", { referencedTable: "gallery_images" });
@@ -23,8 +24,8 @@ export const getGalleries = createServerFn({ method: "GET" }).handler(async () =
 export const getGalleryBySlug = createServerFn({ method: "GET" })
   .validator((data) => z.object({ slug: z.string() }).parse(data))
   .handler(async ({ data }) => {
-    const supabase = getMediaDbClient(false) as unknown as AnyDb;
-    const { data: gallery, error } = await supabase
+    const db = getMediaDbClient(false) as unknown as AnyDb;
+    const { data: gallery, error } = await db
       .from("galleries")
       .select("*, gallery_images(*)")
       .eq("slug", data.slug)
@@ -46,9 +47,8 @@ export const upsertGallery = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const supabase = context?.supabase as AnyDb | undefined;
-    if (!supabase) throw new Error("Admin database client unavailable");
-    const { error } = await supabase
+    const db = serverDb() as unknown as AnyDb;
+    const { error } = await db
       .from("galleries")
       .upsert({ slug: data.slug, title: data.title, tagline: data.tagline }, { onConflict: "slug" });
     if (error) throw error;
@@ -68,18 +68,17 @@ export const addGalleryImage = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const supabase = context?.supabase as AnyDb | undefined;
-    if (!supabase) throw new Error("Admin database client unavailable");
+    const db = serverDb() as unknown as AnyDb;
     const media = await inferMediaAssetForUrlDirect(data.src, data.alt);
-    const { data: gallery } = await supabase.from("galleries").select("id").eq("slug", data.gallerySlug).single();
+    const { data: gallery } = await db.from("galleries").select("id").eq("slug", data.gallerySlug).single();
     if (!gallery) throw new Error("Gallery not found");
 
-    const { count } = await supabase
+    const { count } = await db
       .from("gallery_images")
       .select("*", { count: "exact", head: true })
       .eq("gallery_id", gallery.id);
 
-    const { error } = await supabase.from("gallery_images").insert({
+    const { error } = await db.from("gallery_images").insert({
       gallery_id: gallery.id,
       media_asset_id: media.id,
       src: media.url,
@@ -95,9 +94,8 @@ export const removeGalleryImage = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator((data) => z.object({ imageId: z.string() }).parse(data))
   .handler(async ({ data, context }) => {
-    const supabase = context?.supabase as AnyDb | undefined;
-    if (!supabase) throw new Error("Admin database client unavailable");
-    const { error } = await supabase.from("gallery_images").delete().eq("id", data.imageId);
+    const db = serverDb() as unknown as AnyDb;
+    const { error } = await db.from("gallery_images").delete().eq("id", data.imageId);
     if (error) throw error;
     return { ok: true };
   });
@@ -106,10 +104,9 @@ export const reorderGalleryImages = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator((data) => z.object({ imageIds: z.array(z.string()) }).parse(data))
   .handler(async ({ data, context }) => {
-    const supabase = context?.supabase as AnyDb | undefined;
-    if (!supabase) throw new Error("Admin database client unavailable");
+    const db = serverDb() as unknown as AnyDb;
     for (let i = 0; i < data.imageIds.length; i++) {
-      const { error } = await supabase.from("gallery_images").update({ position: i + 1 }).eq("id", data.imageIds[i]);
+      const { error } = await db.from("gallery_images").update({ position: i + 1 }).eq("id", data.imageIds[i]);
       if (error) throw error;
     }
     return { ok: true };
@@ -127,9 +124,8 @@ export const updateImageMeta = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const supabase = context?.supabase as AnyDb | undefined;
-    if (!supabase) throw new Error("Admin database client unavailable");
-    const { error } = await supabase.from("gallery_images").update({ alt: data.alt, title: data.title }).eq("id", data.imageId);
+    const db = serverDb() as unknown as AnyDb;
+    const { error } = await db.from("gallery_images").update({ alt: data.alt, title: data.title }).eq("id", data.imageId);
     if (error) throw error;
     return { ok: true };
   });

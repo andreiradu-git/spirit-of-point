@@ -1,6 +1,6 @@
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/cms-client";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useAiLanguage } from "@/hooks/use-ai-language";
 
@@ -13,7 +13,7 @@ export function AdminBar() {
   if (loading || !user || !isAdmin) return null;
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
     setEditMode(false);
     navigate({ to: "/" });
   };

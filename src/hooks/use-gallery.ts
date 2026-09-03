@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/cms-client";
 
 export type GalleryImage = {
   id: string;
@@ -18,7 +18,7 @@ export type Gallery = {
 };
 
 async function fetchGallery(slug: string): Promise<Gallery | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("galleries")
     .select("*, gallery_images(*)")
     .eq("slug", slug)
@@ -30,7 +30,7 @@ async function fetchGallery(slug: string): Promise<Gallery | null> {
   }
   return {
     ...data,
-    images: (data.gallery_images ?? []).sort((a, b) => a.position - b.position),
+    images: ((data.gallery_images ?? []) as GalleryImage[]).sort((a, b) => a.position - b.position),
   };
 }
 

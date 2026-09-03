@@ -15,6 +15,13 @@ const nitroWithR2Binding = {
           bucket_name: "pointstudio-assets",
         },
       ],
+      d1_databases: [
+        {
+          binding: "DB",
+          database_name: "pointstudio-db",
+          database_id: "ea776cce-0d0d-4583-a260-f95d3d1709c0",
+        },
+      ],
     },
   },
 } as unknown as {

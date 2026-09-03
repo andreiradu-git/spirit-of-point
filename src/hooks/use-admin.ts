@@ -1,41 +1,23 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import { db, type AuthUser } from "@/lib/cms-client";
 
 export function useAdmin() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
-    const check = async (u: User | null) => {
-      if (!u) {
-        if (mounted) {
-          setUser(null);
-          setIsAdmin(false);
-          setLoading(false);
-        }
-        return;
-      }
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", u.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (mounted) {
-        setUser(u);
-        setIsAdmin(!!data);
-        setLoading(false);
-      }
+    const apply = (u: AuthUser | null) => {
+      if (!mounted) return;
+      setUser(u);
+      setIsAdmin(u?.role === "admin");
+      setLoading(false);
     };
 
-    supabase.auth.getUser().then(({ data }) => check(data.user));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      check(session?.user ?? null);
-    });
+    db.auth.getUser().then(({ data }) => apply(data.user));
+    const { data: sub } = db.auth.onAuthStateChange((_event, session) => apply(session?.user ?? null));
 
     return () => {
       mounted = false;

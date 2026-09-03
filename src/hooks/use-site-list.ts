@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/cms-client";
 
 const LIST_PREFIX = "list.";
 
@@ -10,7 +10,7 @@ export function useSiteList<T>(id: string, fallback: T[]) {
   const query = useQuery({
     queryKey: ["site-list", id],
     queryFn: async (): Promise<T[] | null> => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("site_settings")
         .select("value")
         .eq("key", key)
@@ -31,7 +31,7 @@ export function useSiteList<T>(id: string, fallback: T[]) {
 
   const save = async (next: T[]) => {
     const value = { items: next } as unknown as never;
-    const { error } = await supabase
+    const { error } = await db
       .from("site_settings")
       .upsert({ key, value }, { onConflict: "key" });
     if (error) throw error;

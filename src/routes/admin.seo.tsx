@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/hooks/use-admin";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/cms-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSeoContent } from "@/lib/seo-ai.functions";
@@ -61,7 +61,7 @@ function AdminSeoPage() {
   const { data: existing } = useQuery({
     queryKey: ["page_seo", "admin"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("page_seo").select("*");
+      const { data, error } = await db.from("page_seo").select("*");
       if (error) throw error;
       return data ?? [];
     },
@@ -71,7 +71,7 @@ function AdminSeoPage() {
   const { data: galleryImages } = useQuery({
     queryKey: ["gallery_images", "seo-audit"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("gallery_images")
         .select("id, src, alt, gallery_id");
       if (error) throw error;
@@ -90,7 +90,7 @@ function AdminSeoPage() {
   useEffect(() => {
     const map: Record<string, Row> = {};
     for (const p of DEFAULT_PAGES) {
-      const e = existing?.find((r) => r.path === p.path);
+      const e = existing?.find((r: Row) => r.path === p.path);
       map[p.path] = {
         path: p.path,
         title: e?.title ?? "",
@@ -105,7 +105,7 @@ function AdminSeoPage() {
   const seoScore = useMemo(() => {
     const totalPages = DEFAULT_PAGES.length;
     const pagesWithMeta = DEFAULT_PAGES.filter((p) => {
-      const e = existing?.find((r) => r.path === p.path);
+      const e = existing?.find((r: Row) => r.path === p.path);
       return !!(e?.title && e?.description);
     }).length;
     const totalImages = galleryImages?.length ?? 0;
@@ -119,7 +119,7 @@ function AdminSeoPage() {
   const save = async (path: string) => {
     setSaving(path);
     const r = rows[path];
-    const { error } = await supabase.from("page_seo").upsert(
+    const { error } = await db.from("page_seo").upsert(
       {
         path,
         title: r.title || null,
@@ -192,7 +192,7 @@ function AdminSeoPage() {
       });
       const alt = out.alt;
       if (alt) {
-        const { error } = await supabase.from("gallery_images").update({ alt }).eq("id", img.id);
+        const { error } = await db.from("gallery_images").update({ alt }).eq("id", img.id);
         if (error) throw error;
         qc.invalidateQueries({ queryKey: ["gallery_images"] });
       }
@@ -217,7 +217,7 @@ function AdminSeoPage() {
             data: { kind: "alt", imageUrl: img.src, context: "Point Studio portfolio", language: aiLang },
           });
           if (out.alt) {
-            await supabase.from("gallery_images").update({ alt: out.alt }).eq("id", img.id);
+            await db.from("gallery_images").update({ alt: out.alt }).eq("id", img.id);
           }
         } catch {
           // continue on error

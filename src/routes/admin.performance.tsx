@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/cms-client";
 
 export const Route = createFileRoute("/admin/performance")({
   head: () => ({ meta: [{ title: "Performance — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -49,7 +49,7 @@ function PerformancePage() {
     queryKey: ["admin", "performance", "views"],
     queryFn: async () => {
       const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("page_views")
         .select("path, referrer, country, city, session_id, created_at")
         .gte("created_at", since)

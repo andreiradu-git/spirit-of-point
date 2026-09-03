@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/cms-client";
 
 export type GallerySummary = { id: string; slug: string; title: string; tagline: string | null };
 
@@ -8,7 +8,7 @@ export function useGalleries() {
   return useQuery({
     queryKey: ["galleries", "all"],
     queryFn: async (): Promise<GallerySummary[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("galleries")
         .select("id, slug, title, tagline")
         .order("title");
