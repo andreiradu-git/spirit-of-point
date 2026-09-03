@@ -502,7 +502,7 @@ export function EditableGallery({
         onDragEnd={onDragEnd}
       >
         <SortableContext items={images.map((i) => i.id)} strategy={rectSortingStrategy}>
-          <div className={`grid ${gridCols} gap-2 md:gap-3`}>
+          <div className={`grid ${gridCols} ${archive ? "gap-4 md:gap-5 lg:gap-6" : "gap-2 md:gap-3"}`}>
             {images.map((img, i) =>
               renderItem ? (
                 <div key={img.id} className="relative group">
