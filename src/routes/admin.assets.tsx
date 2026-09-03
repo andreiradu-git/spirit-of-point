@@ -650,34 +650,17 @@ function DropZoneUploader() {
         const isImage = (file.type || "").startsWith("image/");
         try {
           if (isImage) {
-            // Upload the untouched original — server places it under
-            // `originals/<uuid>.<ext>`. Public delivery now goes through
-            // Cloudflare Image Transformations on that original, so no
-            // browser-side WebP derivative is generated here any more.
-            // (The manual Optimize/Regenerate action still exists.)
-            patch(id, { progress: 20, status: "uploading original" });
-            const origB64 = await optBlobToBase64(file);
-            patch(id, { progress: 60, status: "uploading original" });
-            await doUploadR2({
-              data: {
-                filename: file.name,
-                contentType: file.type || "application/octet-stream",
-                dataBase64: origB64,
-                kind: "image",
-              },
-            });
+            patch(id, { progress: 15, status: "reading image" });
+            const result = await uploadImageWithProtection(file, doUploadR2);
             patch(id, {
               progress: 100,
               done: true,
-              status: `${Math.round(file.size / 1024)} KB original stored`,
+              status: result.oversized ? "original + web master stored" : `${Math.round(file.size / 1024)} KB original stored`,
             });
-
-
-
-
+            if (result.warning) patch(id, { status: result.warning });
           } else {
             patch(id, { progress: 20, status: "uploading" });
-            const b64 = await optBlobToBase64(file);
+            const b64 = await blobToBase64(file);
             patch(id, { progress: 60, status: "uploading" });
             await doUploadR2({
               data: {
@@ -690,7 +673,6 @@ function DropZoneUploader() {
             patch(id, { progress: 100, done: true, status: "done" });
           }
         } catch (e) {
-
           patch(id, {
             error: e instanceof Error ? e.message : String(e),
             progress: 100,
@@ -702,7 +684,7 @@ function DropZoneUploader() {
       qc.invalidateQueries({ queryKey: ["media-picker", "assets"] });
       setBusy(false);
     },
-    [doUploadR2, folder, qc, writeVariants],
+    [doUploadR2, folder, qc],
   );
 
 
