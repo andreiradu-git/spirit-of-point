@@ -32,6 +32,8 @@ import {
   materializeGallery,
 } from "@/lib/media.functions";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
+import { ZoomLightbox } from "./ZoomLightbox";
+
 import { useGalleryCovers, useSetGalleryCover } from "@/hooks/use-gallery-covers";
 
 
@@ -502,7 +504,7 @@ export function EditableGallery({
         onDragEnd={onDragEnd}
       >
         <SortableContext items={images.map((i) => i.id)} strategy={rectSortingStrategy}>
-          <div className={`grid ${gridCols} gap-2 md:gap-3`}>
+          <div className={`grid ${gridCols} ${archive ? "gap-4 md:gap-5 lg:gap-6" : "gap-2 md:gap-3"}`}>
             {images.map((img, i) =>
               renderItem ? (
                 <div key={img.id} className="relative group">
@@ -612,7 +614,16 @@ export function EditableGallery({
           e.target.value = "";
         }}
       />
-      {lightbox && activeIndex !== null && (
+      {lightbox && activeIndex !== null && archive && (
+        <ZoomLightbox
+          images={images}
+          index={activeIndex}
+          onClose={() => setActiveIndex(null)}
+          onIndexChange={setActiveIndex}
+        />
+      )}
+      {lightbox && activeIndex !== null && !archive && (
+
         <div
           className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 md:p-8"
           onClick={() => setActiveIndex(null)}
