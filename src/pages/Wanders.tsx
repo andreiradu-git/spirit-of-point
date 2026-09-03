@@ -8,8 +8,8 @@ export function WandersPage() {
   return (
     <PortfolioPage
       slug="wanders"
-      title="Wanders"
-      titleId="wanders.title"
+      // No visible page heading — Wanders/Reflecții follow the Food presentation
+      // (description + gallery only). SEO title, slug and CMS name are unchanged.
       tagline="Moments woven into personal, artistic work."
       taglineId="wanders.description"
       fallbackImages={data}

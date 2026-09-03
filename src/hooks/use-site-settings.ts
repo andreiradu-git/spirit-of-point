@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { db } from "@/lib/cms-client";
 
 export type SiteSettings = {
   showVideo: boolean;
@@ -13,46 +14,70 @@ const DEFAULTS: SiteSettings = {
   showTestimonials: true,
   showFotografieCulinara: true,
 };
-const KEY = "point-studio-settings";
-const EVT = "point-studio-settings-change";
 
-function read(): SiteSettings {
-  if (typeof window === "undefined") return DEFAULTS;
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    if (!raw) return DEFAULTS;
-    const saved = JSON.parse(raw) as Partial<SiteSettings> & { showPatterns?: boolean };
-    return {
-      ...DEFAULTS,
-      ...saved,
-      showWanders: typeof saved.showWanders === "boolean" ? saved.showWanders : saved.showPatterns ?? DEFAULTS.showWanders,
-    };
-  } catch {
-    return DEFAULTS;
-  }
+/**
+ * Canonical D1 key holding every public visibility flag.
+ *
+ * These flags used to live in `localStorage`, which meant an admin toggling
+ * "Show testimonials" only changed their own browser — every visitor kept
+ * getting the built-in defaults. The single source of truth is now this
+ * `site_settings` row, so the toggles behave the same for everyone.
+ */
+export const SITE_FLAGS_KEY = "setting.site-flags";
+
+function coerce(raw: unknown): SiteSettings {
+  const v = (raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}) as Record<
+    string,
+    unknown
+  >;
+  const bool = (key: keyof SiteSettings, legacy?: string): boolean => {
+    const candidates = legacy ? [v[key], v[legacy]] : [v[key]];
+    for (const c of candidates) {
+      if (typeof c === "boolean") return c;
+      if (c === "true" || c === 1) return true;
+      if (c === "false" || c === 0) return false;
+    }
+    return DEFAULTS[key];
+  };
+  return {
+    showVideo: bool("showVideo"),
+    showWanders: bool("showWanders", "showPatterns"),
+    showTestimonials: bool("showTestimonials"),
+    showFotografieCulinara: bool("showFotografieCulinara"),
+  };
 }
 
 export function useSiteSettings() {
-  const [settings, setSettings] = useState<SiteSettings>(DEFAULTS);
-  const [ready, setReady] = useState(false);
+  const qc = useQueryClient();
 
-  useEffect(() => {
-    setSettings(read());
-    setReady(true);
-    const onChange = () => setSettings(read());
-    window.addEventListener(EVT, onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener(EVT, onChange);
-      window.removeEventListener("storage", onChange);
-    };
-  }, []);
+  const query = useQuery({
+    queryKey: ["site-flags"],
+    queryFn: async (): Promise<SiteSettings> => {
+      const { data, error } = await db
+        .from("site_settings")
+        .select("value")
+        .eq("key", SITE_FLAGS_KEY)
+        .maybeSingle();
+      if (error) throw error;
+      return coerce(data?.value ?? null);
+    },
+    staleTime: 30_000,
+  });
 
-  const update = (patch: Partial<SiteSettings>) => {
-    const next = { ...read(), ...patch };
-    window.localStorage.setItem(KEY, JSON.stringify(next));
-    window.dispatchEvent(new Event(EVT));
-    setSettings(next);
+  const settings = query.data ?? DEFAULTS;
+  const ready = query.isSuccess;
+
+  const update = async (patch: Partial<SiteSettings>) => {
+    const next = { ...settings, ...patch };
+    qc.setQueryData(["site-flags"], next);
+    const { error } = await db
+      .from("site_settings")
+      .upsert({ key: SITE_FLAGS_KEY, value: next as unknown as never }, { onConflict: "key" });
+    if (error) {
+      await qc.invalidateQueries({ queryKey: ["site-flags"] });
+      throw error;
+    }
+    await qc.invalidateQueries({ queryKey: ["site-flags"] });
   };
 
   return { settings, update, ready };

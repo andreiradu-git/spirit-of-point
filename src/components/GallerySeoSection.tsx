@@ -125,7 +125,8 @@ export function GallerySeoSection({
 
   // Related galleries: shared category first, then shared tags, then any other.
   const related = useMemo(() => {
-    const others = (galleries ?? []).filter((g) => g.slug !== slug);
+    // "hero" is the Homepage Hero carousel, not a public gallery — never relate to it.
+    const others = (galleries ?? []).filter((g) => g.slug !== slug && g.slug !== "hero");
     const tags = new Set(draft.tags.map((t) => t.toLowerCase()));
     const scored = others.map((g) => {
       const s = allSeo?.[g.slug];
