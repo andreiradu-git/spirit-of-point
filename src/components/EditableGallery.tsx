@@ -32,6 +32,8 @@ import {
   materializeGallery,
 } from "@/lib/media.functions";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
+import { ZoomLightbox } from "./ZoomLightbox";
+
 import { useGalleryCovers, useSetGalleryCover } from "@/hooks/use-gallery-covers";
 
 
