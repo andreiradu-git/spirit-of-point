@@ -101,20 +101,40 @@ function webMasterFilename(filename: string): string {
 /**
  * Stores the uploaded image byte-for-byte first. Only images beyond the
  * deployed Cloudflare input limits receive a separate JPEG delivery source.
+ * SVG logos remain vector originals and are used directly for delivery.
  */
 export async function uploadImageWithProtection(file: File, upload: UploadImage): Promise<ProtectedImageUpload> {
   const contentType = file.type || "image/jpeg";
-  const dimensions = await imageDimensions(file);
   const original = await upload({
     data: {
       filename: file.name,
       contentType,
       dataBase64: await blobToBase64(file),
       kind: "image",
-      width: dimensions.width,
-      height: dimensions.height,
     },
   });
+
+  if (contentType === "image/svg+xml") {
+    return {
+      ...original,
+      deliveryUrl: original.url,
+      deliveryKey: original.key,
+      oversized: false,
+    };
+  }
+
+  let dimensions: ImageDimensions;
+  try {
+    dimensions = await imageDimensions(file);
+  } catch (error) {
+    return {
+      ...original,
+      deliveryUrl: original.url,
+      deliveryKey: original.key,
+      oversized: false,
+      warning: `Original preserved, but image dimensions could not be read: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 
   if (!exceedsCloudflareImageLimit(dimensions)) {
     return {
