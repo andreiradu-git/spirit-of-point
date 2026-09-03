@@ -43,6 +43,7 @@ import { Route as RoWorkSlugRouteImport } from './routes/ro.work.$slug'
 import { Route as ApiPublicVitalsRouteImport } from './routes/api/public/vitals'
 import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
 import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
+import { Route as ApiDebugEmailRouteImport } from './routes/api/debug/email'
 import { Route as ApiDebugD1RouteImport } from './routes/api/debug/d1'
 import { Route as ApiDebugAiRouteImport } from './routes/api/debug/ai'
 
@@ -218,6 +219,11 @@ const ApiDebugR2Route = ApiDebugR2RouteImport.update({
   path: '/api/debug/r2',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDebugEmailRoute = ApiDebugEmailRouteImport.update({
+  id: '/api/debug/email',
+  path: '/api/debug/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDebugD1Route = ApiDebugD1RouteImport.update({
   id: '/api/debug/d1',
   path: '/api/debug/d1',
@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/ro/': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/d1': typeof ApiDebugD1Route
+  '/api/debug/email': typeof ApiDebugEmailRoute
   '/api/debug/r2': typeof ApiDebugR2Route
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/vitals': typeof ApiPublicVitalsRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByTo {
   '/ro': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/d1': typeof ApiDebugD1Route
+  '/api/debug/email': typeof ApiDebugEmailRoute
   '/api/debug/r2': typeof ApiDebugR2Route
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/vitals': typeof ApiPublicVitalsRoute
@@ -339,6 +347,7 @@ export interface FileRoutesById {
   '/ro/': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/d1': typeof ApiDebugD1Route
+  '/api/debug/email': typeof ApiDebugEmailRoute
   '/api/debug/r2': typeof ApiDebugR2Route
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/vitals': typeof ApiPublicVitalsRoute
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/ro/'
     | '/api/debug/ai'
     | '/api/debug/d1'
+    | '/api/debug/email'
     | '/api/debug/r2'
     | '/api/public/track'
     | '/api/public/vitals'
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/ro'
     | '/api/debug/ai'
     | '/api/debug/d1'
+    | '/api/debug/email'
     | '/api/debug/r2'
     | '/api/public/track'
     | '/api/public/vitals'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/ro/'
     | '/api/debug/ai'
     | '/api/debug/d1'
+    | '/api/debug/email'
     | '/api/debug/r2'
     | '/api/public/track'
     | '/api/public/vitals'
@@ -494,6 +506,7 @@ export interface RootRouteChildren {
   RoIndexRoute: typeof RoIndexRoute
   ApiDebugAiRoute: typeof ApiDebugAiRoute
   ApiDebugD1Route: typeof ApiDebugD1Route
+  ApiDebugEmailRoute: typeof ApiDebugEmailRoute
   ApiDebugR2Route: typeof ApiDebugR2Route
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicVitalsRoute: typeof ApiPublicVitalsRoute
@@ -740,6 +753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDebugR2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/debug/email': {
+      id: '/api/debug/email'
+      path: '/api/debug/email'
+      fullPath: '/api/debug/email'
+      preLoaderRoute: typeof ApiDebugEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/debug/d1': {
       id: '/api/debug/d1'
       path: '/api/debug/d1'
@@ -790,6 +810,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoIndexRoute: RoIndexRoute,
   ApiDebugAiRoute: ApiDebugAiRoute,
   ApiDebugD1Route: ApiDebugD1Route,
+  ApiDebugEmailRoute: ApiDebugEmailRoute,
   ApiDebugR2Route: ApiDebugR2Route,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicVitalsRoute: ApiPublicVitalsRoute,
