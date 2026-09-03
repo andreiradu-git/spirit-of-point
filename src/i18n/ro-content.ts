@@ -31,6 +31,12 @@ export const RO_CONTENT: Record<string, string> = {
   "services.intro":
     "La Point Studio știm să surprindem esența fiecărui moment — începând cu fotografia culinară care aduce gusturile la viață și continuând cu toate tipurile de fotografie de care ai nevoie. De la farfurii la portrete, arhitectură, evenimente corporate, documentarea siturilor industriale sau peisaj, obiectivul nostru îți spune povestea frumos.",
 
+  // Wanders
+  "wanders.title": "Reflecții",
+  "wanders.description": "Momente țesute în lucrări artistice personale.",
+  "wanders.longDescription":
+    "Unele imagini nu sunt făcute ca să vândă o poveste — apar de la sine, atunci când privirea încetează să caute ceva și începe pur și simplu să vadă. Aici se întâmplă asta. Departe de disciplina unui brief, aceste fotografii nu urmează niciun client, niciun produs, niciun plan — doar ceea ce, în tăcere, atinge ceva înăuntru. Unele nu aparțin niciunei serii anume; altele și-au găsit locul în proiecte artistice personale, expuse sau păstrate aproape. Împreună, sunt mai puțin un portofoliu și mai degrabă o urmă — a ceea ce ne mișcă, fără apărare, atunci când aparatul de fotografiat devine un mod de a asculta, nu de a arăta.",
+
   // Testimonials
   "testimonials.eyebrow": "03 — Vorbe bune",
   "testimonials.title": "Testimoniale",

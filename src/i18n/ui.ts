@@ -8,6 +8,7 @@ export const UI_RO: Record<string, string> = {
   Food: "Mâncare",
   People: "Oameni",
   Editorial: "Editorial",
+  Wanders: "Reflecții",
   Patterns: "Texturi",
   Video: "Video",
   Contact: "Contact",
