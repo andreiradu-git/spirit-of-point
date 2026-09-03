@@ -7,6 +7,7 @@ import { Editable } from "./Editable";
 import { GallerySeoSection } from "./GallerySeoSection";
 import { useGalleryCover } from "@/hooks/use-gallery-covers";
 import { useLang, useTr } from "@/i18n";
+import { withoutBrandingAssets } from "@/lib/branding-assets";
 
 type Img = { src: string; alt?: string; title?: string };
 
