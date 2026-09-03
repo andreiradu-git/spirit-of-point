@@ -111,11 +111,6 @@ export function CrossfadeImage({
       setOutgoing((prev) => (prev && prev.id === shown.id ? prev : shown));
       setShown({ id: idRef.current, src, srcSet, sizes });
       setProgress(0);
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          if (!cancelled && token === tokenRef.current) setProgress(1);
-        }),
-      );
     };
 
     if (pre.complete) {
@@ -130,6 +125,20 @@ export function CrossfadeImage({
       pre.removeEventListener("error", start);
     };
   }, [src, srcSet, sizes, shown]);
+
+  // Kick the crossfade one painted frame after both layers are mounted, so the
+  // incoming layer always animates from 0 instead of appearing instantly.
+  useEffect(() => {
+    if (progress !== 0) return;
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setProgress(1));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, [progress]);
 
   // Drop the outgoing layer once the crossfade has finished.
   useEffect(() => {
