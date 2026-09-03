@@ -140,7 +140,11 @@ class ServerQuery implements PromiseLike<{ data: any; error: { message: string }
     return this;
   }
 
-  order(column: string, options?: { ascending?: boolean }) {
+  order(column: string, options?: { ascending?: boolean; referencedTable?: string }) {
+    if (options?.referencedTable) {
+      if (this.embed) this.embed.orderBy = column;
+      return this;
+    }
     this.orderBy.push(`${column} ${options?.ascending === false ? "DESC" : "ASC"}`);
     return this;
   }
