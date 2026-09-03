@@ -1,6 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-import { getRequest } from "@tanstack/react-start/server";
-import { readServerEnv } from "@/lib/server-env";
+import { serverDb, type ServerDb } from "@/lib/db-client.server";
 import { deleteR2ObjectDirect, listR2ObjectsDirect, optimizedKeyFor, type R2Object } from "@/lib/r2.server";
 
 const R2_PUBLIC_URL = "https://images.pointstudio.ro";
@@ -28,108 +26,16 @@ export type SiteAsset = {
   isOrphanOptimized?: boolean;
 };
 
-type Db = ReturnType<typeof createClient>;
-type UnsafeDb = Omit<ReturnType<typeof createClient>, "from"> & { from: (table: string) => any };
+type UnsafeDb = Omit<ServerDb, "from"> & { from: (table: string) => any };
 
-function dbFetch(key: string): typeof fetch {
-  return (input, init) => {
-    const headers = new Headers(typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined);
-    if (init?.headers) new Headers(init.headers).forEach((value, name) => headers.set(name, value));
-    if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`) headers.delete("Authorization");
-    headers.set("apikey", key);
-    return fetch(input, { ...init, headers });
-  };
+/**
+ * Media metadata now lives in Cloudflare D1. The `service` flag is kept for
+ * call-site compatibility; D1 access is already server-only and privileged,
+ * and admin authorisation happens in the server-function middleware.
+ */
+export function getMediaDbClient(_service = false): ServerDb {
+  return serverDb();
 }
-
-// When no service-role key exists in this runtime, privileged writes must still
-// run as the signed-in admin, otherwise PostgREST hits them as `anon` and RLS
-// rejects every insert ("new row violates row-level security policy").
-function currentRequestBearer(): string | undefined {
-  try {
-    const header = getRequest()?.headers.get("authorization") ?? "";
-    if (!header.toLowerCase().startsWith("bearer ")) return undefined;
-    const token = header.slice(7).trim();
-    return token.split(".").length === 3 ? token : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-export function getMediaDbClient(service = false): Db {
-  const url = readServerEnv("SUPABASE_URL") ?? readServerEnv("VITE_SUPABASE_URL");
-  const publishable = readServerEnv("SUPABASE_PUBLISHABLE_KEY") ?? readServerEnv("VITE_SUPABASE_PUBLISHABLE_KEY");
-  const serviceKey = readServerEnv("SUPABASE_SERVICE_ROLE_KEY");
-
-  // Service-role is preferred for privileged writes, but a missing service key
-  // must not take the whole metadata backend down: fall back to the publishable
-  // key plus the caller's admin bearer token so RLS admin policies still pass.
-  let key = service ? serviceKey ?? publishable : publishable;
-  let userToken: string | undefined;
-  if (service && !serviceKey && publishable) {
-    userToken = currentRequestBearer();
-    console.warn(
-      `SUPABASE_SERVICE_ROLE_KEY missing in this runtime — falling back to publishable key (RLS enforced${userToken ? ", acting as signed-in admin" : ", anonymous"}).`,
-    );
-  }
-
-  // If you want to run in an R2-only dev mode (no Supabase), set R2_ONLY_MODE=true in env.
-  const r2OnlyFlag = (readServerEnv("R2_ONLY_MODE") || "").toLowerCase() === "true" || readServerEnv("R2_ONLY_MODE") === "1";
-
-  if (!url || !key) {
-    const missing = [!url && "SUPABASE_URL", !key && (service ? "SUPABASE_SERVICE_ROLE_KEY/SUPABASE_PUBLISHABLE_KEY" : "SUPABASE_PUBLISHABLE_KEY")]
-      .filter(Boolean)
-      .join(", ");
-
-    if (!r2OnlyFlag) {
-      // Return an HTTP 500 response to make missing dependency visible to monitoring
-      throw new Response(
-        JSON.stringify({
-          message: `Media database is not configured in this runtime. Missing: ${missing}.`,
-        }),
-        {
-          status: 500,
-          headers: { "content-type": "application/json; charset=utf-8" },
-        },
-      );
-    }
-
-    // Minimal stub that implements the `.from(...).select/upsert/update/delete/...` chain
-    // used across the media pipeline. Returns empty results or success objects.
-    const makeStubQuery = () => {
-      const chain: any = {
-        select: async () => ({ data: [], error: null }),
-        maybeSingle: async () => ({ data: null, error: null }),
-        single: async () => ({ data: null, error: null }),
-        insert: async () => ({ data: null, error: null }),
-        upsert: async () => ({ error: null }),
-        update: async () => ({ error: null }),
-        delete: async () => ({ error: null }),
-        eq: function () { return this; },
-        or: function () { return this; },
-        limit: function () { return this; },
-        order: function () { return this; },
-        in: function () { return this; },
-      };
-      return chain;
-    };
-
-    const stubClient: any = {
-      from: (_table: string) => makeStubQuery(),
-      rpc: async () => ({ data: true, error: null }),
-    };
-
-    return stubClient as Db;
-  }
-
-  return createClient(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: dbFetch(key),
-      ...(userToken ? { headers: { Authorization: `Bearer ${userToken}` } } : {}),
-    },
-  });
-}
-
 
 function unsafeDb(service = false): UnsafeDb {
   return getMediaDbClient(service) as unknown as UnsafeDb;
