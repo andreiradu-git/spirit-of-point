@@ -1,6 +1,7 @@
 // Administrator authentication backed by Cloudflare D1.
 //
-// - Passwords: PBKDF2-SHA256 (WebCrypto), 210_000 iterations, per-user random salt.
+// - Passwords: PBKDF2-SHA256 (WebCrypto), 100_000 iterations (Workers maximum),
+//   per-user random salt, versioned hash string.
 // - Sessions:  random 32-byte token in an HttpOnly cookie; only its SHA-256 hash is stored.
 // No third-party auth provider is involved; everything runs on the Worker + D1.
 import { getCookie, setCookie, deleteCookie } from "@tanstack/react-start/server";
@@ -8,7 +9,12 @@ import { d1First, d1Run, newId, nowIso } from "@/lib/d1.server";
 
 export const SESSION_COOKIE = "ps_session";
 const SESSION_DAYS = 30;
-const PBKDF2_ITERATIONS = 210_000;
+// Cloudflare Workers' WebCrypto caps PBKDF2 at 100_000 iterations; anything
+// higher throws "iteration counts above 100000 are not supported".
+// The hash format stays versioned (`pbkdf2$<iterations>$<salt>$<derived>`)
+// so stored hashes remain verifiable if this value is raised later.
+const PBKDF2_MAX_ITERATIONS = 100_000;
+const PBKDF2_ITERATIONS = PBKDF2_MAX_ITERATIONS;
 
 export type AdminUser = { id: string; email: string; role: string };
 
@@ -47,7 +53,15 @@ export async function hashPassword(password: string): Promise<string> {
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const [scheme, iterations, salt, derived] = stored.split("$");
   if (scheme !== "pbkdf2" || !iterations || !salt || !derived) return false;
-  const candidate = await pbkdf2(password, unb64(salt), Number(iterations));
+  // Verification always uses the iteration count stored with the hash, so
+  // signup and signin can never diverge on parameters.
+  let candidate: string;
+  try {
+    candidate = await pbkdf2(password, unb64(salt), Number(iterations));
+  } catch (error) {
+    console.error(`[auth] verify: ${error instanceof Error ? error.message : String(error)}`);
+    return false;
+  }
   if (candidate.length !== derived.length) return false;
   let diff = 0;
   for (let i = 0; i < candidate.length; i++) diff |= candidate.charCodeAt(i) ^ derived.charCodeAt(i);
