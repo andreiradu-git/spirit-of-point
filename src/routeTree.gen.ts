@@ -39,6 +39,7 @@ import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as RoWorkSlugRouteImport } from './routes/ro.work.$slug'
 import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
+import { Route as ApiDebugD1RouteImport } from './routes/api/debug/d1'
 import { Route as ApiDebugAiRouteImport } from './routes/api/debug/ai'
 
 const VideoRoute = VideoRouteImport.update({
@@ -193,6 +194,11 @@ const ApiDebugR2Route = ApiDebugR2RouteImport.update({
   path: '/api/debug/r2',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDebugD1Route = ApiDebugD1RouteImport.update({
+  id: '/api/debug/d1',
+  path: '/api/debug/d1',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDebugAiRoute = ApiDebugAiRouteImport.update({
   id: '/api/debug/ai',
   path: '/api/debug/ai',
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/work/$slug': typeof WorkSlugRoute
   '/ro/': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
+  '/api/debug/d1': typeof ApiDebugD1Route
   '/api/debug/r2': typeof ApiDebugR2Route
   '/ro/work/$slug': typeof RoWorkSlugRoute
 }
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/work/$slug': typeof WorkSlugRoute
   '/ro': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
+  '/api/debug/d1': typeof ApiDebugD1Route
   '/api/debug/r2': typeof ApiDebugR2Route
   '/ro/work/$slug': typeof RoWorkSlugRoute
 }
@@ -296,6 +304,7 @@ export interface FileRoutesById {
   '/work/$slug': typeof WorkSlugRoute
   '/ro/': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
+  '/api/debug/d1': typeof ApiDebugD1Route
   '/api/debug/r2': typeof ApiDebugR2Route
   '/ro/work/$slug': typeof RoWorkSlugRoute
 }
@@ -331,6 +340,7 @@ export interface FileRouteTypes {
     | '/work/$slug'
     | '/ro/'
     | '/api/debug/ai'
+    | '/api/debug/d1'
     | '/api/debug/r2'
     | '/ro/work/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/work/$slug'
     | '/ro'
     | '/api/debug/ai'
+    | '/api/debug/d1'
     | '/api/debug/r2'
     | '/ro/work/$slug'
   id:
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/work/$slug'
     | '/ro/'
     | '/api/debug/ai'
+    | '/api/debug/d1'
     | '/api/debug/r2'
     | '/ro/work/$slug'
   fileRoutesById: FileRoutesById
@@ -431,6 +443,7 @@ export interface RootRouteChildren {
   WorkSlugRoute: typeof WorkSlugRoute
   RoIndexRoute: typeof RoIndexRoute
   ApiDebugAiRoute: typeof ApiDebugAiRoute
+  ApiDebugD1Route: typeof ApiDebugD1Route
   ApiDebugR2Route: typeof ApiDebugR2Route
   RoWorkSlugRoute: typeof RoWorkSlugRoute
 }
@@ -647,6 +660,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDebugR2RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/debug/d1': {
+      id: '/api/debug/d1'
+      path: '/api/debug/d1'
+      fullPath: '/api/debug/d1'
+      preLoaderRoute: typeof ApiDebugD1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/debug/ai': {
       id: '/api/debug/ai'
       path: '/api/debug/ai'
@@ -687,6 +707,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkSlugRoute: WorkSlugRoute,
   RoIndexRoute: RoIndexRoute,
   ApiDebugAiRoute: ApiDebugAiRoute,
+  ApiDebugD1Route: ApiDebugD1Route,
   ApiDebugR2Route: ApiDebugR2Route,
   RoWorkSlugRoute: RoWorkSlugRoute,
 }
