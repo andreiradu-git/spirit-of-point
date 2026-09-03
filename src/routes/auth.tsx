@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/cms-client";
+import { adminExists } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
