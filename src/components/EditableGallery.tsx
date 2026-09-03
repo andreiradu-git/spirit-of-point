@@ -263,16 +263,32 @@ export function EditableGallery({
     }
   };
 
-  const onRemove = async (id: string) => {
-    if (id.startsWith("fallback-")) {
-      alert(
-        "This image is a placeholder from the source file. It will disappear once you add real images or replace the gallery contents.",
-      );
-      return;
+  // Source-file placeholders are converted into real D1 gallery rows on demand,
+  // so any visible image can be managed like an uploaded one.
+  const materializeAndMap = async () => {
+    const res = await materialize({ data: { gallerySlug: slug } });
+    invalidate(slug);
+    const byKey = new Map<string, string>();
+    for (const row of res.images as Array<{ id: string; src: string }>) {
+      byKey.set(row.src.split("/").pop() ?? row.src, row.id);
     }
+    return byKey;
+  };
+
+  const resolveRealId = async (id: string): Promise<string | null> => {
+    if (!id.startsWith("fallback-")) return id;
+    const img = images.find((i) => i.id === id);
+    if (!img) return null;
+    const map = await materializeAndMap();
+    return map.get(img.src.split("/").pop() ?? img.src) ?? null;
+  };
+
+  const onRemove = async (id: string) => {
     if (!confirm("Remove this image from the gallery?")) return;
     try {
-      await removeImage({ data: { imageId: id } });
+      const realId = await resolveRealId(id);
+      if (!realId) throw new Error("This image could not be matched to a gallery entry.");
+      await removeImage({ data: { imageId: realId } });
       invalidate(slug);
     } catch (e) {
       console.error("Delete failed", e);
