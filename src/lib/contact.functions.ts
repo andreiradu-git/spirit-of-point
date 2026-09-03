@@ -31,6 +31,9 @@ const submitSchema = z.object({
 // Verified sender domain in Resend. The resend.dev test sender can only deliver
 // to the Resend account owner, which silently broke admin notifications.
 const DEFAULT_FROM = "Point Studio <noreply@pointstudio.ro>";
+// Notification recipient. Guaranteed in code so the live Worker never depends
+// on CONTACT_NOTIFY_EMAIL being present; the env var may still override it.
+const DEFAULT_TO = "andrei@pointstudio.ro";
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -39,20 +42,24 @@ function escapeHtml(value: string): string {
 /** Public, secret-free view of the notification configuration (used by /api/debug/email). */
 export function contactEmailConfigStatus() {
   const apiKey = readServerEnv("RESEND_API_KEY");
-  const to = readServerEnv("CONTACT_NOTIFY_EMAIL");
-  const from = readServerEnv("CONTACT_FROM_EMAIL");
+  const to = readServerEnv("CONTACT_NOTIFY_EMAIL") || DEFAULT_TO;
+  const from = readServerEnv("CONTACT_FROM_EMAIL") || DEFAULT_FROM;
   return {
     provider: "resend",
     hasApiKey: Boolean(apiKey),
     apiKeyLooksValid: Boolean(apiKey?.startsWith("re_")),
     hasRecipient: Boolean(to),
-    recipientDomain: to?.split("@")[1] ?? null,
-    hasFromOverride: Boolean(from),
-    fromDomain: (from ?? DEFAULT_FROM).split("@").pop()?.replace(/>$/, "") ?? null,
-    usingResendTestSender: (from ?? DEFAULT_FROM).includes("resend.dev"),
+    recipient: to,
+    recipientDomain: to.split("@")[1] ?? null,
+    hasRecipientOverride: Boolean(readServerEnv("CONTACT_NOTIFY_EMAIL")),
+    hasFromOverride: Boolean(readServerEnv("CONTACT_FROM_EMAIL")),
+    from,
+    fromDomain: from.split("@").pop()?.replace(/>$/, "") ?? null,
+    usingResendTestSender: from.includes("resend.dev"),
     ready: Boolean(apiKey && to),
   };
 }
+
 
 /**
  * Notification email through Resend. Never blocks or reverts the stored message.
