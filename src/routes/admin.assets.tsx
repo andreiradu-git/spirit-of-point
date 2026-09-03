@@ -21,6 +21,8 @@ import {
 import {
   optimizeImageBlob,
   blobToBase64 as optBlobToBase64,
+  isWorthStoring,
+  NOT_SMALLER_MESSAGE,
 } from "@/lib/optimize-image";
 
 import {
