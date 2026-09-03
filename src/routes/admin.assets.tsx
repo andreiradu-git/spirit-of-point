@@ -347,58 +347,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
-  const optimizedKeyFor = (originalKey: string) => {
-    const base = originalKey.split("/").pop() || originalKey;
-    const dot = base.lastIndexOf(".");
-    const stem = dot > 0 ? base.slice(0, dot) : base;
-    return `optimized/${stem}.webp`;
-  };
-
-  const doOptimize = async () => {
-    if (!asset.r2Key || asset.kind !== "image") return;
-    setOptBusy(true);
-    setOptInfo("Reading original from R2…");
-    try {
-      const source = await readSource({ data: { key: asset.r2Key } });
-      const origSize = source.size;
-      const origBlob = new Blob(
-        [Uint8Array.from(atob(source.dataBase64), (c) => c.charCodeAt(0))],
-        { type: source.contentType },
-      );
-
-      setOptInfo(`Encoding WebP (${Math.round(origSize / 1024)} KB original)…`);
-      const optimized = await optimizeImageBlob(origBlob);
-      const optKey = optimizedKeyFor(asset.r2Key);
-
-      const newSize = optimized.webp.size;
-      if (!isWorthStoring(newSize, origSize)) {
-        // Never publish a derivative that is not smaller than its source.
-        setOptInfo(NOT_SMALLER_MESSAGE);
-        return;
-      }
-
-      setOptInfo("Uploading optimized WebP…");
-      const optB64 = await optBlobToBase64(optimized.webp);
-      await writeVariants({
-        data: {
-          // Use the validated blob MIME type, never a hardcoded value.
-          main: { key: optKey, contentType: optimized.mimeType, dataBase64: optB64 },
-        },
-      });
-
-      const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
-      setOptInfo(
-        `${Math.round(origSize / 1024)} → ${Math.round(newSize / 1024)} KB (−${pct}%) · ${optimized.width}×${optimized.height} webp`,
-      );
-      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setOptInfo(null);
-      alert("Optimize failed: " + msg);
-    } finally {
-      setOptBusy(false);
-    }
-  };
 
   const doDeleteKey = async (key: string, kind: "original" | "optimized" | "asset") => {
     if (!window.confirm(`Delete this ${kind} file permanently?\n\n${key}\n\nThis cannot be undone.`)) return;
