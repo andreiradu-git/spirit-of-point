@@ -341,8 +341,11 @@ export const RESPONSIVE_WIDTHS = [400, 800, 1200, 1600, 2400] as const;
 export const IMAGE_QUALITY = 85;
 /** Quality for large presentation surfaces (hero, lightbox, fullscreen). */
 export const IMAGE_QUALITY_LARGE = 88;
-/** Hard ceiling — never request more than the ladder's top rung. */
+/** Hard ceiling for the responsive grid ladder — never request more. */
 export const MAX_IMAGE_WIDTH = 2400;
+/** Ceiling for a single opened fullscreen photograph (Wanders viewer). */
+export const LIGHTBOX_MAX_WIDTH = 3200;
+
 
 const R2_HOST = /(^|\/\/)images\.pointstudio\.ro\//;
 /** Formats Cloudflare Image Transformations must not touch. */
