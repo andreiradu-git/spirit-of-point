@@ -25,7 +25,7 @@ export function PortfolioPage({
   fallbackImages: Img[];
   showStrip?: boolean;
   showLogos?: boolean;
-  galleryLayout?: "grid" | "masonry" | "stacked";
+  galleryLayout?: "grid" | "masonry" | "stacked" | "archive";
 }) {
   const lang = useLang();
   const t = useTr();
@@ -111,6 +111,17 @@ export function PortfolioPage({
             slug={slug}
             fallbackImages={fallbackImages}
             layout="stacked"
+            lightbox
+          />
+        </div>
+      ) : galleryLayout === "archive" ? (
+        <div className="mx-auto max-w-7xl px-6 pt-2 md:pt-6 pb-24">
+          <EditableGallery
+            slug={slug}
+            fallbackImages={fallbackImages}
+            layout="grid"
+            columns={4}
+            archive
             lightbox
           />
         </div>
