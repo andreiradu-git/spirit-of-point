@@ -13,6 +13,7 @@ export function Gallery({
   columns?: number;
   layout?: "grid" | "masonry" | "stacked";
 }) {
+  const t = useTr();
   const images = allImages.filter((i) => !/LOGO_PSP/i.test(i.src));
   const [active, setActive] = useState<number | null>(null);
 
