@@ -243,8 +243,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const removeAsset = useServerFn(deleteMediaAsset);
   const rename = useServerFn(renameR2Object);
 
-  const readSource = useServerFn(readR2Object);
-  const writeVariants = useServerFn(writeR2Variants);
   const qc = useQueryClient();
 
   const [label, setLabel] = useState(meta?.label ?? "");
@@ -255,8 +253,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
 
   const [saving, setSaving] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
-  const [optBusy, setOptBusy] = useState(false);
-  const [optInfo, setOptInfo] = useState<string | null>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [deleting, setDeleting] = useState(false);
