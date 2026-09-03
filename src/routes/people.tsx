@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { cdn } from "@/components/SiteLayout";
-import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/people.json";
+import { PeoplePage } from "@/pages/People";
+import { altLinks } from "@/i18n";
+
+const alt = altLinks("/people", "en");
 
 export const Route = createFileRoute("/people")({
   component: PeoplePage,
@@ -22,12 +25,8 @@ export const Route = createFileRoute("/people")({
       { property: "og:description", content: "Portraits, fashion and business photography." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
-      { property: "og:url", content: "https://www.pointstudio.ro/people" },
+      ...alt.meta,
     ],
-    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/people" }],
+    links: alt.links,
   }),
 });
-
-function PeoplePage() {
-  return <PortfolioPage slug="people" tagline="Portrait, Fashion & Business Photography" fallbackImages={data} />;
-}

@@ -4,20 +4,20 @@ import fallbackVideos from "@/data/videos.json";
 import { VideoPage } from "@/pages/Video";
 import { altLinks } from "@/i18n";
 
-const alt = altLinks("/video", "en");
+const alt = altLinks("/video", "ro");
 
-export const Route = createFileRoute("/video")({
+export const Route = createFileRoute("/ro/video")({
   component: VideoPage,
   head: () => ({
     meta: [
-      { title: "Video Production & Motion — Point Studio Bucharest" },
+      { title: "Producție video și motion — Point Studio București" },
       {
         name: "description",
         content:
-          "Commercial video production, motion and reels by Point Studio — Bucharest photo & video studio.",
+          "Producție video comercială, motion și reels realizate de Point Studio — studio foto-video din București.",
       },
-      { property: "og:title", content: "Video Production — Point Studio" },
-      { property: "og:description", content: "Motion, reels and video productions by Point Studio." },
+      { property: "og:title", content: "Producție video — Point Studio" },
+      { property: "og:description", content: "Motion, reels și producții video by Point Studio." },
       { property: "og:image", content: cdn(fallbackVideos[0].poster, 1600) },
       { name: "twitter:image", content: cdn(fallbackVideos[0].poster, 1600) },
       ...alt.meta,

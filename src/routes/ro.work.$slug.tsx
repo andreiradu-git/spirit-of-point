@@ -3,9 +3,9 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { WorkPage, resolveWork } from "@/pages/Work";
 import { altLinks, tr } from "@/i18n";
 
-const LANG = "en" as const;
+const LANG = "ro" as const;
 
-export const Route = createFileRoute("/work/$slug")({
+export const Route = createFileRoute("/ro/work/$slug")({
   component: WorkRoute,
   loader: ({ params }) => {
     const w = resolveWork(params.slug);

@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { cdn } from "@/components/SiteLayout";
-import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/editorial.json";
+import { EditorialPage } from "@/pages/Editorial";
+import { altLinks } from "@/i18n";
+
+const alt = altLinks("/editorial", "en");
 
 export const Route = createFileRoute("/editorial")({
   component: EditorialPage,
@@ -22,21 +25,8 @@ export const Route = createFileRoute("/editorial")({
       { property: "og:description", content: "Our editorial and printed portfolio." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
-      { property: "og:url", content: "https://www.pointstudio.ro/editorial" },
+      ...alt.meta,
     ],
-    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/editorial" }],
+    links: alt.links,
   }),
 });
-
-function EditorialPage() {
-  return (
-    <PortfolioPage
-      slug="editorial"
-      tagline="Editorial & Printed Work"
-      fallbackImages={data}
-      showStrip
-      showLogos
-    />
-  );
-}
-
