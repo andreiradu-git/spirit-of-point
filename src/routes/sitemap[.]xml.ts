@@ -18,10 +18,8 @@ const STATIC_ENTRIES: Entry[] = [
   { path: "/video", changefreq: "monthly", priority: "0.7" },
   { path: "/wanders", changefreq: "monthly", priority: "0.7" },
   { path: "/contact", changefreq: "yearly", priority: "0.6" },
-  // Work categories (/work/$slug)
-  { path: "/work/food", changefreq: "monthly", priority: "0.7" },
-  { path: "/work/people", changefreq: "monthly", priority: "0.7" },
-  { path: "/work/editorial", changefreq: "monthly", priority: "0.7" },
+  // Work categories (/work/$slug). food/people/editorial are omitted: they are
+  // the same galleries as the top-level /food, /people and /editorial URLs.
   { path: "/work/corporate", changefreq: "monthly", priority: "0.7" },
   { path: "/work/landscape", changefreq: "monthly", priority: "0.7" },
   { path: "/work/industrial", changefreq: "monthly", priority: "0.7" },

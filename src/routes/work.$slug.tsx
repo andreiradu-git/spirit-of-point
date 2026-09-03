@@ -5,6 +5,12 @@ import { altLinks, tr } from "@/i18n";
 
 const LANG: "en" | "ro" = "en";
 
+const DUPLICATE_OF: Record<string, string> = {
+  food: "/food",
+  people: "/people",
+  editorial: "/editorial",
+};
+
 const descLong = (title: string) => `${title} photography portfolio by Point Studio.`;
 const descShort = (title: string) => `${title} photography by Point Studio.`;
 
@@ -48,7 +54,9 @@ export const Route = createFileRoute("/work/$slug")({
       return { meta: [{ title: "Point Studio" }, { name: "robots", content: "noindex" }] };
     }
     const title = tr(LANG, loaderData.title);
-    const alt = altLinks(`/work/${params.slug}`, LANG);
+    // food/people/editorial also live at the top-level URL with identical
+    // content, so the /work/... variant points its canonical there.
+    const alt = altLinks(DUPLICATE_OF[params.slug] ?? `/work/${params.slug}`, LANG);
     // Unknown slugs still render (CMS galleries resolve at runtime) but must not
     // create an unbounded set of indexable soft-404 URLs.
     const known = Object.prototype.hasOwnProperty.call(WORK, params.slug);
