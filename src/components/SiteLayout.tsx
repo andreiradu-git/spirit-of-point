@@ -78,7 +78,7 @@ export function SiteLayout({
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 sm:h-20 md:h-24 flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-center shrink-0" aria-label="Point Studio">
+          <Link to={localizePath("/", lang)} className="flex items-center shrink-0" aria-label="Point Studio">
             <img
               src="https://images.squarespace-cdn.com/content/v1/61698c11d84cc850768a6bf8/3236b78e-0c1c-48e9-83fd-bbfa1f67650f/LOGO_PSP.png?format=400w"
               alt="Point Studio"
@@ -192,6 +192,15 @@ function SocialIcons({ className = "", iconClass = "h-4 w-4" }: { className?: st
   );
 }
 
+/** Remembers the visitor's manual choice; never used to auto-redirect. */
+function rememberLang(next: "en" | "ro") {
+  try {
+    window.localStorage.setItem("point-studio-lang", next);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 function LangSwitch({ light, className = "" }: { light: boolean; className?: string }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const lang = useLang();
@@ -201,6 +210,7 @@ function LangSwitch({ light, className = "" }: { light: boolean; className?: str
     <div className={`flex items-center gap-1 text-xs uppercase tracking-[0.2em] ${className}`}>
       <Link
         to={localizePath(path, "en")}
+        onClick={() => rememberLang("en")}
         aria-label="English"
         className={`transition-colors ${lang === "en" ? active : idle}`}
       >
@@ -209,6 +219,7 @@ function LangSwitch({ light, className = "" }: { light: boolean; className?: str
       <span className={light ? "text-white/40" : "text-muted-foreground/50"}>/</span>
       <Link
         to={localizePath(path, "ro")}
+        onClick={() => rememberLang("ro")}
         aria-label="Română"
         className={`transition-colors ${lang === "ro" ? active : idle}`}
       >
