@@ -79,7 +79,15 @@ class ServerQuery implements PromiseLike<{ data: any; error: { message: string }
   constructor(private table: string) {}
 
   select(columns = "*", options?: { count?: string; head?: boolean }) {
-    if (this.op === "select") this.columns = columns.includes("(") ? "*" : columns || "*";
+    const embedMatch = columns.match(/([a-z_][a-z0-9_]*)\s*\(([^)]*)\)/i);
+    if (embedMatch) {
+      this.embed = {
+        table: embedMatch[1]!,
+        foreignKey: `${this.table.replace(/ies$/, "y").replace(/s$/, "")}_id`,
+        orderBy: "position",
+      };
+    }
+    if (this.op === "select") this.columns = embedMatch ? "*" : columns || "*";
     if (options?.count) this.wantCount = true;
     return this;
   }
