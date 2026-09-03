@@ -58,8 +58,8 @@ export function SiteLayout({
 
 
   const nav: NavItem[] = BASE_NAV
-    .filter((n) => n.label !== "Video" || settings.showVideo)
-    .filter((n) => n.label !== "Wanders" || settings.showWanders)
+    .filter((n) => n.label !== "Video" || !ready || settings.showVideo)
+    .filter((n) => n.label !== "Wanders" || !ready || settings.showWanders)
     .map((n) => ({ ...n }));
 
   const localizedNav: NavItem[] = nav.map((n) => ({

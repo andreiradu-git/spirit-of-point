@@ -109,7 +109,7 @@ function SortableImage({
           srcSet={cdnSrcSet(image.src, archive ? [400, 800, 1200] : [400, 800, 1200, 1600])}
           sizes={
             archive
-              ? "(min-width:1024px) 15vw, (min-width:768px) 31vw, 92vw"
+              ? "(min-width:1024px) 18vw, (min-width:768px) 31vw, 92vw"
               : "(min-width:1024px) 20vw, (min-width:768px) 33vw, 50vw"
           }
           alt={image.alt ?? caption}
@@ -380,7 +380,7 @@ export function EditableGallery({
       : archive
       ? // Wanders-only: thumbnails ~70% of previous displayed width
         // (desktop 4→6 cols, tablet 2→3 cols); mobile stays single column.
-        "grid-cols-1 md:grid-cols-3 lg:grid-cols-6"
+        "grid-cols-1 md:grid-cols-3 lg:grid-cols-5"
       : columns === 2
       ? "grid-cols-2"
       : columns === 4

@@ -19,7 +19,7 @@ import { useLang, useTr } from "@/i18n";
 
 
 export function Index() {
-  const { settings } = useSiteSettings();
+  const { settings, ready: settingsReady } = useSiteSettings();
   const lang = useLang();
   const t = useTr();
   const heroSrc = useImage("hero", home[1]?.src);
@@ -272,7 +272,7 @@ export function Index() {
       </section>
 
       {/* Testimonials */}
-      {settings.showTestimonials && (
+      {settingsReady && settings.showTestimonials && (
         <section className="bg-[#e5e5e5]">
           <div className="mx-auto max-w-7xl px-6 pb-16 md:pb-20">
             <div className="grid md:grid-cols-12 gap-10 items-end mb-10">
