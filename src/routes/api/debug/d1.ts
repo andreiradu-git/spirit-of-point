@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/debug/d1")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }: { request: Request }) => {
         const { readServerEnv } = await import("@/lib/server-env");
         const { d1First, hasD1Binding, d1Transport } = await import("@/lib/d1.server");
 
