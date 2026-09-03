@@ -216,8 +216,8 @@ export const dbExec = createServerFn({ method: "POST" })
     const r = rule(data.table);
     if (data.op === "select") {
       await authorize(data.table, r.read);
-      return { rows: await runSelect(data) };
+      return { rows: (await runSelect(data)) as unknown as Array<Record<string, any>> };
     }
     await authorize(data.table, r.write);
-    return { rows: await runWrite(data) };
+    return { rows: (await runWrite(data)) as unknown as Array<Record<string, any>> };
   });

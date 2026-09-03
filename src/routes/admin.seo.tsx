@@ -90,7 +90,7 @@ function AdminSeoPage() {
   useEffect(() => {
     const map: Record<string, Row> = {};
     for (const p of DEFAULT_PAGES) {
-      const e = existing?.find((r) => r.path === p.path);
+      const e = existing?.find((r: Row) => r.path === p.path);
       map[p.path] = {
         path: p.path,
         title: e?.title ?? "",
@@ -105,7 +105,7 @@ function AdminSeoPage() {
   const seoScore = useMemo(() => {
     const totalPages = DEFAULT_PAGES.length;
     const pagesWithMeta = DEFAULT_PAGES.filter((p) => {
-      const e = existing?.find((r) => r.path === p.path);
+      const e = existing?.find((r: Row) => r.path === p.path);
       return !!(e?.title && e?.description);
     }).length;
     const totalImages = galleryImages?.length ?? 0;

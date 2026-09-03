@@ -30,7 +30,7 @@ async function fetchGallery(slug: string): Promise<Gallery | null> {
   }
   return {
     ...data,
-    images: (data.gallery_images ?? []).sort((a, b) => a.position - b.position),
+    images: ((data.gallery_images ?? []) as GalleryImage[]).sort((a, b) => a.position - b.position),
   };
 }
 
