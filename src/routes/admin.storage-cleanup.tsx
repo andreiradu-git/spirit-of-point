@@ -30,10 +30,14 @@ function StorageCleanupPage() {
   const del = useServerFn(deleteR2Object);
   const qc = useQueryClient();
 
-  const [filter, setFilter] = useState<"all" | "orphan" | "referenced">("orphan");
+  const [filter, setFilter] = useState<
+    "all" | "unreferenced" | "active" | "archival-master" | "legacy-optimized"
+  >("unreferenced");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [dryRun, setDryRun] = useState<string[] | null>(null);
+  const [result, setResult] = useState<string[] | null>(null);
 
   const { data, isFetching, refetch } = useQuery({
     queryKey: ["r2-orphans"],
@@ -44,7 +48,13 @@ function StorageCleanupPage() {
   const rows = useMemo(() => {
     if (!data) return [];
     return data.objects
-      .filter((r) => (filter === "orphan" ? !r.referenced : filter === "referenced" ? r.referenced : true))
+      .filter((r) =>
+        filter === "all"
+          ? true
+          : filter === "legacy-optimized"
+            ? r.category.startsWith("legacy-optimized")
+            : r.category === filter,
+      )
       .filter((r) =>
         search
           ? r.key.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,24 +75,43 @@ function StorageCleanupPage() {
     else setSelected(new Set(rows.map((r) => r.key)));
   };
 
+  const selectable = rows.filter((r) => selected.has(r.key) && !r.protected && !r.referenced);
+
+  const runDryRun = () => {
+    setResult(null);
+    setDryRun(
+      [...selected].map((key) => {
+        const row = rows.find((r) => r.key === key);
+        if (!row) return `${key} — not in current scan (skipped)`;
+        if (row.protected) return `${key} — archival master, will be REFUSED`;
+        if (row.referenced) return `${key} — still referenced, will be REFUSED`;
+        return `${key} — ${fmtBytes(row.size)}, will be deleted`;
+      }),
+    );
+  };
+
   const deleteSelected = async () => {
-    if (selected.size === 0) return;
+    if (selectable.length === 0) return;
     if (
       !confirm(
-        `Delete ${selected.size} object(s) from R2 permanently? This cannot be undone.`,
+        `Permanently delete ${selectable.length} unreferenced object(s) from R2? This cannot be undone.`,
       )
     )
       return;
     setDeleting(true);
+    const log: string[] = [];
     try {
-      for (const key of selected) {
+      for (const row of selectable) {
         try {
-          await del({ data: { key } });
+          const res = await del({ data: { key: row.key } });
+          log.push(`${row.key} — ${res.ok ? "deleted" : `refused (${res.reason})`}`);
         } catch (e) {
-          console.error("Failed to delete", key, e);
+          log.push(`${row.key} — failed: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
       setSelected(new Set());
+      setDryRun(null);
+      setResult(log);
       await qc.invalidateQueries({ queryKey: ["r2-orphans"] });
     } finally {
       setDeleting(false);
@@ -124,14 +153,60 @@ function StorageCleanupPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Stat label="Objects" value={data.totalObjects.toString()} />
             <Stat label="Total size" value={fmtBytes(data.totalBytes)} />
-            <Stat label="Orphans" value={data.orphanCount.toString()} tone="warn" />
+            <Stat label="Unreferenced" value={data.orphanCount.toString()} tone="warn" />
             <Stat label="Recoverable" value={fmtBytes(data.orphanBytes)} tone="warn" />
+          </div>
+        )}
+
+        {data && (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {Object.entries(data.byCategory).map(([cat, v]) => (
+              <Stat key={cat} label={cat.replace(/-/g, " ")} value={`${v.count} · ${fmtBytes(v.bytes)}`} />
+            ))}
+          </div>
+        )}
+
+        {data && data.missingReferences.length > 0 && (
+          <div className="border border-amber-300 bg-amber-50 rounded p-3 text-xs">
+            <div className="font-medium mb-1">
+              Broken references ({data.missingReferences.length}) — content points at objects that
+              are not in R2:
+            </div>
+            <ul className="space-y-0.5 max-h-40 overflow-auto font-mono">
+              {data.missingReferences.map((m) => (
+                <li key={`${m.source}-${m.key}`}>
+                  {m.key} — {m.source}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {dryRun && (
+          <div className="border rounded p-3 text-xs bg-neutral-50">
+            <div className="font-medium mb-1">Dry run — nothing has been deleted:</div>
+            <ul className="space-y-0.5 max-h-48 overflow-auto font-mono">
+              {dryRun.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {result && (
+          <div className="border rounded p-3 text-xs bg-white">
+            <div className="font-medium mb-1">Deletion result:</div>
+            <ul className="space-y-0.5 max-h-48 overflow-auto font-mono">
+              {result.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
           </div>
         )}
 
         <div className="flex flex-wrap gap-2 items-center justify-between">
           <div className="flex gap-2">
-            {(["orphan", "referenced", "all"] as const).map((k) => (
+            {(["unreferenced", "active", "archival-master", "legacy-optimized", "all"] as const).map((k) => (
               <button
                 key={k}
                 onClick={() => {
@@ -142,7 +217,7 @@ function StorageCleanupPage() {
                   filter === k ? "bg-black text-white border-black" : "hover:bg-neutral-50"
                 }`}
               >
-                {k[0].toUpperCase() + k.slice(1)}
+                {k.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase())}
               </button>
             ))}
           </div>
@@ -153,12 +228,19 @@ function StorageCleanupPage() {
             className="text-sm border rounded px-2 py-1.5 w-64"
           />
           <button
+            onClick={runDryRun}
+            disabled={selected.size === 0}
+            className="inline-flex items-center gap-2 rounded border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-neutral-50"
+          >
+            Dry run ({selected.size})
+          </button>
+          <button
             onClick={deleteSelected}
-            disabled={selected.size === 0 || deleting}
+            disabled={selectable.length === 0 || deleting || !dryRun}
             className="inline-flex items-center gap-2 rounded bg-red-600 text-white px-3 py-1.5 text-sm disabled:opacity-40"
           >
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            Delete selected ({selected.size})
+            Delete confirmed ({selectable.length})
           </button>
         </div>
 
@@ -219,13 +301,17 @@ function StorageCleanupPage() {
                     {new Date(r.uploaded ?? Date.now()).toLocaleString()}
                   </td>
                   <td className="px-3 py-2 align-top">
-                    {r.referenced ? (
+                    {r.protected ? (
+                      <span className="inline-flex items-center gap-1 text-blue-700 text-xs">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Archival master (protected)
+                      </span>
+                    ) : r.referenced ? (
                       <span className="inline-flex items-center gap-1 text-green-700 text-xs">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Referenced
+                        <CheckCircle2 className="h-3.5 w-3.5" /> {r.category.replace(/-/g, " ")}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-amber-700 text-xs">
-                        <AlertTriangle className="h-3.5 w-3.5" /> Orphan
+                        <AlertTriangle className="h-3.5 w-3.5" /> {r.category.replace(/-/g, " ")}
                       </span>
                     )}
                   </td>
