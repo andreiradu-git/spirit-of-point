@@ -60,11 +60,8 @@ export function EditableImage({
 
     setUploading(true);
     try {
-      const dataBase64 = await fileToBase64(file);
-      const res = await upload({
-        data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
-      });
-      onChange?.(res.url);
+      const result = await uploadImageWithProtection(file, async (input) => upload(input));
+      onChange?.(result.deliveryUrl);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("Upload failed", e);
