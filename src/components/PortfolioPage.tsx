@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { SiteLayout, cdn, cdnSrcSet, onTransformError } from "./SiteLayout";
 import { EditableGallery } from "./EditableGallery";
 import { EditableLogoBand } from "./EditableLogoBand";
@@ -8,7 +8,7 @@ import { GallerySeoSection } from "./GallerySeoSection";
 import { useGalleryCover } from "@/hooks/use-gallery-covers";
 import { useLang, useTr } from "@/i18n";
 
-type Img = { src: string; alt?: string };
+type Img = { src: string; alt?: string; title?: string };
 
 export function PortfolioPage({
   slug,
@@ -18,6 +18,7 @@ export function PortfolioPage({
   showStrip = false,
   showLogos = false,
   galleryLayout = "masonry",
+  belowGallery,
 }: {
   slug: string;
   tagline: string;
@@ -26,13 +27,14 @@ export function PortfolioPage({
   showStrip?: boolean;
   showLogos?: boolean;
   galleryLayout?: "grid" | "masonry" | "stacked" | "archive";
+  belowGallery?: ReactNode;
 }) {
   const lang = useLang();
   const t = useTr();
   const { data: gallery } = useGallery(slug);
   const cover = useGalleryCover(slug);
   const rawImages: Img[] =
-    gallery?.images.map((img) => ({ src: img.src, alt: img.alt ?? undefined })) ??
+    gallery?.images.map((img) => ({ src: img.src, alt: img.alt ?? undefined, title: img.title ?? undefined })) ??
     fallbackImages.filter((i) => !/LOGO_PSP/i.test(i.src));
   // The chosen cover leads the page; otherwise the first uploaded image does.
   const images: Img[] = cover
@@ -136,6 +138,8 @@ export function PortfolioPage({
           />
         </div>
       )}
+
+      {belowGallery}
 
       <GallerySeoSection
         slug={slug}

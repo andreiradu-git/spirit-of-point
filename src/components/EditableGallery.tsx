@@ -1,5 +1,6 @@
 import { useState, useRef, type ReactNode } from "react";
 import { useAdmin } from "@/hooks/use-admin";
+import { useTr } from "@/i18n";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useGallery, useInvalidateGallery, type GalleryImage } from "@/hooks/use-gallery";
 import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "@/components/SiteLayout";
