@@ -307,12 +307,16 @@ export function EditableGallery({
 
 
   const onAltChange = async (id: string, alt: string) => {
-    await updateMeta({ data: { imageId: id, alt } });
+    const realId = await resolveRealId(id);
+    if (!realId) return;
+    await updateMeta({ data: { imageId: realId, alt } });
     invalidate(slug);
   };
 
   const onTitleChange = async (id: string, title: string) => {
-    await updateMeta({ data: { imageId: id, title } });
+    const realId = await resolveRealId(id);
+    if (!realId) return;
+    await updateMeta({ data: { imageId: realId, title } });
     invalidate(slug);
   };
 
@@ -323,7 +327,14 @@ export function EditableGallery({
     const oldIndex = images.findIndex((i) => i.id === active.id);
     const newIndex = images.findIndex((i) => i.id === over.id);
     const next = arrayMove(images, oldIndex, newIndex);
-    await reorder({ data: { imageIds: next.map((i) => i.id) } });
+    let ids = next.map((i) => i.id);
+    if (usingFallback) {
+      const map = await materializeAndMap();
+      const mapped = next.map((i) => map.get(i.src.split("/").pop() ?? i.src));
+      if (mapped.some((v) => !v)) return;
+      ids = mapped as string[];
+    }
+    await reorder({ data: { imageIds: ids } });
     invalidate(slug);
   };
 
