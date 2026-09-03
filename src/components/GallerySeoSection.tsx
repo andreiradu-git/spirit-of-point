@@ -20,8 +20,9 @@ const SITE = "https://www.pointstudio.ro";
 const TOP_LEVEL = new Set(["food", "people", "editorial", "patterns", "video"]);
 
 /** Route path for any gallery slug — works for new CMS galleries with no code change. */
-export function galleryPath(slug: string): string {
-  return TOP_LEVEL.has(slug) ? `/${slug}` : `/work/${slug}`;
+export function galleryPath(slug: string, lang: "en" | "ro" = "en"): string {
+  const base = TOP_LEVEL.has(slug) ? `/${slug}` : `/work/${slug}`;
+  return lang === "ro" ? `/ro${base}` : base;
 }
 
 function sanitize(html: string): string {
@@ -63,17 +64,18 @@ export function GallerySeoSection({
   const { editMode } = useEditMode();
   const editable = isAdmin && editMode;
 
+  const routeLang = useLang();
+  const lang = langProp ?? routeLang;
+  // Romanian SEO content is stored under a separate key so both languages coexist.
+  const seoKey = lang === "ro" ? `${slug}#ro` : slug;
+  const loc = location ?? (lang === "ro" ? "București" : "Bucharest");
+
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: allSeo } = useAllGallerySeo();
   const saveSeo = useSaveGallerySeo();
   const legacy = useText(lang === "ro" ? `gallery-seo.${slug}#ro` : `gallery-seo.${slug}`, "");
   const { data: galleries } = useGalleries();
   const runAi = useServerFn(generateGallerySeo);
-  const routeLang = useLang();
-  const lang = langProp ?? routeLang;
-  // Romanian SEO content is stored under a separate key so both languages coexist.
-  const seoKey = lang === "ro" ? `${slug}#ro` : slug;
-  const loc = location ?? (lang === "ro" ? "București" : "Bucharest");
   const { remaining, limit, consume } = useAiCredits();
 
   const stored: GallerySeoData = useMemo(() => {
@@ -196,7 +198,7 @@ export function GallerySeoSection({
   const persist = async (next: GallerySeoData) => {
     setSaving(true);
     try {
-      await saveSeo(slug, next);
+      await saveSeo(seoKey, next);
       setDraft(next);
     } catch (e) {
       alert("Save failed: " + (e instanceof Error ? e.message : String(e)));
@@ -231,7 +233,7 @@ export function GallerySeoSection({
         data: {
           gallerySlug: slug,
           galleryTitle: title,
-          location: draft.location || location,
+          location: draft.location || loc,
           current: draft.html || undefined,
           language: lang,
           category: draft.category || undefined,
@@ -329,7 +331,7 @@ export function GallerySeoSection({
               {field("OG description", "ogDescription")}
               {field("Image ALT template", "altTemplate", `${title} photography — {n}`)}
               {field("Category", "category")}
-              {field("Location", "location", location)}
+              {field("Location", "location", loc)}
               {field("Keywords (comma separated)", "keywords")}
               <label className="flex flex-col gap-1 text-[11px] uppercase tracking-widest text-muted-foreground">
                 Tags (comma separated)
@@ -449,7 +451,7 @@ export function GallerySeoSection({
             <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
               {related.map((g) => (
                 <li key={g.slug}>
-                  <Link to={galleryPath(g.slug)} className="underline underline-offset-4 hover:no-underline">
+                  <Link to={galleryPath(g.slug, lang)} className="underline underline-offset-4 hover:no-underline">
                     {g.title}
                   </Link>
                 </li>
