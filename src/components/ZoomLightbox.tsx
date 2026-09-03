@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "@/components/SiteLayout";
+import {
+  cdnFixed,
+  IMAGE_QUALITY_LARGE,
+  LIGHTBOX_MAX_WIDTH,
+  onTransformError,
+} from "@/components/SiteLayout";
 import { useTr } from "@/i18n";
 
 export type ZoomLightboxImage = { src: string; alt?: string | null; title?: string | null };
@@ -111,6 +116,23 @@ export function ZoomLightbox({
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
+
+  // Neighbour prefetch happens only after the opened photograph has finished
+  // loading, and is skipped on Save-Data / slow connections.
+  const onCurrentLoaded = useCallback(() => {
+    const nav = navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    };
+    const c = nav.connection;
+    if (c?.saveData || (c?.effectiveType && !/4g/.test(c.effectiveType))) return;
+    for (const d of [1, -1]) {
+      const n = images[(index + d + images.length) % images.length];
+      if (!n || n === images[index]) continue;
+      const pre = new Image();
+      pre.decoding = "async";
+      pre.src = cdnFixed(n.src, LIGHTBOX_MAX_WIDTH, IMAGE_QUALITY_LARGE);
+    }
+  }, [images, index]);
 
   const img = images[index];
   if (!img) return null;
