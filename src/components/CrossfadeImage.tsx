@@ -97,9 +97,6 @@ export function CrossfadeImage({
   const [progress, setProgress] = useState(1);
   const tokenRef = useRef(0);
   const idRef = useRef(0);
-  useEffect(() => {
-    (window as any).__xfMounts = ((window as any).__xfMounts || 0) + 1;
-  }, []);
 
   useEffect(() => {
     if (src === shown.src) return;
@@ -163,21 +160,6 @@ export function CrossfadeImage({
       onDoubleClick={onDoubleClick}
     >
       <div className="absolute inset-0" style={innerStyle}>
-        {outgoing && (
-          <div className={layerClass} style={{ opacity: 1 - progress, transition }} aria-hidden>
-            <img
-              key={outgoing.id}
-              src={outgoing.src}
-              srcSet={outgoing.srcSet}
-              sizes={outgoing.sizes}
-              alt=""
-              decoding="async"
-              draggable={false}
-              className={imgClassName}
-              style={imgStyle}
-            />
-          </div>
-        )}
         <div className={layerClass} style={{ opacity: progress, transition }}>
           <img
             key={shown.id}
@@ -195,6 +177,21 @@ export function CrossfadeImage({
             style={onClick ? { ...imgStyle, pointerEvents: "auto" } : imgStyle}
           />
         </div>
+        {outgoing && (
+          <div className={`${layerClass} z-10`} style={{ opacity: 1 - progress, transition }} aria-hidden>
+            <img
+              key={outgoing.id}
+              src={outgoing.src}
+              srcSet={outgoing.srcSet}
+              sizes={outgoing.sizes}
+              alt=""
+              decoding="async"
+              draggable={false}
+              className={imgClassName}
+              style={imgStyle}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
