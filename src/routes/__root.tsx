@@ -17,6 +17,7 @@ import { usePageSeoAndTrack } from "@/hooks/use-page-seo";
 import { ThemeInjector } from "@/hooks/use-theme";
 import { useLang, useTr } from "@/i18n";
 import { WebVitalsReporter } from "@/components/WebVitalsReporter";
+import { fetchSiteFlags, type SiteSettings } from "@/lib/site-flags";
 
 function SeoAndAnalytics() {
   usePageSeoAndTrack();
@@ -87,6 +88,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Visibility flags are resolved server-side so SSR and hydration render the
+  // exact same set of sections and nav items (no show/hide flash).
+  loader: async (): Promise<{ siteFlags: SiteSettings | null }> => {
+    try {
+      return { siteFlags: await fetchSiteFlags() };
+    } catch {
+      return { siteFlags: null };
+    }
+  },
+  staleTime: 30_000,
   head: () => ({
     meta: [
       { charSet: "utf-8" },

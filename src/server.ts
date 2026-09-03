@@ -112,8 +112,18 @@ function isH3SwallowedErrorBody(body: string): boolean {
 }
 
 // Canonical host + legacy Squarespace query params.
-// Collapses apex -> www and strips indexable duplicate URLs like /?itemId=abc.
+// Collapses apex -> www, http -> https, retires the duplicate /patterns page and
+// strips indexable duplicate URLs like /?itemId=abc.
 const LEGACY_PARAMS = ["itemId", "itemid", "format", "category", "tag", "author", "month", "view"];
+
+// /patterns rendered exactly the same images as /wanders after the rename, so the
+// old path is a pure duplicate with one clear modern equivalent.
+const RETIRED_PATHS: Record<string, string> = {
+  "/patterns": "/wanders",
+  "/patterns/": "/wanders",
+  "/ro/patterns": "/ro/wanders",
+  "/ro/patterns/": "/ro/wanders",
+};
 
 function canonicalRedirect(request: Request): Response | undefined {
   let url: URL;
@@ -130,11 +140,23 @@ function canonicalRedirect(request: Request): Response | undefined {
 
   if (host === "pointstudio.ro") {
     url.hostname = "www.pointstudio.ro";
-    url.protocol = "https:";
     changed = true;
   }
 
   if (isProdDomain) {
+    // Only upgrade when the request URL itself is plain http, so a proxy that
+    // already terminated TLS can never produce a redirect loop.
+    if (url.protocol === "http:") {
+      url.protocol = "https:";
+      changed = true;
+    }
+
+    const retired = RETIRED_PATHS[url.pathname];
+    if (retired) {
+      url.pathname = retired;
+      changed = true;
+    }
+
     for (const p of LEGACY_PARAMS) {
       if (url.searchParams.has(p)) {
         url.searchParams.delete(p);
@@ -146,6 +168,7 @@ function canonicalRedirect(request: Request): Response | undefined {
   if (!changed) return undefined;
   return Response.redirect(url.toString(), 301);
 }
+
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {

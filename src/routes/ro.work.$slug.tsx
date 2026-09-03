@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
-import { WorkPage, resolveWork } from "@/pages/Work";
+import { WorkPage, resolveWork, WORK } from "@/pages/Work";
 import { altLinks, tr } from "@/i18n";
 
 const LANG: "en" | "ro" = "ro";
@@ -50,8 +50,12 @@ export const Route = createFileRoute("/ro/work/$slug")({
     }
     const title = tr(LANG, loaderData.title);
     const alt = altLinks(`/work/${params.slug}`, LANG);
+    // Unknown slugs still render (CMS galleries resolve at runtime) but must not
+    // create an unbounded set of indexable soft-404 URLs.
+    const known = Object.prototype.hasOwnProperty.call(WORK, params.slug);
     return {
       meta: [
+        ...(known ? [] : [{ name: "robots", content: "noindex, follow" }]),
         { title: `${title} — Point Studio` },
         {
           name: "description",

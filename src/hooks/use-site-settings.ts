@@ -1,71 +1,40 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getRouteApi } from "@tanstack/react-router";
 import { db } from "@/lib/cms-client";
+import {
+  SITE_FLAGS_KEY,
+  SITE_FLAG_DEFAULTS,
+  fetchSiteFlags,
+  type SiteSettings,
+} from "@/lib/site-flags";
 
-export type SiteSettings = {
-  showVideo: boolean;
-  showWanders: boolean;
-  showTestimonials: boolean;
-  showFotografieCulinara: boolean;
-};
+export type { SiteSettings } from "@/lib/site-flags";
+export { SITE_FLAGS_KEY } from "@/lib/site-flags";
 
-const DEFAULTS: SiteSettings = {
-  showVideo: true,
-  showWanders: true,
-  showTestimonials: true,
-  showFotografieCulinara: true,
-};
+const rootApi = getRouteApi("__root__");
 
 /**
- * Canonical D1 key holding every public visibility flag.
+ * Public visibility flags.
  *
- * These flags used to live in `localStorage`, which meant an admin toggling
- * "Show testimonials" only changed their own browser — every visitor kept
- * getting the built-in defaults. The single source of truth is now this
- * `site_settings` row, so the toggles behave the same for everyone.
+ * The values are resolved in the root loader, so they are already correct
+ * during SSR and are handed to react-query as `initialData`. That removes the
+ * old SSR/hydration split where the server rendered one visibility state and
+ * the browser flipped to another once the query resolved.
  */
-export const SITE_FLAGS_KEY = "setting.site-flags";
-
-function coerce(raw: unknown): SiteSettings {
-  const v = (raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}) as Record<
-    string,
-    unknown
-  >;
-  const bool = (key: keyof SiteSettings, legacy?: string): boolean => {
-    const candidates = legacy ? [v[key], v[legacy]] : [v[key]];
-    for (const c of candidates) {
-      if (typeof c === "boolean") return c;
-      if (c === "true" || c === 1) return true;
-      if (c === "false" || c === 0) return false;
-    }
-    return DEFAULTS[key];
-  };
-  return {
-    showVideo: bool("showVideo"),
-    showWanders: bool("showWanders", "showPatterns"),
-    showTestimonials: bool("showTestimonials"),
-    showFotografieCulinara: bool("showFotografieCulinara"),
-  };
-}
-
 export function useSiteSettings() {
   const qc = useQueryClient();
+  const rootData = rootApi.useLoaderData() as { siteFlags?: SiteSettings | null } | undefined;
+  const initial = rootData?.siteFlags ?? undefined;
 
   const query = useQuery({
     queryKey: ["site-flags"],
-    queryFn: async (): Promise<SiteSettings> => {
-      const { data, error } = await db
-        .from("site_settings")
-        .select("value")
-        .eq("key", SITE_FLAGS_KEY)
-        .maybeSingle();
-      if (error) throw error;
-      return coerce(data?.value ?? null);
-    },
+    queryFn: fetchSiteFlags,
     staleTime: 30_000,
+    ...(initial ? { initialData: initial } : {}),
   });
 
-  const settings = query.data ?? DEFAULTS;
-  const ready = query.isSuccess;
+  const settings = query.data ?? SITE_FLAG_DEFAULTS;
+  const ready = query.isSuccess || !!initial;
 
   const update = async (patch: Partial<SiteSettings>) => {
     const next = { ...settings, ...patch };
