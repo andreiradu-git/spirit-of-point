@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CrossfadeImage } from "./CrossfadeImage";
 import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "./SiteLayout";
 import { useTr } from "@/i18n";
 
@@ -161,12 +162,21 @@ export function Gallery({
         >
           ‹
         </button>
-        <img
+        <CrossfadeImage
           src={cdn(images[active].src, 2400, IMAGE_QUALITY_LARGE)}
           srcSet={cdnSrcSet(images[active].src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)}
           sizes="(min-width:1024px) 90vw, 100vw"
           alt={images[active].alt || ""}
-          className="max-h-[90vh] max-w-[90vw] object-contain"
+          preload={[1, -1]
+            .map((d) => images[(active + d + images.length) % images.length])
+            .filter((n) => n && n !== images[active])
+            .map((n) => ({
+              src: cdn(n.src, 2400, IMAGE_QUALITY_LARGE),
+              srcSet: cdnSrcSet(n.src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE),
+              sizes: "(min-width:1024px) 90vw, 100vw",
+            }))}
+          stageClassName="w-[90vw] h-[90vh]"
+          imgClassName="max-h-full max-w-full w-auto h-auto object-contain"
           onClick={(e) => e.stopPropagation()}
           onError={onTransformError}
         />

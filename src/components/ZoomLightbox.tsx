@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CrossfadeImage } from "./CrossfadeImage";
 import {
   cdnFixed,
   IMAGE_QUALITY_LARGE,
@@ -117,26 +118,17 @@ export function ZoomLightbox({
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  // Neighbour prefetch happens only after the opened photograph has finished
-  // loading, and is skipped on Save-Data / slow connections.
-  const onCurrentLoaded = useCallback(() => {
-    const nav = navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
-    };
-    const c = nav.connection;
-    if (c?.saveData || (c?.effectiveType && !/4g/.test(c.effectiveType))) return;
-    for (const d of [1, -1]) {
-      const n = images[(index + d + images.length) % images.length];
-      if (!n || n === images[index]) continue;
-      const pre = new Image();
-      pre.decoding = "async";
-      pre.src = cdnFixed(n.src, LIGHTBOX_MAX_WIDTH, IMAGE_QUALITY_LARGE);
-    }
-  }, [images, index]);
-
   const img = images[index];
+  // Neighbour prefetch list (handled by CrossfadeImage after the current
+  // photograph has loaded, and skipped on Save-Data / slow connections).
+  const neighbours = [1, -1]
+    .map((d) => images[(index + d + images.length) % images.length])
+    .filter((n): n is ZoomLightboxImage => Boolean(n) && n !== img)
+    .map((n) => ({ src: cdnFixed(n.src, LIGHTBOX_MAX_WIDTH, IMAGE_QUALITY_LARGE) }));
+
   if (!img) return null;
   const caption = img.title || img.alt || "";
+
 
   const onPointerDown = (e: React.PointerEvent) => {
     pinchRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -232,26 +224,23 @@ export function ZoomLightbox({
           else zoomAt(2.5, ...anchor(e.clientX, e.clientY));
         }}
       >
-        <img
-          key={img.src}
+        <CrossfadeImage
           // One request only: the largest useful web variant (<= 3200px long
           // edge, quality 88, format=auto, fit=scale-down so never upscaled).
           // Zooming reuses this already-loaded source.
           src={cdnFixed(img.src, LIGHTBOX_MAX_WIDTH, IMAGE_QUALITY_LARGE)}
           alt={img.alt ?? caption}
-          decoding="async"
-          fetchPriority="high"
-          draggable={false}
-          onLoad={onCurrentLoaded}
-
-          className="max-h-[calc(100vh-9rem)] max-w-[88vw] object-contain"
-          style={{
+          preload={neighbours}
+          stageClassName="absolute inset-0"
+          imgClassName="max-h-[calc(100vh-9rem)] max-w-[88vw] w-auto h-auto object-contain"
+          innerStyle={{
             transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})`,
             transformOrigin: "center center",
             transition: draggingRef.current ? "none" : "transform 120ms ease-out",
           }}
           onError={onTransformError}
         />
+
       </div>
 
       <button
