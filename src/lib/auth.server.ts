@@ -52,7 +52,15 @@ export async function hashPassword(password: string): Promise<string> {
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const [scheme, iterations, salt, derived] = stored.split("$");
   if (scheme !== "pbkdf2" || !iterations || !salt || !derived) return false;
-  const candidate = await pbkdf2(password, unb64(salt), Number(iterations));
+  // Verification always uses the iteration count stored with the hash, so
+  // signup and signin can never diverge on parameters.
+  let candidate: string;
+  try {
+    candidate = await pbkdf2(password, unb64(salt), Number(iterations));
+  } catch (error) {
+    console.error(`[auth] verify: ${error instanceof Error ? error.message : String(error)}`);
+    return false;
+  }
   if (candidate.length !== derived.length) return false;
   let diff = 0;
   for (let i = 0; i < candidate.length; i++) diff |= candidate.charCodeAt(i) ^ derived.charCodeAt(i);
