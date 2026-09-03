@@ -98,8 +98,16 @@ export const deleteR2Object = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    // Fresh server-side re-check: never trust the classification the browser saw.
+    // Anything still referenced, or any archival master, is refused outright.
+    const report = await buildStorageReport();
+    const entry = report.objects.find((o) => o.key === data.key);
+    if (!entry) return { ok: false, deleted: [], reason: "not-found" as const };
+    if (entry.protected)
+      return { ok: false, deleted: [], reason: "archival-master-protected" as const };
+    if (entry.referenced) return { ok: false, deleted: [], reason: "still-referenced" as const };
     await deleteMediaAssetDirect({ key: data.key });
-    return { ok: true, deleted: [data.key] };
+    return { ok: true, deleted: [data.key], reason: "deleted" as const };
   });
 
 
@@ -139,9 +147,8 @@ export const replaceR2Object = createServerFn({ method: "POST" })
  * Orphan scanner — lists every object in R2 and marks whether the object URL
  * (or its key) is referenced anywhere in CMS content. Never deletes anything.
  */
-export const scanStorageOrphans = createServerFn({ method: "GET" })
-  .middleware([requireAdminAuth])
-  .handler(async ({ context }) => {
+/** Read-only audit of every R2 object against every CMS and static reference. */
+async function buildStorageReport() {
     const db = serverDb() as unknown as AdminDb;
     const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
       try {
@@ -303,7 +310,11 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
       scannedAt: new Date().toISOString(),
       objects: report,
     };
-  });
+}
+
+export const scanStorageOrphans = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async () => buildStorageReport());
 
 export type StorageCategory =
   | "active"
