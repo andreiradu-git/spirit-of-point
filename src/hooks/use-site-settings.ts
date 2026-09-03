@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 
 export type SiteSettings = {
   showVideo: boolean;
-  showPatterns: boolean;
+  showWanders: boolean;
   showTestimonials: boolean;
   showFotografieCulinara: boolean;
 };
 
 const DEFAULTS: SiteSettings = {
   showVideo: true,
-  showPatterns: true,
+  showWanders: true,
   showTestimonials: true,
   showFotografieCulinara: true,
 };
@@ -21,7 +21,12 @@ function read(): SiteSettings {
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return DEFAULTS;
-    return { ...DEFAULTS, ...JSON.parse(raw) };
+    const saved = JSON.parse(raw) as Partial<SiteSettings> & { showPatterns?: boolean };
+    return {
+      ...DEFAULTS,
+      ...saved,
+      showWanders: typeof saved.showWanders === "boolean" ? saved.showWanders : saved.showPatterns ?? DEFAULTS.showWanders,
+    };
   } catch {
     return DEFAULTS;
   }

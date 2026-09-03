@@ -4,10 +4,12 @@
  */
 export const UI_RO: Record<string, string> = {
   // Navigation
+  "Personal work": "Lucrare personală",
   Home: "Acasă",
   Food: "Mâncare",
   People: "Oameni",
   Editorial: "Editorial",
+  Wanders: "Reflecții",
   Patterns: "Texturi",
   Video: "Video",
   Contact: "Contact",
@@ -23,6 +25,7 @@ export const UI_RO: Record<string, string> = {
   "Portrait, Fashion & Business Photography": "Fotografie de portret, fashion și business",
   "Editorial & Printed Work": "Lucrări editoriale și tipărite",
   "Patterns, Textures & Closeups": "Modele, texturi și prim-planuri",
+  "Moments woven into personal, artistic work.": "Momente țesute în lucrări artistice personale.",
   "Video Productions": "Producții video",
 
   // Generic controls

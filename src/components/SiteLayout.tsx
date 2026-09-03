@@ -31,6 +31,8 @@ const BASE_NAV = [
   { to: "/food", label: "Food" },
   { to: "/people", label: "People" },
   { to: "/editorial", label: "Editorial" },
+  { to: "/video", label: "Video" },
+  { to: "/wanders", label: "Wanders" },
   { to: "/contact", label: "Contact" },
 ] as const;
 
@@ -55,14 +57,10 @@ export function SiteLayout({
   const t = useTr();
 
 
-  const nav: NavItem[] = BASE_NAV.map((n) => ({ ...n }));
-  if (settings.showPatterns) {
-    nav.splice(2, 0, { to: "/patterns", label: "Patterns" });
-  }
-  if (settings.showVideo) {
-    // insert Video before Contact
-    nav.splice(nav.length - 1, 0, { to: "/video", label: "Video" });
-  }
+  const nav: NavItem[] = BASE_NAV
+    .filter((n) => n.label !== "Video" || settings.showVideo)
+    .filter((n) => n.label !== "Wanders" || settings.showWanders)
+    .map((n) => ({ ...n }));
 
   const localizedNav: NavItem[] = nav.map((n) => ({
     to: localizePath(n.to, lang),
@@ -173,8 +171,8 @@ export function SiteLayout({
         <SettingsPanel
           showVideo={settings.showVideo}
           onToggleVideo={() => update({ showVideo: !settings.showVideo })}
-          showPatterns={settings.showPatterns}
-          onTogglePatterns={() => update({ showPatterns: !settings.showPatterns })}
+          showWanders={settings.showWanders}
+          onToggleWanders={() => update({ showWanders: !settings.showWanders })}
           showTestimonials={settings.showTestimonials}
           onToggleTestimonials={() => update({ showTestimonials: !settings.showTestimonials })}
           showFotografieCulinara={settings.showFotografieCulinara}
@@ -245,8 +243,8 @@ function HeaderSocials({ light }: { light: boolean }) {
 function SettingsPanel({
   showVideo,
   onToggleVideo,
-  showPatterns,
-  onTogglePatterns,
+  showWanders,
+  onToggleWanders,
   showTestimonials,
   onToggleTestimonials,
   showFotografieCulinara,
@@ -254,8 +252,8 @@ function SettingsPanel({
 }: {
   showVideo: boolean;
   onToggleVideo: () => void;
-  showPatterns: boolean;
-  onTogglePatterns: () => void;
+  showWanders: boolean;
+  onToggleWanders: () => void;
   showTestimonials: boolean;
   onToggleTestimonials: () => void;
   showFotografieCulinara: boolean;
@@ -280,11 +278,11 @@ function SettingsPanel({
             />
           </label>
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span>Show Patterns in menu</span>
+            <span>Show Wanders in menu</span>
             <input
               type="checkbox"
-              checked={showPatterns}
-              onChange={onTogglePatterns}
+              checked={showWanders}
+              onChange={onToggleWanders}
               className="h-4 w-4 accent-foreground"
             />
           </label>

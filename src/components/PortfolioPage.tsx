@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { SiteLayout, cdn, cdnSrcSet, onTransformError } from "./SiteLayout";
 import { EditableGallery } from "./EditableGallery";
 import { EditableLogoBand } from "./EditableLogoBand";
@@ -8,31 +8,37 @@ import { GallerySeoSection } from "./GallerySeoSection";
 import { useGalleryCover } from "@/hooks/use-gallery-covers";
 import { useLang, useTr } from "@/i18n";
 
-type Img = { src: string; alt?: string };
+type Img = { src: string; alt?: string; title?: string };
 
 export function PortfolioPage({
   slug,
+  title,
+  titleId,
   tagline,
   taglineId,
   fallbackImages,
   showStrip = false,
   showLogos = false,
   galleryLayout = "masonry",
+  belowGallery,
 }: {
   slug: string;
+  title?: string;
+  titleId?: string;
   tagline: string;
   taglineId?: string;
   fallbackImages: Img[];
   showStrip?: boolean;
   showLogos?: boolean;
-  galleryLayout?: "grid" | "masonry" | "stacked";
+  galleryLayout?: "grid" | "masonry" | "stacked" | "archive";
+  belowGallery?: ReactNode;
 }) {
   const lang = useLang();
   const t = useTr();
   const { data: gallery } = useGallery(slug);
   const cover = useGalleryCover(slug);
   const rawImages: Img[] =
-    gallery?.images.map((img) => ({ src: img.src, alt: img.alt ?? undefined })) ??
+    gallery?.images.map((img) => ({ src: img.src, alt: img.alt ?? undefined, title: img.title ?? undefined })) ??
     fallbackImages.filter((i) => !/LOGO_PSP/i.test(i.src));
   // The chosen cover leads the page; otherwise the first uploaded image does.
   const images: Img[] = cover
@@ -49,7 +55,12 @@ export function PortfolioPage({
 
   return (
     <SiteLayout>
-      <div className="pt-10 md:pt-14 pb-10 md:pb-16">
+      <div className={`${title ? "pt-10 md:pt-14" : "pt-10 md:pt-14"} pb-10 md:pb-16`}>
+        {title && (
+          <h1 className="text-center text-2xl md:text-3xl font-serif text-foreground px-4 mb-3">
+            {titleId ? <Editable id={titleId}>{title}</Editable> : t(title)}
+          </h1>
+        )}
         <p className="text-center text-[11px] md:text-xs uppercase tracking-[0.35em] md:tracking-[0.5em] text-foreground/70 px-4">
           {taglineId ? (
             <Editable id={taglineId} className="inline">
@@ -114,6 +125,17 @@ export function PortfolioPage({
             lightbox
           />
         </div>
+      ) : galleryLayout === "archive" ? (
+        <div className="mx-auto max-w-7xl px-6 pt-2 md:pt-6 pb-24">
+          <EditableGallery
+            slug={slug}
+            fallbackImages={fallbackImages}
+            layout="grid"
+            columns={4}
+            archive
+            lightbox
+          />
+        </div>
       ) : (
         <div className="mx-auto max-w-7xl px-6 pt-10 md:pt-14 pb-24">
           <EditableGallery
@@ -125,6 +147,8 @@ export function PortfolioPage({
           />
         </div>
       )}
+
+      {belowGallery}
 
       <GallerySeoSection
         slug={slug}

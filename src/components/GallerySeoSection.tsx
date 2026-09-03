@@ -17,7 +17,7 @@ import { generateGallerySeo } from "@/lib/gallery-seo.functions";
 import { Loader2, Sparkles, RefreshCw, Save, Plus, Trash2 } from "lucide-react";
 
 const SITE = "https://www.pointstudio.ro";
-const TOP_LEVEL = new Set(["food", "people", "editorial", "patterns", "video"]);
+const TOP_LEVEL = new Set(["food", "people", "editorial", "patterns", "wanders", "video"]);
 
 /** Route path for any gallery slug — works for new CMS galleries with no code change. */
 export function galleryPath(slug: string, lang: "en" | "ro" = "en"): string {

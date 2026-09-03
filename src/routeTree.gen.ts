@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WandersRouteImport } from './routes/wanders'
 import { Route as VideoRouteImport } from './routes/video'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PeopleRouteImport } from './routes/people'
@@ -22,6 +23,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoIndexRouteImport } from './routes/ro.index'
 import { Route as WorkSlugRouteImport } from './routes/work.$slug'
+import { Route as RoWandersRouteImport } from './routes/ro.wanders'
 import { Route as RoVideoRouteImport } from './routes/ro.video'
 import { Route as RoPeopleRouteImport } from './routes/ro.people'
 import { Route as RoPatternsRouteImport } from './routes/ro.patterns'
@@ -42,6 +44,11 @@ import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
 import { Route as ApiDebugD1RouteImport } from './routes/api/debug/d1'
 import { Route as ApiDebugAiRouteImport } from './routes/api/debug/ai'
 
+const WandersRoute = WandersRouteImport.update({
+  id: '/wanders',
+  path: '/wanders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VideoRoute = VideoRouteImport.update({
   id: '/video',
   path: '/video',
@@ -107,6 +114,11 @@ const RoIndexRoute = RoIndexRouteImport.update({
 const WorkSlugRoute = WorkSlugRouteImport.update({
   id: '/work/$slug',
   path: '/work/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoWandersRoute = RoWandersRouteImport.update({
+  id: '/ro/wanders',
+  path: '/ro/wanders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoVideoRoute = RoVideoRouteImport.update({
@@ -217,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/people': typeof PeopleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
+  '/wanders': typeof WandersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -232,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/ro/patterns': typeof RoPatternsRoute
   '/ro/people': typeof RoPeopleRoute
   '/ro/video': typeof RoVideoRoute
+  '/ro/wanders': typeof RoWandersRoute
   '/work/$slug': typeof WorkSlugRoute
   '/ro/': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
@@ -251,6 +265,7 @@ export interface FileRoutesByTo {
   '/people': typeof PeopleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
+  '/wanders': typeof WandersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -266,6 +281,7 @@ export interface FileRoutesByTo {
   '/ro/patterns': typeof RoPatternsRoute
   '/ro/people': typeof RoPeopleRoute
   '/ro/video': typeof RoVideoRoute
+  '/ro/wanders': typeof RoWandersRoute
   '/work/$slug': typeof WorkSlugRoute
   '/ro': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
@@ -286,6 +302,7 @@ export interface FileRoutesById {
   '/people': typeof PeopleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
+  '/wanders': typeof WandersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
   '/admin/contacts': typeof AdminContactsRoute
@@ -301,6 +318,7 @@ export interface FileRoutesById {
   '/ro/patterns': typeof RoPatternsRoute
   '/ro/people': typeof RoPeopleRoute
   '/ro/video': typeof RoVideoRoute
+  '/ro/wanders': typeof RoWandersRoute
   '/work/$slug': typeof WorkSlugRoute
   '/ro/': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
@@ -322,6 +340,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/sitemap.xml'
     | '/video'
+    | '/wanders'
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
@@ -337,6 +356,7 @@ export interface FileRouteTypes {
     | '/ro/patterns'
     | '/ro/people'
     | '/ro/video'
+    | '/ro/wanders'
     | '/work/$slug'
     | '/ro/'
     | '/api/debug/ai'
@@ -356,6 +376,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/sitemap.xml'
     | '/video'
+    | '/wanders'
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
@@ -371,6 +392,7 @@ export interface FileRouteTypes {
     | '/ro/patterns'
     | '/ro/people'
     | '/ro/video'
+    | '/ro/wanders'
     | '/work/$slug'
     | '/ro'
     | '/api/debug/ai'
@@ -390,6 +412,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/sitemap.xml'
     | '/video'
+    | '/wanders'
     | '/admin/analytics'
     | '/admin/assets'
     | '/admin/contacts'
@@ -405,6 +428,7 @@ export interface FileRouteTypes {
     | '/ro/patterns'
     | '/ro/people'
     | '/ro/video'
+    | '/ro/wanders'
     | '/work/$slug'
     | '/ro/'
     | '/api/debug/ai'
@@ -425,6 +449,7 @@ export interface RootRouteChildren {
   PeopleRoute: typeof PeopleRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VideoRoute: typeof VideoRoute
+  WandersRoute: typeof WandersRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAssetsRoute: typeof AdminAssetsRoute
   AdminContactsRoute: typeof AdminContactsRoute
@@ -440,6 +465,7 @@ export interface RootRouteChildren {
   RoPatternsRoute: typeof RoPatternsRoute
   RoPeopleRoute: typeof RoPeopleRoute
   RoVideoRoute: typeof RoVideoRoute
+  RoWandersRoute: typeof RoWandersRoute
   WorkSlugRoute: typeof WorkSlugRoute
   RoIndexRoute: typeof RoIndexRoute
   ApiDebugAiRoute: typeof ApiDebugAiRoute
@@ -450,6 +476,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wanders': {
+      id: '/wanders'
+      path: '/wanders'
+      fullPath: '/wanders'
+      preLoaderRoute: typeof WandersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/video': {
       id: '/video'
       path: '/video'
@@ -539,6 +572,13 @@ declare module '@tanstack/react-router' {
       path: '/work/$slug'
       fullPath: '/work/$slug'
       preLoaderRoute: typeof WorkSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ro/wanders': {
+      id: '/ro/wanders'
+      path: '/ro/wanders'
+      fullPath: '/ro/wanders'
+      preLoaderRoute: typeof RoWandersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ro/video': {
@@ -689,6 +729,7 @@ const rootRouteChildren: RootRouteChildren = {
   PeopleRoute: PeopleRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VideoRoute: VideoRoute,
+  WandersRoute: WandersRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAssetsRoute: AdminAssetsRoute,
   AdminContactsRoute: AdminContactsRoute,
@@ -704,6 +745,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoPatternsRoute: RoPatternsRoute,
   RoPeopleRoute: RoPeopleRoute,
   RoVideoRoute: RoVideoRoute,
+  RoWandersRoute: RoWandersRoute,
   WorkSlugRoute: WorkSlugRoute,
   RoIndexRoute: RoIndexRoute,
   ApiDebugAiRoute: ApiDebugAiRoute,
