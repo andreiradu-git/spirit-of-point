@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { db as supabase } from "@/lib/cms-client";
+import { db } from "@/lib/cms-client";
 
 export type ThemeConfig = {
   fonts: {
@@ -45,7 +45,7 @@ export const DEFAULT_THEME: ThemeConfig = {
 const KEY = "theme.config";
 
 async function fetchTheme(): Promise<ThemeConfig> {
-  const { data } = await supabase.from("site_settings").select("value").eq("key", KEY).maybeSingle();
+  const { data } = await db.from("site_settings").select("value").eq("key", KEY).maybeSingle();
   const raw = data?.value as Partial<ThemeConfig> | null;
   if (!raw) return DEFAULT_THEME;
   return {
@@ -99,7 +99,7 @@ export function useTheme() {
 export function useSaveTheme() {
   const qc = useQueryClient();
   return async (t: ThemeConfig) => {
-    const { error } = await supabase.from("site_settings").upsert({ key: KEY, value: t }, { onConflict: "key" });
+    const { error } = await db.from("site_settings").upsert({ key: KEY, value: t }, { onConflict: "key" });
     if (error) throw error;
     apply(t);
     qc.invalidateQueries({ queryKey: ["theme.config"] });

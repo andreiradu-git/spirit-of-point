@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { db as supabase } from "@/lib/cms-client";
+import { db } from "@/lib/cms-client";
 
 const PREFIX = "gallery.cover.";
 
@@ -37,7 +37,7 @@ export function useSetGalleryCover() {
   return async (slug: string, src: string | null) => {
     const key = `${PREFIX}${slug}`;
     if (src === null) {
-      const { error } = await supabase.from("site_settings").delete().eq("key", key);
+      const { error } = await db.from("site_settings").delete().eq("key", key);
       if (error) throw error;
     } else {
       const { error } = await supabase

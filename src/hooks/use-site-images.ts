@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { db as supabase } from "@/lib/cms-client";
+import { db } from "@/lib/cms-client";
 
 const IMAGE_PREFIX = "image.";
 

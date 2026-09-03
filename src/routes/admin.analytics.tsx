@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/hooks/use-admin";
-import { db as supabase } from "@/lib/cms-client";
+import { db } from "@/lib/cms-client";
 import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/admin/analytics")({

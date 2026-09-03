@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/hooks/use-admin";
-import { db as supabase } from "@/lib/cms-client";
+import { db } from "@/lib/cms-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSeoContent } from "@/lib/seo-ai.functions";
@@ -61,7 +61,7 @@ function AdminSeoPage() {
   const { data: existing } = useQuery({
     queryKey: ["page_seo", "admin"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("page_seo").select("*");
+      const { data, error } = await db.from("page_seo").select("*");
       if (error) throw error;
       return data ?? [];
     },
@@ -119,7 +119,7 @@ function AdminSeoPage() {
   const save = async (path: string) => {
     setSaving(path);
     const r = rows[path];
-    const { error } = await supabase.from("page_seo").upsert(
+    const { error } = await db.from("page_seo").upsert(
       {
         path,
         title: r.title || null,
@@ -192,7 +192,7 @@ function AdminSeoPage() {
       });
       const alt = out.alt;
       if (alt) {
-        const { error } = await supabase.from("gallery_images").update({ alt }).eq("id", img.id);
+        const { error } = await db.from("gallery_images").update({ alt }).eq("id", img.id);
         if (error) throw error;
         qc.invalidateQueries({ queryKey: ["gallery_images"] });
       }
@@ -217,7 +217,7 @@ function AdminSeoPage() {
             data: { kind: "alt", imageUrl: img.src, context: "Point Studio portfolio", language: aiLang },
           });
           if (out.alt) {
-            await supabase.from("gallery_images").update({ alt: out.alt }).eq("id", img.id);
+            await db.from("gallery_images").update({ alt: out.alt }).eq("id", img.id);
           }
         } catch {
           // continue on error

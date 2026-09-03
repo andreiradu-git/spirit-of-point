@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { db as supabase } from "@/lib/cms-client";
+import { db } from "@/lib/cms-client";
 
 export type PageSeo = {
   path: string;
@@ -26,7 +26,7 @@ export function useAllPageSeo() {
   return useQuery({
     queryKey: ["page_seo", "all"],
     queryFn: async (): Promise<PageSeo[]> => {
-      const { data, error } = await supabase.from("page_seo").select("*");
+      const { data, error } = await db.from("page_seo").select("*");
       if (error) throw error;
       return (data ?? []) as PageSeo[];
     },
