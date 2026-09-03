@@ -135,21 +135,9 @@ export function VideoPage() {
         posterAuto: true,
       };
       if (res.needsUpload && res.blob) {
-        // Convert blob → base64 and push to R2 as an image asset.
-        const buf = new Uint8Array(await res.blob.arrayBuffer());
-        let bin = "";
-        for (let i = 0; i < buf.length; i += 0x8000) {
-          bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + 0x8000)));
-        }
-        const { url: posterUrl } = await upload({
-          data: {
-            filename: `poster-${Date.now()}.webp`,
-            contentType: "image/webp",
-            dataBase64: btoa(bin),
-            kind: "image",
-          },
-        });
-        return { ...meta, posterUrl, poster: posterUrl };
+        const posterFile = new File([res.blob], `poster-${Date.now()}.webp`, { type: res.blob.type || "image/webp" });
+        const result = await uploadImageWithProtection(posterFile, async (input) => upload(input));
+        return { ...meta, posterUrl: result.deliveryUrl, poster: result.deliveryUrl };
       }
       if (res.posterUrl) {
         return { ...meta, posterUrl: res.posterUrl, poster: res.posterUrl };
