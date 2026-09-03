@@ -29,6 +29,7 @@ import {
   removeGalleryImage,
   reorderGalleryImages,
   updateImageMeta,
+  materializeGallery,
 } from "@/lib/media.functions";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
 import { useGalleryCovers, useSetGalleryCover } from "@/hooks/use-gallery-covers";
@@ -188,13 +189,14 @@ export function EditableGallery({
 }: Props) {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
-  const { data: gallery } = useGallery(slug);
+  const { data: gallery, isPending } = useGallery(slug);
   const invalidate = useInvalidateGallery();
   const addImage = useServerFn(addGalleryImage);
   const removeImage = useServerFn(removeGalleryImage);
   const reorder = useServerFn(reorderGalleryImages);
   const updateMeta = useServerFn(updateImageMeta);
   const upload = useServerFn(uploadToR2);
+  const materialize = useServerFn(materializeGallery);
   const { data: covers } = useGalleryCovers();
   const setCover = useSetGalleryCover();
   const coverSrc = covers?.[slug];
@@ -215,17 +217,26 @@ export function EditableGallery({
   const inputRef = useRef<HTMLInputElement>(null);
 
 
-  const editable = isAdmin && editMode;
+  // A canonical D1 gallery is the single source of truth once it exists.
+  // Static source data is only ever shown for a page whose gallery has not been
+  // created yet, or while the gallery request is still in flight — never merged
+  // with D1 content, so a removed image can't reappear from the source file.
+  const usingFallback = !gallery;
+
+  // Editing is disabled while the gallery identity is unknown, so admins never
+  // act on placeholder rows.
+  const editable = isAdmin && editMode && !isPending;
 
   const images: GalleryImage[] = withoutBrandingAssets(
-    gallery?.images.map((img) => ({ ...img, src: img.src })) ??
-    fallbackImages.map((img, i) => ({
-      id: `fallback-${i}`,
-      src: img.src,
-      alt: img.alt ?? null,
-      title: img.title ?? null,
-      position: i + 1,
-    })),
+    gallery
+      ? gallery.images.map((img) => ({ ...img, src: img.src }))
+      : fallbackImages.map((img, i) => ({
+          id: `fallback-${i}`,
+          src: img.src,
+          alt: img.alt ?? null,
+          title: img.title ?? null,
+          position: i + 1,
+        })),
   );
 
   const sensors = useSensors(
@@ -254,16 +265,32 @@ export function EditableGallery({
     }
   };
 
-  const onRemove = async (id: string) => {
-    if (id.startsWith("fallback-")) {
-      alert(
-        "This image is a placeholder from the source file. It will disappear once you add real images or replace the gallery contents.",
-      );
-      return;
+  // Source-file placeholders are converted into real D1 gallery rows on demand,
+  // so any visible image can be managed like an uploaded one.
+  const materializeAndMap = async () => {
+    const res = await materialize({ data: { gallerySlug: slug } });
+    invalidate(slug);
+    const byKey = new Map<string, string>();
+    for (const row of res.images as Array<{ id: string; src: string }>) {
+      byKey.set(row.src.split("/").pop() ?? row.src, row.id);
     }
+    return byKey;
+  };
+
+  const resolveRealId = async (id: string): Promise<string | null> => {
+    if (!id.startsWith("fallback-")) return id;
+    const img = images.find((i) => i.id === id);
+    if (!img) return null;
+    const map = await materializeAndMap();
+    return map.get(img.src.split("/").pop() ?? img.src) ?? null;
+  };
+
+  const onRemove = async (id: string) => {
     if (!confirm("Remove this image from the gallery?")) return;
     try {
-      await removeImage({ data: { imageId: id } });
+      const realId = await resolveRealId(id);
+      if (!realId) throw new Error("This image could not be matched to a gallery entry.");
+      await removeImage({ data: { imageId: realId } });
       invalidate(slug);
     } catch (e) {
       console.error("Delete failed", e);
@@ -282,12 +309,16 @@ export function EditableGallery({
 
 
   const onAltChange = async (id: string, alt: string) => {
-    await updateMeta({ data: { imageId: id, alt } });
+    const realId = await resolveRealId(id);
+    if (!realId) return;
+    await updateMeta({ data: { imageId: realId, alt } });
     invalidate(slug);
   };
 
   const onTitleChange = async (id: string, title: string) => {
-    await updateMeta({ data: { imageId: id, title } });
+    const realId = await resolveRealId(id);
+    if (!realId) return;
+    await updateMeta({ data: { imageId: realId, title } });
     invalidate(slug);
   };
 
@@ -298,7 +329,14 @@ export function EditableGallery({
     const oldIndex = images.findIndex((i) => i.id === active.id);
     const newIndex = images.findIndex((i) => i.id === over.id);
     const next = arrayMove(images, oldIndex, newIndex);
-    await reorder({ data: { imageIds: next.map((i) => i.id) } });
+    let ids = next.map((i) => i.id);
+    if (usingFallback) {
+      const map = await materializeAndMap();
+      const mapped = next.map((i) => map.get(i.src.split("/").pop() ?? i.src));
+      if (mapped.some((v) => !v)) return;
+      ids = mapped as string[];
+    }
+    await reorder({ data: { imageIds: ids } });
     invalidate(slug);
   };
 
