@@ -21,6 +21,8 @@ import {
 import {
   optimizeImageBlob,
   blobToBase64 as optBlobToBase64,
+  isWorthStoring,
+  NOT_SMALLER_MESSAGE,
 } from "@/lib/optimize-image";
 
 import {
@@ -383,15 +385,22 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       const optimized = await optimizeImageBlob(origBlob);
       const optKey = optimizedKeyFor(asset.r2Key);
 
+      const newSize = optimized.webp.size;
+      if (!isWorthStoring(newSize, origSize)) {
+        // Never publish a derivative that is not smaller than its source.
+        setOptInfo(NOT_SMALLER_MESSAGE);
+        return;
+      }
+
       setOptInfo("Uploading optimized WebP…");
       const optB64 = await optBlobToBase64(optimized.webp);
       await writeVariants({
         data: {
-          main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
+          // Use the validated blob MIME type, never a hardcoded value.
+          main: { key: optKey, contentType: optimized.mimeType, dataBase64: optB64 },
         },
       });
 
-      const newSize = optimized.webp.size;
       const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
       setOptInfo(
         `${Math.round(origSize / 1024)} → ${Math.round(newSize / 1024)} KB (−${pct}%) · ${optimized.width}×${optimized.height} webp`,
@@ -778,21 +787,28 @@ function DropZoneUploader() {
             const stem = dot > 0 ? base.slice(0, dot) : base;
             const optKey = `optimized/${stem}.webp`;
 
-            patch(id, { progress: 75, status: "publishing optimized" });
-            const optB64 = await optBlobToBase64(optimized.webp);
-            await writeVariants({
-              data: {
-                main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
-              },
-            });
-            const pct = file.size > 0 ? Math.round((1 - optimized.webp.size / file.size) * 100) : 0;
-            patch(id, {
-              progress: 100,
-              done: true,
-              status: `${Math.round(file.size / 1024)} → ${Math.round(optimized.webp.size / 1024)} KB (−${pct}%)`,
-              optimizedSize: optimized.webp.size,
-              reductionPct: pct,
-            });
+            if (!isWorthStoring(optimized.webp.size, file.size)) {
+              // Original stays the display file; no optimized key is recorded.
+              patch(id, { progress: 100, done: true, status: NOT_SMALLER_MESSAGE });
+            } else {
+              patch(id, { progress: 75, status: "publishing optimized" });
+              const optB64 = await optBlobToBase64(optimized.webp);
+              await writeVariants({
+                data: {
+                  // Validated blob MIME type — never hardcoded.
+                  main: { key: optKey, contentType: optimized.mimeType, dataBase64: optB64 },
+                },
+              });
+              const pct = file.size > 0 ? Math.round((1 - optimized.webp.size / file.size) * 100) : 0;
+              patch(id, {
+                progress: 100,
+                done: true,
+                status: `${Math.round(file.size / 1024)} → ${Math.round(optimized.webp.size / 1024)} KB (−${pct}%)`,
+                optimizedSize: optimized.webp.size,
+                reductionPct: pct,
+              });
+            }
+
 
           } else {
             patch(id, { progress: 20, status: "uploading" });

@@ -41,6 +41,29 @@ const variantSchema = z.object({
   dataBase64: z.string().min(1),
 });
 
+/** True when the buffer starts with RIFF....WEBP. */
+export function looksLikeWebp(bytes: Uint8Array): boolean {
+  if (bytes.byteLength < 12) return false;
+  const ascii = (start: number, end: number) =>
+    String.fromCharCode(...bytes.subarray(start, end));
+  return ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP";
+}
+
+/** Rejects non-WebP payloads written under a `.webp` key. */
+export function assertWebpBytes(key: string, contentType: string, bytes: Uint8Array): void {
+  if (!key.toLowerCase().endsWith(".webp")) return;
+  if (contentType !== "image/webp") {
+    throw new Error(
+      `Refusing to store "${key}": content type is "${contentType}", expected image/webp.`,
+    );
+  }
+  if (!looksLikeWebp(bytes)) {
+    throw new Error(
+      `Refusing to store "${key}": payload is not WebP (missing RIFF/WEBP signature).`,
+    );
+  }
+}
+
 // Writes the single optimized display file, plus an optional backup of the
 // untouched original. `siblings` is kept for backward compatibility but the
 // current pipeline never sends any.
@@ -71,6 +94,10 @@ export const writeR2Variants = createServerFn({ method: "POST" })
       results.push({ key: data.backup.key, size: body.byteLength, url });
     }
     const main = b64ToBytes(data.main.dataBase64);
+    // Safety net: a `.webp` key must contain real WebP bytes. A browser without
+    // a WebP canvas encoder (Safari) silently returns PNG, which previously got
+    // stored as a bogus "optimized" file several times larger than its source.
+    assertWebpBytes(data.main.key, data.main.contentType, main);
     const mainUrl = await putR2Object(data.main.key, main, data.main.contentType);
     if (data.main.key.startsWith("optimized/")) {
       await markOptimizedMediaAssetDirect(data.main.key, mainUrl, main.byteLength);

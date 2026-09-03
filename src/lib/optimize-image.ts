@@ -14,12 +14,43 @@ export type OptimizedImage = {
   width: number;
   height: number;
   webp: Blob;
+  /** Validated MIME type of `webp`. Always "image/webp" — never trust a hardcoded value. */
+  mimeType: string;
   originalSize: number;
   quality: number;
 };
 
+export const OPTIMIZED_MIME = "image/webp";
+
 const MIN_LONG_EDGE = 2400;
 const TARGET_BYTES = 1024 * 1024; // 1 MB
+
+/**
+ * Safari (and any browser without a WebP canvas encoder) is allowed by spec to
+ * ignore the requested type in `canvas.toBlob` and silently return PNG. Storing
+ * that under a `.webp` key produced 6-8 MB "optimized" files that were larger
+ * than their JPEG sources. Never accept a blob whose real type isn't WebP.
+ */
+export function assertWebpBlob(blob: Blob): void {
+  if (blob.type !== OPTIMIZED_MIME) {
+    throw new Error(
+      `This browser cannot encode WebP: canvas returned "${blob.type || "unknown"}" instead of ${OPTIMIZED_MIME}. ` +
+        `Optimization aborted so a non-WebP file is never stored under a .webp key. ` +
+        `Use Chrome, Edge or Firefox to optimize images.`,
+    );
+  }
+}
+
+/**
+ * A derivative is only worth storing when it is actually smaller than its
+ * source. Equal-or-larger output means the original stays in use.
+ */
+export function isWorthStoring(optimizedSize: number, originalSize: number): boolean {
+  return originalSize > 0 && optimizedSize < originalSize;
+}
+
+export const NOT_SMALLER_MESSAGE =
+  "Optimized version was not smaller than the original; original retained.";
 
 async function encode(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
   return new Promise((resolve) => {
@@ -63,16 +94,27 @@ export async function optimizeImageBlob(input: Blob): Promise<OptimizedImage> {
   let webp: Blob | null = null;
   let usedQuality = qualities[0];
   for (const q of qualities) {
-    const attempt = await encode(canvas, "image/webp", q);
+    const attempt = await encode(canvas, OPTIMIZED_MIME, q);
     if (!attempt) continue;
+    // Fail fast on the very first attempt if the browser silently substituted
+    // another format (Safari returns image/png here).
+    assertWebpBlob(attempt);
     webp = attempt;
     usedQuality = q;
     if (attempt.size <= TARGET_BYTES) break;
   }
   bmp.close?.();
   if (!webp) throw new Error("Browser could not encode WebP");
+  assertWebpBlob(webp);
 
-  return { width: w, height: h, webp, originalSize: input.size, quality: usedQuality };
+  return {
+    width: w,
+    height: h,
+    webp,
+    mimeType: webp.type,
+    originalSize: input.size,
+    quality: usedQuality,
+  };
 }
 
 export async function blobToBase64(blob: Blob): Promise<string> {
