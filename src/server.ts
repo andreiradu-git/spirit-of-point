@@ -191,12 +191,32 @@ function canonicalRedirect(request: Request): Response | undefined {
   return Response.redirect(url.toString(), 301);
 }
 
+/** 410 Gone for intentionally removed legacy pages (no equivalent to redirect to). */
+function goneResponse(request: Request): Response | undefined {
+  if (request.method !== "GET" && request.method !== "HEAD") return undefined;
+  let pathname: string;
+  try {
+    pathname = new URL(request.url).pathname;
+  } catch {
+    return undefined;
+  }
+  if (!GONE_PATHS.has(pathname)) return undefined;
+  return new Response("<!doctype html><title>Gone</title><p>This page no longer exists.</p>", {
+    status: 410,
+    headers: { "content-type": "text/html; charset=utf-8", "x-robots-tag": "noindex" },
+  });
+}
+
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const gone = goneResponse(request);
+      if (gone) return gone;
       const redirect = canonicalRedirect(request);
       if (redirect) return redirect;
+
+
 
       const directWorkerEnv = asRecord(env);
       console.log("worker.fetch host", new URL(request.url).host);
