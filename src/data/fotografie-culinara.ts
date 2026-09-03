@@ -59,7 +59,7 @@ export const fotografieCulinaraContent: FotografieCulinaraContent = {
     keywords:
       "fotografie culinara Bucuresti, fotografie food, fotograf mancare, fotografie meniu restaurant, food photography Bucuresti, Glovo, Tazz, Bolt Food",
     ogImage:
-      "https://images.squarespace-cdn.com/content/v1/61698c11d84cc850768a6bf8/3236b78e-0c1c-48e9-83fd-bbfa1f67650f/LOGO_PSP.png?format=1500w",
+      "https://images.pointstudio.ro/originals/4d60d181-80a0-4944-8dd7-c6e0312db758.webp",
   },
 
   h1: "Fotografie Culinară Profesională în București",
