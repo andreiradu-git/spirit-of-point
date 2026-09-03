@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAdmin } from "@/hooks/use-admin";
-import { getVitalsSummary, listVitalsRoutes, METRIC_THRESHOLDS } from "@/lib/analytics.functions";
+import { getVitalsSummary, listVitalsRoutes } from "@/lib/analytics.functions";
+import { METRIC_THRESHOLDS } from "@/lib/web-vitals-thresholds";
 
 export const Route = createFileRoute("/admin/performance")({
   head: () => ({ meta: [{ title: "Performance — Admin" }, { name: "robots", content: "noindex" }] }),

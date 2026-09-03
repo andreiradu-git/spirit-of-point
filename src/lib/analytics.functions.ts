@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAdminAuth } from "@/lib/admin-auth";
 import { d1All, d1First } from "@/lib/d1.server";
+import { METRIC_THRESHOLDS } from "@/lib/web-vitals-thresholds";
 
 const rangeSchema = z.object({ days: z.union([z.literal(7), z.literal(30), z.literal(90)]).default(30) });
 
@@ -115,13 +116,7 @@ export const getAnalyticsSummary = createServerFn({ method: "GET" })
     };
   });
 
-export const METRIC_THRESHOLDS: Record<string, { good: number; poor: number; unit: "ms" | "score" }> = {
-  LCP: { good: 2500, poor: 4000, unit: "ms" },
-  INP: { good: 200, poor: 500, unit: "ms" },
-  CLS: { good: 0.1, poor: 0.25, unit: "score" },
-  FCP: { good: 1800, poor: 3000, unit: "ms" },
-  TTFB: { good: 800, poor: 1800, unit: "ms" },
-};
+
 
 export type VitalsSummary = {
   scannedAt: string;
