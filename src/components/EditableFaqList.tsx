@@ -4,6 +4,7 @@ import { useEditMode } from "@/hooks/use-edit-mode";
 import { useList, useSaveList } from "@/hooks/use-site-lists";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSiteText } from "@/lib/text-ai.functions";
+import { useLang, textKey } from "@/i18n";
 
 export type FaqItem = { q: string; a: string };
 
@@ -18,8 +19,10 @@ export function EditableFaqList({ id, fallback, lang = "ro" }: Props) {
   const { editMode } = useEditMode();
   const editable = isAdmin && editMode;
 
-  const items = useList<FaqItem>(id, fallback);
-  const save = useSaveList();
+  const listKey = textKey(id, useLang());
+  const items = useList<FaqItem>(listKey, fallback);
+  const saveList = useSaveList();
+  const save = (_id: string, next: unknown) => saveList(listKey, next as never);
   const runAi = useServerFn(generateSiteText);
   const [busy, setBusy] = useState<string | null>(null);
 
