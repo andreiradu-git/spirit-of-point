@@ -217,6 +217,23 @@ class ServerQuery implements PromiseLike<{ data: any; error: { message: string }
           return { data: null, error: null, count: Number(rows[0]?.__count ?? 0) };
         }
         const decoded = rows.map((row) => decode(this.table, row));
+        if (this.embed && decoded.length) {
+          const key = pk(this.table);
+          const ids = decoded.map((row) => row[key] as SqlValue).filter((v) => v != null);
+          const children = ids.length
+            ? (
+                await d1All<Row>(
+                  `SELECT * FROM ${this.embed.table} WHERE ${this.embed.foreignKey} IN (${ids
+                    .map(() => "?")
+                    .join(", ")})${this.embed.orderBy ? ` ORDER BY ${this.embed.orderBy} ASC` : ""}`,
+                  ids,
+                )
+              ).map((row) => decode(this.embed!.table, row))
+            : [];
+          for (const row of decoded) {
+            row[this.embed.table] = children.filter((c) => c[this.embed!.foreignKey] === row[key]);
+          }
+        }
         if (this.mode === "many") return { data: decoded, error: null, count: decoded.length };
         if (decoded.length) return { data: decoded[0], error: null };
         if (this.mode === "maybe") return { data: null, error: null };
