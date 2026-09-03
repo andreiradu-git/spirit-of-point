@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fotografieCulinaraContent as C } from "@/data/fotografie-culinara";
+import { foodPhotographyContent as C } from "@/data/food-photography-bucharest";
 import { FoodPhotographyLanding } from "@/pages/FoodPhotographyLanding";
 
-const URL_CANON = "https://www.pointstudio.ro/fotografie-culinara-bucuresti";
-const URL_EN = "https://www.pointstudio.ro/food-photography-bucharest";
-const NS = "foto-culinara";
+const URL_CANON = "https://www.pointstudio.ro/food-photography-bucharest";
+const URL_RO = "https://www.pointstudio.ro/fotografie-culinara-bucuresti";
+const NS = "food-photography-en";
 
-export const Route = createFileRoute("/fotografie-culinara-bucuresti")({
-  component: FotografieCulinaraPage,
+export const Route = createFileRoute("/food-photography-bucharest")({
+  component: FoodPhotographyPage,
   head: () => ({
     meta: [
       { title: C.seo.title },
@@ -17,16 +17,16 @@ export const Route = createFileRoute("/fotografie-culinara-bucuresti")({
       { property: "og:description", content: C.seo.description },
       { property: "og:type", content: "article" },
       { property: "og:url", content: URL_CANON },
-      { property: "og:locale", content: "ro_RO" },
+      { property: "og:locale", content: "en_US" },
       { property: "og:image", content: C.seo.ogImage },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:image", content: C.seo.ogImage },
     ],
     links: [
       { rel: "canonical", href: URL_CANON },
-      { rel: "alternate", hrefLang: "ro", href: URL_CANON },
-      { rel: "alternate", hrefLang: "en", href: URL_EN },
-      { rel: "alternate", hrefLang: "x-default", href: URL_EN },
+      { rel: "alternate", hrefLang: "en", href: URL_CANON },
+      { rel: "alternate", hrefLang: "ro", href: URL_RO },
+      { rel: "alternate", hrefLang: "x-default", href: URL_CANON },
     ],
     scripts: [
       {
@@ -34,18 +34,18 @@ export const Route = createFileRoute("/fotografie-culinara-bucuresti")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "LocalBusiness",
-          name: "Point Studio — Fotografie Culinară București",
+          name: "Point Studio — Food Photography Bucharest",
           description: C.seo.description,
           url: URL_CANON,
           telephone: C.cta.phone,
           email: C.cta.email,
           address: {
             "@type": "PostalAddress",
-            addressLocality: "București",
+            addressLocality: "Bucharest",
             addressCountry: "RO",
             streetAddress: "Piața Presei Libere 1",
           },
-          areaServed: "București",
+          areaServed: "Bucharest",
         }),
       },
       {
@@ -64,6 +64,6 @@ export const Route = createFileRoute("/fotografie-culinara-bucuresti")({
   }),
 });
 
-function FotografieCulinaraPage() {
-  return <FoodPhotographyLanding content={C} ns={NS} lang="ro" />;
+function FoodPhotographyPage() {
+  return <FoodPhotographyLanding content={C} ns={NS} lang="en" />;
 }

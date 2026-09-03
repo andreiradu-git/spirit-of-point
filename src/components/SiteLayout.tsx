@@ -16,7 +16,7 @@ function FotografieCulinaraFooterLink({ visible }: { visible: boolean }) {
       : "Read more about food photography in Bucharest →";
   return (
     <Link
-      to="/fotografie-culinara-bucuresti"
+      to={linkLang === "ro" ? "/fotografie-culinara-bucuresti" : "/food-photography-bucharest"}
       className="mt-2 block text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
     >
       {label}
