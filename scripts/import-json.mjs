@@ -28,7 +28,24 @@ if (!dir) {
   process.exit(1);
 }
 
-const files = (await readdir(dir)).filter((f) => f.endsWith(".json"));
+// Parents before children so foreign keys resolve.
+const ORDER = [
+  "site_settings",
+  "asset_meta",
+  "media_assets",
+  "galleries",
+  "gallery_images",
+  "menu_items",
+  "pages",
+  "page_seo",
+  "page_views",
+  "contact_messages",
+];
+const found = (await readdir(dir)).filter((f) => f.endsWith(".json"));
+const files = [
+  ...ORDER.map((t) => `${t}.json`).filter((f) => found.includes(f)),
+  ...found.filter((f) => !ORDER.includes(path.basename(f, ".json"))),
+];
 for (const file of files) {
   const table = path.basename(file, ".json");
   const rows = JSON.parse(await readFile(path.join(dir, file), "utf8"));
