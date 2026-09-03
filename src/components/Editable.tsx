@@ -5,6 +5,7 @@ import { useText, useSaveText } from "@/hooks/use-site-texts";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSiteText } from "@/lib/text-ai.functions";
 import { useAiLanguage } from "@/hooks/use-ai-language";
+import { useLang, textKey, contentDefault } from "@/i18n";
 
 type Props = {
   id: string;
@@ -31,8 +32,11 @@ export function Editable({
 }: Props): ReactNode {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
-  const value = useText(id, children);
-  const save = useSaveText();
+  const contentLang = useLang();
+  const storageKey = textKey(id, contentLang);
+  const value = useText(storageKey, contentDefault(id, contentLang, children));
+  const saveText = useSaveText();
+  const save = (_id: string, text: string) => saveText(storageKey, text);
   const runAi = useServerFn(generateSiteText);
   const { lang: globalLang } = useAiLanguage();
   const aiLang = lang ?? globalLang;

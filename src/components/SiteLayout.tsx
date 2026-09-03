@@ -5,6 +5,7 @@ import { Editable } from "@/components/Editable";
 import { useSocials, SOCIAL_ICON_PATHS } from "@/hooks/use-socials";
 import { useAdmin } from "@/hooks/use-admin";
 import { fotografieCulinaraContent } from "@/data/fotografie-culinara";
+import { useLang, useTr, localizePath, tr } from "@/i18n";
 
 function FotografieCulinaraFooterLink({ visible }: { visible: boolean }) {
   if (!visible || !fotografieCulinaraContent.isVisibleInNav) return null;
@@ -45,9 +46,11 @@ export function SiteLayout({
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { settings, update, ready } = useSiteSettings();
   const { isAdmin } = useAdmin();
+  const lang = useLang();
+  const t = useTr();
 
 
-  const nav: NavItem[] = [...BASE_NAV];
+  const nav: NavItem[] = BASE_NAV.map((n) => ({ ...n }));
   if (settings.showPatterns) {
     nav.splice(2, 0, { to: "/patterns", label: "Patterns" });
   }
@@ -55,6 +58,11 @@ export function SiteLayout({
     // insert Video before Contact
     nav.splice(nav.length - 1, 0, { to: "/video", label: "Video" });
   }
+
+  const localizedNav: NavItem[] = nav.map((n) => ({
+    to: localizePath(n.to, lang),
+    label: tr(lang, n.label),
+  }));
 
   const light = headerTone === "light";
   const textActive = light ? "text-white" : "text-foreground";
@@ -70,7 +78,7 @@ export function SiteLayout({
         }`}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 sm:h-20 md:h-24 flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-center shrink-0" aria-label="Point Studio">
+          <Link to={localizePath("/", lang)} className="flex items-center shrink-0" aria-label="Point Studio">
             <img
               src="https://images.squarespace-cdn.com/content/v1/61698c11d84cc850768a6bf8/3236b78e-0c1c-48e9-83fd-bbfa1f67650f/LOGO_PSP.png?format=400w"
               alt="Point Studio"
@@ -80,7 +88,7 @@ export function SiteLayout({
 
           <div className="hidden md:flex items-center gap-8">
             <nav className="flex gap-8 text-xs uppercase tracking-[0.2em]">
-              {nav.map((n) => (
+              {localizedNav.map((n) => (
                 <Link
                   key={n.to}
                   to={n.to}
@@ -90,6 +98,7 @@ export function SiteLayout({
                 </Link>
               ))}
             </nav>
+            <LangSwitch light={light} />
             <HeaderSocials light={light} />
           </div>
           <button
@@ -97,7 +106,7 @@ export function SiteLayout({
             className={`md:hidden text-xs uppercase tracking-widest ${light ? "text-white" : ""}`}
             aria-label="Menu"
           >
-            {open ? "Close" : "Menu"}
+            {open ? t("Close") : t("Menu")}
           </button>
         </div>
         {open && (
@@ -106,11 +115,12 @@ export function SiteLayout({
               light ? "bg-black/70 text-white" : "border-t border-border bg-background"
             }`}
           >
-            {nav.map((n) => (
+            {localizedNav.map((n) => (
               <Link key={n.to} to={n.to} onClick={() => setOpen(false)}>
                 {n.label}
               </Link>
             ))}
+            <LangSwitch light={light} className="pt-1" />
           </nav>
         )}
       </header>
@@ -143,7 +153,7 @@ export function SiteLayout({
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-4 right-4 z-50 h-11 w-11 rounded-full bg-[#25D366] text-white shadow-lg hover:brightness-105 flex items-center justify-center"
-        aria-label="Chat on WhatsApp"
+        aria-label={t("Chat on WhatsApp")}
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true">
           <path d="M20.52 3.48A11.86 11.86 0 0 0 12.02 0C5.4 0 .04 5.36.04 11.98c0 2.11.55 4.17 1.6 5.99L0 24l6.2-1.62a11.94 11.94 0 0 0 5.82 1.48h.01c6.62 0 11.98-5.36 11.98-11.98 0-3.2-1.25-6.21-3.49-8.4ZM12.03 21.3h-.01a9.3 9.3 0 0 1-4.74-1.3l-.34-.2-3.68.96.98-3.59-.22-.37a9.28 9.28 0 0 1-1.42-4.92c0-5.14 4.19-9.32 9.34-9.32 2.49 0 4.83.97 6.59 2.73a9.25 9.25 0 0 1 2.73 6.6c0 5.14-4.19 9.31-9.23 9.41Zm5.4-6.98c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.95 1.16-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.11 3.22 5.11 4.52.71.31 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.09 1.75-.72 2-1.4.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35Z"/>
@@ -178,6 +188,43 @@ function SocialIcons({ className = "", iconClass = "h-4 w-4" }: { className?: st
           <svg viewBox="0 0 24 24" className={`${iconClass} fill-current`}><path d={SOCIAL_ICON_PATHS[s.icon]} /></svg>
         </a>
       ))}
+    </div>
+  );
+}
+
+/** Remembers the visitor's manual choice; never used to auto-redirect. */
+function rememberLang(next: "en" | "ro") {
+  try {
+    window.localStorage.setItem("point-studio-lang", next);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+function LangSwitch({ light, className = "" }: { light: boolean; className?: string }) {
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const lang = useLang();
+  const idle = light ? "text-white/60 hover:text-white" : "text-muted-foreground hover:text-foreground";
+  const active = light ? "text-white" : "text-foreground";
+  return (
+    <div className={`flex items-center gap-1 text-xs uppercase tracking-[0.2em] ${className}`}>
+      <Link
+        to={localizePath(path, "en")}
+        onClick={() => rememberLang("en")}
+        aria-label="English"
+        className={`transition-colors ${lang === "en" ? active : idle}`}
+      >
+        EN
+      </Link>
+      <span className={light ? "text-white/40" : "text-muted-foreground/50"}>/</span>
+      <Link
+        to={localizePath(path, "ro")}
+        onClick={() => rememberLang("ro")}
+        aria-label="Română"
+        className={`transition-colors ${lang === "ro" ? active : idle}`}
+      >
+        RO
+      </Link>
     </div>
   );
 }

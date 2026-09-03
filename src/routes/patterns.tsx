@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { cdn } from "@/components/SiteLayout";
-import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/patterns.json";
+import { PatternsPage } from "@/pages/Patterns";
+import { altLinks } from "@/i18n";
+
+const alt = altLinks("/patterns", "en");
 
 export const Route = createFileRoute("/patterns")({
   component: PatternsPage,
@@ -20,13 +23,8 @@ export const Route = createFileRoute("/patterns")({
       { property: "og:description", content: "Textures, backgrounds and closeups." },
       { property: "og:image", content: cdn(data[0].src, 1600) },
       { name: "twitter:image", content: cdn(data[0].src, 1600) },
-      { property: "og:url", content: "https://www.pointstudio.ro/patterns" },
+      ...alt.meta,
     ],
-    links: [{ rel: "canonical", href: "https://www.pointstudio.ro/patterns" }],
+    links: alt.links,
   }),
 });
-
-function PatternsPage() {
-  return <PortfolioPage slug="patterns" tagline="Patterns, Textures & Closeups" fallbackImages={data} galleryLayout="stacked" />;
-}
-

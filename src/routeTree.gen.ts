@@ -19,7 +19,14 @@ import { Route as EditorialRouteImport } from './routes/editorial'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RoIndexRouteImport } from './routes/ro.index'
 import { Route as WorkSlugRouteImport } from './routes/work.$slug'
+import { Route as RoVideoRouteImport } from './routes/ro.video'
+import { Route as RoPeopleRouteImport } from './routes/ro.people'
+import { Route as RoPatternsRouteImport } from './routes/ro.patterns'
+import { Route as RoFoodRouteImport } from './routes/ro.food'
+import { Route as RoEditorialRouteImport } from './routes/ro.editorial'
+import { Route as RoContactRouteImport } from './routes/ro.contact'
 import { Route as AdminThemeRouteImport } from './routes/admin.theme'
 import { Route as AdminStorageCleanupRouteImport } from './routes/admin.storage-cleanup'
 import { Route as AdminSocialsRouteImport } from './routes/admin.socials'
@@ -29,6 +36,7 @@ import { Route as AdminHeroRouteImport } from './routes/admin.hero'
 import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
 import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
+import { Route as RoWorkSlugRouteImport } from './routes/ro.work.$slug'
 import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
 import { Route as ApiDebugAiRouteImport } from './routes/api/debug/ai'
 
@@ -83,9 +91,44 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoIndexRoute = RoIndexRouteImport.update({
+  id: '/ro/',
+  path: '/ro/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkSlugRoute = WorkSlugRouteImport.update({
   id: '/work/$slug',
   path: '/work/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoVideoRoute = RoVideoRouteImport.update({
+  id: '/ro/video',
+  path: '/ro/video',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoPeopleRoute = RoPeopleRouteImport.update({
+  id: '/ro/people',
+  path: '/ro/people',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoPatternsRoute = RoPatternsRouteImport.update({
+  id: '/ro/patterns',
+  path: '/ro/patterns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoFoodRoute = RoFoodRouteImport.update({
+  id: '/ro/food',
+  path: '/ro/food',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoEditorialRoute = RoEditorialRouteImport.update({
+  id: '/ro/editorial',
+  path: '/ro/editorial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoContactRoute = RoContactRouteImport.update({
+  id: '/ro/contact',
+  path: '/ro/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminThemeRoute = AdminThemeRouteImport.update({
@@ -133,6 +176,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/admin/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoWorkSlugRoute = RoWorkSlugRouteImport.update({
+  id: '/ro/work/$slug',
+  path: '/ro/work/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDebugR2Route = ApiDebugR2RouteImport.update({
   id: '/api/debug/r2',
   path: '/api/debug/r2',
@@ -164,9 +212,17 @@ export interface FileRoutesByFullPath {
   '/admin/socials': typeof AdminSocialsRoute
   '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/ro/contact': typeof RoContactRoute
+  '/ro/editorial': typeof RoEditorialRoute
+  '/ro/food': typeof RoFoodRoute
+  '/ro/patterns': typeof RoPatternsRoute
+  '/ro/people': typeof RoPeopleRoute
+  '/ro/video': typeof RoVideoRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/ro/': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/r2': typeof ApiDebugR2Route
+  '/ro/work/$slug': typeof RoWorkSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -188,9 +244,17 @@ export interface FileRoutesByTo {
   '/admin/socials': typeof AdminSocialsRoute
   '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/ro/contact': typeof RoContactRoute
+  '/ro/editorial': typeof RoEditorialRoute
+  '/ro/food': typeof RoFoodRoute
+  '/ro/patterns': typeof RoPatternsRoute
+  '/ro/people': typeof RoPeopleRoute
+  '/ro/video': typeof RoVideoRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/ro': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/r2': typeof ApiDebugR2Route
+  '/ro/work/$slug': typeof RoWorkSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -213,9 +277,17 @@ export interface FileRoutesById {
   '/admin/socials': typeof AdminSocialsRoute
   '/admin/storage-cleanup': typeof AdminStorageCleanupRoute
   '/admin/theme': typeof AdminThemeRoute
+  '/ro/contact': typeof RoContactRoute
+  '/ro/editorial': typeof RoEditorialRoute
+  '/ro/food': typeof RoFoodRoute
+  '/ro/patterns': typeof RoPatternsRoute
+  '/ro/people': typeof RoPeopleRoute
+  '/ro/video': typeof RoVideoRoute
   '/work/$slug': typeof WorkSlugRoute
+  '/ro/': typeof RoIndexRoute
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/r2': typeof ApiDebugR2Route
+  '/ro/work/$slug': typeof RoWorkSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -239,9 +311,17 @@ export interface FileRouteTypes {
     | '/admin/socials'
     | '/admin/storage-cleanup'
     | '/admin/theme'
+    | '/ro/contact'
+    | '/ro/editorial'
+    | '/ro/food'
+    | '/ro/patterns'
+    | '/ro/people'
+    | '/ro/video'
     | '/work/$slug'
+    | '/ro/'
     | '/api/debug/ai'
     | '/api/debug/r2'
+    | '/ro/work/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -263,9 +343,17 @@ export interface FileRouteTypes {
     | '/admin/socials'
     | '/admin/storage-cleanup'
     | '/admin/theme'
+    | '/ro/contact'
+    | '/ro/editorial'
+    | '/ro/food'
+    | '/ro/patterns'
+    | '/ro/people'
+    | '/ro/video'
     | '/work/$slug'
+    | '/ro'
     | '/api/debug/ai'
     | '/api/debug/r2'
+    | '/ro/work/$slug'
   id:
     | '__root__'
     | '/'
@@ -287,9 +375,17 @@ export interface FileRouteTypes {
     | '/admin/socials'
     | '/admin/storage-cleanup'
     | '/admin/theme'
+    | '/ro/contact'
+    | '/ro/editorial'
+    | '/ro/food'
+    | '/ro/patterns'
+    | '/ro/people'
+    | '/ro/video'
     | '/work/$slug'
+    | '/ro/'
     | '/api/debug/ai'
     | '/api/debug/r2'
+    | '/ro/work/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -312,9 +408,17 @@ export interface RootRouteChildren {
   AdminSocialsRoute: typeof AdminSocialsRoute
   AdminStorageCleanupRoute: typeof AdminStorageCleanupRoute
   AdminThemeRoute: typeof AdminThemeRoute
+  RoContactRoute: typeof RoContactRoute
+  RoEditorialRoute: typeof RoEditorialRoute
+  RoFoodRoute: typeof RoFoodRoute
+  RoPatternsRoute: typeof RoPatternsRoute
+  RoPeopleRoute: typeof RoPeopleRoute
+  RoVideoRoute: typeof RoVideoRoute
   WorkSlugRoute: typeof WorkSlugRoute
+  RoIndexRoute: typeof RoIndexRoute
   ApiDebugAiRoute: typeof ApiDebugAiRoute
   ApiDebugR2Route: typeof ApiDebugR2Route
+  RoWorkSlugRoute: typeof RoWorkSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -389,11 +493,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ro/': {
+      id: '/ro/'
+      path: '/ro'
+      fullPath: '/ro/'
+      preLoaderRoute: typeof RoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/work/$slug': {
       id: '/work/$slug'
       path: '/work/$slug'
       fullPath: '/work/$slug'
       preLoaderRoute: typeof WorkSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ro/video': {
+      id: '/ro/video'
+      path: '/ro/video'
+      fullPath: '/ro/video'
+      preLoaderRoute: typeof RoVideoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ro/people': {
+      id: '/ro/people'
+      path: '/ro/people'
+      fullPath: '/ro/people'
+      preLoaderRoute: typeof RoPeopleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ro/patterns': {
+      id: '/ro/patterns'
+      path: '/ro/patterns'
+      fullPath: '/ro/patterns'
+      preLoaderRoute: typeof RoPatternsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ro/food': {
+      id: '/ro/food'
+      path: '/ro/food'
+      fullPath: '/ro/food'
+      preLoaderRoute: typeof RoFoodRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ro/editorial': {
+      id: '/ro/editorial'
+      path: '/ro/editorial'
+      fullPath: '/ro/editorial'
+      preLoaderRoute: typeof RoEditorialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ro/contact': {
+      id: '/ro/contact'
+      path: '/ro/contact'
+      fullPath: '/ro/contact'
+      preLoaderRoute: typeof RoContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/theme': {
@@ -459,6 +612,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ro/work/$slug': {
+      id: '/ro/work/$slug'
+      path: '/ro/work/$slug'
+      fullPath: '/ro/work/$slug'
+      preLoaderRoute: typeof RoWorkSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/debug/r2': {
       id: '/api/debug/r2'
       path: '/api/debug/r2'
@@ -496,10 +656,28 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSocialsRoute: AdminSocialsRoute,
   AdminStorageCleanupRoute: AdminStorageCleanupRoute,
   AdminThemeRoute: AdminThemeRoute,
+  RoContactRoute: RoContactRoute,
+  RoEditorialRoute: RoEditorialRoute,
+  RoFoodRoute: RoFoodRoute,
+  RoPatternsRoute: RoPatternsRoute,
+  RoPeopleRoute: RoPeopleRoute,
+  RoVideoRoute: RoVideoRoute,
   WorkSlugRoute: WorkSlugRoute,
+  RoIndexRoute: RoIndexRoute,
   ApiDebugAiRoute: ApiDebugAiRoute,
   ApiDebugR2Route: ApiDebugR2Route,
+  RoWorkSlugRoute: RoWorkSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

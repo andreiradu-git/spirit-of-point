@@ -6,6 +6,7 @@ import { useGallery } from "@/hooks/use-gallery";
 import { Editable } from "./Editable";
 import { GallerySeoSection } from "./GallerySeoSection";
 import { useGalleryCover } from "@/hooks/use-gallery-covers";
+import { useLang, useTr } from "@/i18n";
 
 type Img = { src: string; alt?: string };
 
@@ -26,6 +27,8 @@ export function PortfolioPage({
   showLogos?: boolean;
   galleryLayout?: "grid" | "masonry" | "stacked";
 }) {
+  const lang = useLang();
+  const t = useTr();
   const { data: gallery } = useGallery(slug);
   const cover = useGalleryCover(slug);
   const rawImages: Img[] =
@@ -53,7 +56,7 @@ export function PortfolioPage({
               {tagline}
             </Editable>
           ) : (
-            tagline
+            t(tagline)
           )}
         </p>
       </div>
@@ -72,7 +75,7 @@ export function PortfolioPage({
               >
                 <img
                   src={cdn(img.src, 1200)}
-                  alt={img.alt || "Point Studio photograph"}
+                  alt={img.alt || t("Point Studio photograph")}
                   loading="lazy"
                   className="h-full w-auto object-cover"
                 />
@@ -81,14 +84,14 @@ export function PortfolioPage({
           </div>
           <button
             onClick={() => scrollBy(-1)}
-            aria-label="Previous"
+            aria-label={t("Previous")}
             className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 items-center justify-center rounded-full bg-white/90 text-black text-2xl shadow hover:bg-white"
           >
             ‹
           </button>
           <button
             onClick={() => scrollBy(1)}
-            aria-label="Next"
+            aria-label={t("Next")}
             className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 items-center justify-center rounded-full bg-white/90 text-black text-2xl shadow hover:bg-white"
           >
             ›
@@ -120,7 +123,12 @@ export function PortfolioPage({
         </div>
       )}
 
-      <GallerySeoSection slug={slug} title={gallery?.title || tagline} images={images} />
+      <GallerySeoSection
+        slug={slug}
+        lang={lang}
+        title={gallery?.title || t(tagline)}
+        images={images}
+      />
     </SiteLayout>
   );
 }
