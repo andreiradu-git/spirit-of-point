@@ -285,6 +285,14 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         referenceIndex.push({ source: "asset_meta", text: row.url });
       }
     }
+    for (const row of mediaAssets.data ?? []) {
+      for (const value of [row.object_key, row.optimized_object_key, row.original_object_key, row.url, row.optimized_url, row.original_url]) {
+        if (value) {
+          haystackParts.push(value);
+          referenceIndex.push({ source: "media_assets", text: value });
+        }
+      }
+    }
 
     // Also include known bundled data files (videos list).
     try {
