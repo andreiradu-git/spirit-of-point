@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { serverDb } from "@/lib/db-client.server";
+import { serverDb, type ServerDb } from "@/lib/db-client.server";
 import { requireAdminAuth } from "@/lib/admin-auth";
-import { getMediaDbClient } from "@/lib/media-assets.server";
+import { readServerEnv } from "@/lib/server-env";
 
-type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
+type AnyDb = Omit<ServerDb, "from"> & { from: (table: string) => any };
 
 export type ContactMessage = {
   id: string;
@@ -28,42 +28,60 @@ const submitSchema = z.object({
   source_path: z.string().max(500).optional(),
 });
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+}
+
+/** Best-effort email notification through Resend; never blocks the submission. */
+async function notifyByEmail(data: z.infer<typeof submitSchema>): Promise<void> {
+  const apiKey = readServerEnv("RESEND_API_KEY");
+  const to = readServerEnv("CONTACT_NOTIFY_EMAIL");
+  if (!apiKey || !to) return;
+  const from = readServerEnv("CONTACT_FROM_EMAIL") || "Point Studio <onboarding@resend.dev>";
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      reply_to: data.email,
+      subject: `New message from ${data.name}${data.subject ? ` — ${data.subject}` : ""}`,
+      html: `<h2>New contact message</h2>
+        <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+        ${data.phone ? `<p><strong>Phone:</strong> ${escapeHtml(data.phone)}</p>` : ""}
+        ${data.subject ? `<p><strong>Subject:</strong> ${escapeHtml(data.subject)}</p>` : ""}
+        <p>${escapeHtml(data.message).replace(/\n/g, "<br />")}</p>
+        ${data.source_path ? `<p style="color:#888">Sent from ${escapeHtml(data.source_path)}</p>` : ""}`,
+    }),
+  });
+  if (!res.ok) console.error("[contact] Resend notification failed", res.status, await res.text());
+}
+
 export const submitContactMessage = createServerFn({ method: "POST" })
   .validator((data) => submitSchema.parse(data))
   .handler(async ({ data }) => {
-    const tag = "[contact]";
-    try {
-      console.log(`${tag} submitContactMessage called`, { data });
-
-      const db = getMediaDbClient(false) as unknown as AnyDb;
-
-      const payload = {
-        name: data.name,
-        email: data.email,
-        phone: data.phone || null,
-        subject: data.subject || null,
-        message: data.message,
-        source_path: data.source_path || null,
-      };
-
-      console.log(`${tag} inserting into contact_messages`, { payload });
-      // Insert and request the returned row(s) when possible
-      const insertRes = await db.from("contact_messages").insert(payload).select();
-      console.log(`${tag} insert result`, insertRes);
-      if (insertRes.error) {
-        console.error(`${tag} insert failed`, insertRes.error);
-        throw insertRes.error;
-      }
-
-      // No email sending logic present in repository; log and return success once DB insert succeeded.
-      console.log(`${tag} insert succeeded, rows:`, insertRes.data);
-
-      return { ok: true, rows: insertRes.data ?? null };
-    } catch (e) {
-      console.error("[contact] submitContactMessage error", e);
-      // Never swallow errors — rethrow so client sees the failure.
-      throw e;
+    const db = serverDb() as unknown as AnyDb;
+    const insertRes = await db.from("contact_messages").insert({
+      name: data.name,
+      email: data.email,
+      phone: data.phone || null,
+      subject: data.subject || null,
+      message: data.message,
+      source_path: data.source_path || null,
+    });
+    if (insertRes.error) {
+      console.error("[contact] insert failed", insertRes.error);
+      throw new Error(insertRes.error.message);
     }
+
+    try {
+      await notifyByEmail(data);
+    } catch (error) {
+      console.error("[contact] notification error", error);
+    }
+
+    return { ok: true, rows: insertRes.data ?? null };
   });
 
 
