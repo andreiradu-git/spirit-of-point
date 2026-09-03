@@ -28,6 +28,10 @@ const submitSchema = z.object({
   source_path: z.string().max(500).optional(),
 });
 
+// Verified sender domain in Resend. The resend.dev test sender can only deliver
+// to the Resend account owner, which silently broke admin notifications.
+const DEFAULT_FROM = "Point Studio <noreply@pointstudio.ro>";
+
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 }
@@ -44,8 +48,8 @@ export function contactEmailConfigStatus() {
     hasRecipient: Boolean(to),
     recipientDomain: to?.split("@")[1] ?? null,
     hasFromOverride: Boolean(from),
-    fromDomain: (from ?? "onboarding@resend.dev").split("@").pop()?.replace(/>$/, "") ?? null,
-    usingResendTestSender: !from,
+    fromDomain: (from ?? DEFAULT_FROM).split("@").pop()?.replace(/>$/, "") ?? null,
+    usingResendTestSender: (from ?? DEFAULT_FROM).includes("resend.dev"),
     ready: Boolean(apiKey && to),
   };
 }
@@ -65,7 +69,7 @@ async function notifyByEmail(
 
   // Authenticated sender on our own domain. The visitor's address is only ever
   // used as Reply-To so SPF/DMARC stay intact.
-  const from = readServerEnv("CONTACT_FROM_EMAIL") || "Point Studio <onboarding@resend.dev>";
+  const from = readServerEnv("CONTACT_FROM_EMAIL") || DEFAULT_FROM;
 
   const rows: Array<[string, string | undefined]> = [
     ["Name", data.name],
