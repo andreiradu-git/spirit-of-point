@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { cdn, cdnSrcSet } from "@/components/SiteLayout";
+import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "@/components/SiteLayout";
 import {
   useHeroItems,
   useHeroSettings,
@@ -103,8 +103,8 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
             >
               {item.kind === "image" ? (
                 <img
-                  src={cdn(item.src, 2400)}
-                  srcSet={cdnSrcSet(item.src, [800, 1200, 1600, 2400])}
+                  src={cdn(item.src, 2400, IMAGE_QUALITY_LARGE)}
+                  srcSet={cdnSrcSet(item.src, [400, 800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)}
                   sizes="100vw"
                   alt={item.alt ?? ""}
                   loading={i === 0 ? "eager" : "lazy"}
@@ -112,6 +112,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
                   decoding="async"
                   style={mediaStyle}
                   className="w-full h-full object-cover"
+                  onError={onTransformError}
                 />
               ) : embed ? (
                 isActive || isNext ? (

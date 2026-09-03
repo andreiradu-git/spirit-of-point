@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { cdn, onTransformError } from "@/components/SiteLayout";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
@@ -137,7 +138,8 @@ export function EditableLogoBand({ fallback = [] as Logo[] }: { fallback?: Logo[
             {items.map((l, index) => (
               <div key={l.id} className="relative group shrink-0">
                 <img
-                  src={l.src}
+                  src={cdn(l.src, 400)}
+                  onError={onTransformError}
                   alt={l.alt ?? "Client logo"}
                   className="h-6 md:h-9 w-auto object-contain opacity-90 hover:opacity-100 transition"
                 />

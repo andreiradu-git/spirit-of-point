@@ -1,4 +1,4 @@
-import { SiteLayout, cdn } from "@/components/SiteLayout";
+import { SiteLayout, cdn, cdnSrcSet, onTransformError } from "@/components/SiteLayout";
 import { Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
 import home from "@/data/home.json";
@@ -251,10 +251,13 @@ export function Index() {
                 className="relative aspect-[3/4] overflow-hidden group block bg-muted"
               >
                 <img
-                  src={cdn(galleryCovers?.[serviceSlug(img.title || "")] ?? img.src, 700)}
+                  src={cdn(galleryCovers?.[serviceSlug(img.title || "")] ?? img.src, 800)}
+                  srcSet={cdnSrcSet(galleryCovers?.[serviceSlug(img.title || "")] ?? img.src, [400, 800, 1200])}
+                  sizes="(min-width:1024px) 33vw, (min-width:768px) 50vw, 100vw"
                   alt={img.alt ?? img.title ?? ""}
                   loading="lazy"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={onTransformError}
                 />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
                 <div className="absolute inset-0 flex items-end p-4">

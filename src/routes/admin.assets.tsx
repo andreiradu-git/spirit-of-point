@@ -765,11 +765,15 @@ function DropZoneUploader() {
         const isImage = (file.type || "").startsWith("image/");
         try {
           if (isImage) {
-            // 1. Upload the untouched original — server places it under
-            //    `originals/<uuid>.<ext>` and returns that key.
-            patch(id, { progress: 10, status: "uploading original" });
+            // Upload the untouched original — server places it under
+            // `originals/<uuid>.<ext>`. Public delivery now goes through
+            // Cloudflare Image Transformations on that original, so no
+            // browser-side WebP derivative is generated here any more.
+            // (The manual Optimize/Regenerate action still exists.)
+            patch(id, { progress: 20, status: "uploading original" });
             const origB64 = await optBlobToBase64(file);
-            const uploaded = await doUploadR2({
+            patch(id, { progress: 60, status: "uploading original" });
+            await doUploadR2({
               data: {
                 filename: file.name,
                 contentType: file.type || "application/octet-stream",
@@ -777,37 +781,13 @@ function DropZoneUploader() {
                 kind: "image",
               },
             });
+            patch(id, {
+              progress: 100,
+              done: true,
+              status: `${Math.round(file.size / 1024)} KB original stored`,
+            });
 
-            // 2. Optimize in the browser to a single WebP display file and
-            //    upload it under the paired `optimized/<uuid>.webp` key.
-            patch(id, { progress: 45, status: "optimizing" });
-            const optimized = await optimizeImageBlob(file);
-            const base = uploaded.key.split("/").pop() || uploaded.key;
-            const dot = base.lastIndexOf(".");
-            const stem = dot > 0 ? base.slice(0, dot) : base;
-            const optKey = `optimized/${stem}.webp`;
 
-            if (!isWorthStoring(optimized.webp.size, file.size)) {
-              // Original stays the display file; no optimized key is recorded.
-              patch(id, { progress: 100, done: true, status: NOT_SMALLER_MESSAGE });
-            } else {
-              patch(id, { progress: 75, status: "publishing optimized" });
-              const optB64 = await optBlobToBase64(optimized.webp);
-              await writeVariants({
-                data: {
-                  // Validated blob MIME type — never hardcoded.
-                  main: { key: optKey, contentType: optimized.mimeType, dataBase64: optB64 },
-                },
-              });
-              const pct = file.size > 0 ? Math.round((1 - optimized.webp.size / file.size) * 100) : 0;
-              patch(id, {
-                progress: 100,
-                done: true,
-                status: `${Math.round(file.size / 1024)} → ${Math.round(optimized.webp.size / 1024)} KB (−${pct}%)`,
-                optimizedSize: optimized.webp.size,
-                reductionPct: pct,
-              });
-            }
 
 
           } else {

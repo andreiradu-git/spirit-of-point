@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { SiteLayout, cdn } from "./SiteLayout";
+import { SiteLayout, cdn, cdnSrcSet, onTransformError } from "./SiteLayout";
 import { EditableGallery } from "./EditableGallery";
 import { EditableLogoBand } from "./EditableLogoBand";
 import { useGallery } from "@/hooks/use-gallery";
@@ -75,9 +75,12 @@ export function PortfolioPage({
               >
                 <img
                   src={cdn(img.src, 1200)}
+                  srcSet={cdnSrcSet(img.src, [400, 800, 1200, 1600])}
+                  sizes="(min-width:768px) 52vh, 41vh"
                   alt={img.alt || t("Point Studio photograph")}
                   loading="lazy"
                   className="h-full w-auto object-cover"
+                  onError={onTransformError}
                 />
               </div>
             ))}

@@ -85,7 +85,10 @@ export function SiteLayout({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 sm:h-20 md:h-24 flex items-center justify-between gap-3">
           <Link to={localizePath("/", lang)} className="flex items-center shrink-0" aria-label="Point Studio">
             <img
-              src="https://images.pointstudio.ro/originals/4d60d181-80a0-4944-8dd7-c6e0312db758.webp"
+              src={cdn("https://images.pointstudio.ro/originals/4d60d181-80a0-4944-8dd7-c6e0312db758.webp", 400)}
+              srcSet={cdnSrcSet("https://images.pointstudio.ro/originals/4d60d181-80a0-4944-8dd7-c6e0312db758.webp", [400, 800])}
+              sizes="200px"
+              onError={onTransformError}
               alt="Point Studio"
               className="h-10 sm:h-12 md:h-14 lg:h-16 xl:h-[69px] w-auto object-contain"
             />
@@ -320,23 +323,86 @@ function SettingsPanel({
   );
 }
 
-export function cdn(url: string, w = 1500, quality = 75) {
+/**
+ * Cloudflare refuses images above 100 MP ("ERROR 9413"). A handful of
+ * originals are larger than that, so any transformed <img> falls back to the
+ * untouched original instead of showing a broken image.
+ */
+export function onTransformError(e: React.SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget;
+  const raw = img.src.replace(/\/cdn-cgi\/image\/[^/]+\//, "/");
+  if (raw === img.src) return;
+  img.removeAttribute("srcset");
+  img.removeAttribute("sizes");
+  img.src = raw;
+}
+
+/** Responsive ladder used for every transformed image. */
+export const RESPONSIVE_WIDTHS = [400, 800, 1200, 1600, 2400] as const;
+/** Default delivery quality for portfolio images. */
+export const IMAGE_QUALITY = 85;
+/** Quality for large presentation surfaces (hero, lightbox, fullscreen). */
+export const IMAGE_QUALITY_LARGE = 88;
+/** Hard ceiling — never request more than the ladder's top rung. */
+export const MAX_IMAGE_WIDTH = 2400;
+
+const R2_HOST = /(^|\/\/)images\.pointstudio\.ro\//;
+/** Formats Cloudflare Image Transformations must not touch. */
+const NON_TRANSFORMABLE = /\.(svgz?|gif|mp4|webm|mov|m4v|avi|pdf|json|txt)(\?|$)/i;
+
+/** True when the URL is an R2-hosted still image we may transform. */
+function isTransformable(url: string) {
+  if (!url) return false;
+  if (!R2_HOST.test(url)) return false;
+  if (url.includes("/cdn-cgi/image/")) return false; // never double-transform
+  if (NON_TRANSFORMABLE.test(url)) return false;
+  return true;
+}
+
+/** Snap an arbitrary requested width up to the nearest ladder rung. */
+function snapWidth(w: number) {
+  return RESPONSIVE_WIDTHS.find((x) => x >= w) ?? MAX_IMAGE_WIDTH;
+}
+
+/**
+ * Public delivery URL for an image.
+ *
+ * R2 originals under images.pointstudio.ro are served through Cloudflare Image
+ * Transformations (`format=auto`, `fit=scale-down` so an image is never
+ * upscaled past its source). Originals themselves are never modified — these
+ * are delivery variants only. Anything not transformable is returned untouched.
+ */
+export function cdn(url: string, w = 1500, quality = IMAGE_QUALITY) {
   if (!url) return url;
-  // Cloudflare R2 (images.pointstudio.ro) serves originals — no transform param
-  // is applied. Widths/quality are ignored server-side by R2 itself; leaving
-  // the URL untouched avoids polluting cache keys.
-  if (/images\.pointstudio\.ro/.test(url)) {
-    return url;
+  if (isTransformable(url)) {
+    const width = snapWidth(Math.min(w, MAX_IMAGE_WIDTH));
+    const opts = `width=${width},quality=${quality},format=auto,fit=scale-down`;
+    return url.replace(R2_HOST, (m) => `${m.replace(/\/$/, "")}/cdn-cgi/image/${opts}/`);
   }
-  // Squarespace CDN
+  // Squarespace CDN (legacy/fallback data only)
   if (/squarespace-cdn\.com/.test(url)) {
     const buckets = [100, 300, 500, 750, 1000, 1500, 2500];
     const bucket = buckets.find((b) => b >= w) ?? 2500;
     return `${url}?format=${bucket}w`;
   }
-  return `${url}?format=${w}w&q=${quality}`;
+  return url;
 }
 
-export function cdnSrcSet(url: string, widths: number[] = [400, 800, 1200, 1600]) {
-  return widths.map((w) => `${cdn(url, w)} ${w}w`).join(", ");
+/**
+ * Genuine responsive candidates — every descriptor resolves to a distinct
+ * transformed rendition at that exact width, so the browser (including on
+ * DPR 2 displays) can pick the right one. Falls back to the plain URL for
+ * anything not transformable.
+ */
+export function cdnSrcSet(
+  url: string,
+  widths: readonly number[] = RESPONSIVE_WIDTHS,
+  quality = IMAGE_QUALITY,
+) {
+  if (!isTransformable(url) && !/squarespace-cdn\.com/.test(url)) return undefined;
+  const uniq = Array.from(new Set(widths.map((w) => snapWidth(Math.min(w, MAX_IMAGE_WIDTH))))).sort(
+    (a, b) => a - b,
+  );
+  return uniq.map((w) => `${cdn(url, w, quality)} ${w}w`).join(", ");
 }
+
