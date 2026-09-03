@@ -407,3 +407,20 @@ export function cdnSrcSet(
   return uniq.map((w) => `${cdn(url, w, quality)} ${w}w`).join(", ");
 }
 
+
+/**
+ * Exact-width delivery variant for a single large presentation image
+ * (the Wanders fullscreen viewer). Bypasses the responsive ladder so one
+ * request can go up to `LIGHTBOX_MAX_WIDTH`; `fit=scale-down` still means an
+ * image smaller than the requested width is served at its native size and is
+ * never upscaled. Not used by grids — thumbnails keep the ladder.
+ */
+export function cdnFixed(url: string, w: number, quality = IMAGE_QUALITY_LARGE) {
+  if (!url) return url;
+  if (isTransformable(url)) {
+    const width = Math.min(Math.round(w), LIGHTBOX_MAX_WIDTH);
+    const opts = `width=${width},quality=${quality},format=auto,fit=scale-down`;
+    return url.replace(R2_HOST, (m) => `${m.replace(/\/$/, "")}/cdn-cgi/image/${opts}/`);
+  }
+  return cdn(url, w, quality);
+}
