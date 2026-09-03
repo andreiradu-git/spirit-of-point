@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import { Editable } from "@/components/Editable";
 import { useText } from "@/hooks/use-site-texts";

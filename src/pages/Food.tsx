@@ -1,5 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { cdn } from "@/components/SiteLayout";
+import { Link } from "@tanstack/react-router";
 import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/food.json";
 import { fotografieCulinaraContent } from "@/data/fotografie-culinara";

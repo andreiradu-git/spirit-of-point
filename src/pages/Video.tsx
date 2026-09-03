@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import fallbackVideos from "@/data/videos.json";

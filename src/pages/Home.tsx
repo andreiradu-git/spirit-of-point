@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import { Link } from "@tanstack/react-router";
 import { Star } from "lucide-react";
