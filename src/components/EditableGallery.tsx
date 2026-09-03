@@ -1,3 +1,4 @@
+import { withoutBrandingAssets } from "@/lib/branding-assets";
 import { useState, useRef, type ReactNode } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useTr } from "@/i18n";
@@ -216,7 +217,7 @@ export function EditableGallery({
 
   const editable = isAdmin && editMode;
 
-  const images: GalleryImage[] =
+  const images: GalleryImage[] = withoutBrandingAssets(
     gallery?.images.map((img) => ({ ...img, src: img.src })) ??
     fallbackImages.map((img, i) => ({
       id: `fallback-${i}`,
@@ -224,7 +225,8 @@ export function EditableGallery({
       alt: img.alt ?? null,
       title: img.title ?? null,
       position: i + 1,
-    }));
+    })),
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
