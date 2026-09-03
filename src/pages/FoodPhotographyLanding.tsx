@@ -146,15 +146,21 @@ export function FoodPhotographyLanding({
             {t.prices}
           </Editable>
           <p className="leading-relaxed text-foreground/90">
-            {t.priceLead}{" "}
-            <Editable id={`${ns}.pret.pornireDeLa`} as="strong" lang={lang}>
-              {C.pretPornireDeLa}
-            </Editable>
-            .{" "}
+            {/* The "starts from" lead only renders once a real amount exists. */}
+            {C.pretPornireDeLa ? (
+              <>
+                {t.priceLead}{" "}
+                <Editable id={`${ns}.pret.pornireDeLa`} as="strong" lang={lang}>
+                  {C.pretPornireDeLa}
+                </Editable>
+                .{" "}
+              </>
+            ) : null}
             <Editable id={`${ns}.pret.detalii`} multiline lang={lang}>
               {C.pretDetalii}
             </Editable>
           </p>
+
         </section>
 
         <section className="space-y-4">
