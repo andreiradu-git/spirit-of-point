@@ -98,8 +98,16 @@ export const deleteR2Object = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    // Fresh server-side re-check: never trust the classification the browser saw.
+    // Anything still referenced, or any archival master, is refused outright.
+    const report = await buildStorageReport();
+    const entry = report.objects.find((o) => o.key === data.key);
+    if (!entry) return { ok: false, deleted: [], reason: "not-found" as const };
+    if (entry.protected)
+      return { ok: false, deleted: [], reason: "archival-master-protected" as const };
+    if (entry.referenced) return { ok: false, deleted: [], reason: "still-referenced" as const };
     await deleteMediaAssetDirect({ key: data.key });
-    return { ok: true, deleted: [data.key] };
+    return { ok: true, deleted: [data.key], reason: "deleted" as const };
   });
 
 
@@ -139,9 +147,8 @@ export const replaceR2Object = createServerFn({ method: "POST" })
  * Orphan scanner — lists every object in R2 and marks whether the object URL
  * (or its key) is referenced anywhere in CMS content. Never deletes anything.
  */
-export const scanStorageOrphans = createServerFn({ method: "GET" })
-  .middleware([requireAdminAuth])
-  .handler(async ({ context }) => {
+/** Read-only audit of every R2 object against every CMS and static reference. */
+async function buildStorageReport() {
     const db = serverDb() as unknown as AdminDb;
     const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
       try {
@@ -207,18 +214,28 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
       }
     }
 
-    // Also include known bundled data files (videos list).
-    try {
-      const videos = (await import("@/data/videos.json")).default as Array<{ src: string }>;
-      for (const v of videos) {
-        haystackParts.push(v.src);
-        referenceIndex.push({ source: "videos.json", text: v.src });
-      }
-    } catch {
-      /* optional */
+    // Bundled/static content counts as a reference too: the seed JSON files under
+    // src/data are shipped with the app and still render when D1 has no override.
+    const staticData = import.meta.glob("../data/**/*.json", { eager: true }) as Record<
+      string,
+      { default: unknown }
+    >;
+    for (const [file, mod] of Object.entries(staticData)) {
+      const json = JSON.stringify(mod.default ?? "");
+      haystackParts.push(json);
+      referenceIndex.push({ source: `static:${file.replace("../data/", "")}`, text: json });
     }
 
     const haystack = haystackParts.join("\n");
+
+    // Archival masters: any key a media_assets row points at as its untouched
+    // original. These are never deletable, whatever the reference scan says.
+    const protectedKeys = new Set<string>();
+    for (const row of mediaAssets.data ?? []) {
+      for (const value of [row.original_object_key, row.original_url]) {
+        if (value) protectedKeys.add(value.split("/").slice(-2).join("/"));
+      }
+    }
 
     let orphanBytes = 0;
     const report = objects.map((obj) => {
@@ -234,7 +251,18 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
             ),
           )
         : [];
-      if (!referenced) orphanBytes += obj.size;
+      const isProtected = protectedKeys.has(obj.key);
+      const legacyOptimized = obj.key.startsWith("optimized/");
+      const category: StorageCategory = isProtected
+        ? "archival-master"
+        : referenced
+          ? legacyOptimized
+            ? "legacy-optimized-referenced"
+            : "active"
+          : legacyOptimized
+            ? "legacy-optimized-unreferenced"
+            : "unreferenced";
+      if (!referenced && !isProtected) orphanBytes += obj.size;
       return {
         key: obj.key,
         url: obj.url,
@@ -244,19 +272,56 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         originalName: obj.originalName,
         referenced,
         referencedIn,
+        protected: isProtected,
+        category,
       };
     });
+
+    // Broken references: something in the CMS points at a key R2 no longer holds.
+    const presentKeys = new Set(objects.map((o) => o.key));
+    const missing: Array<{ key: string; source: string }> = [];
+    const seenMissing = new Set<string>();
+    for (const ref of referenceIndex) {
+      for (const match of ref.text.matchAll(/(originals|optimized|uploads|media)\/[A-Za-z0-9._-]+/g)) {
+        const key = match[0];
+        if (presentKeys.has(key)) continue;
+        const dedupe = `${ref.source}|${key}`;
+        if (seenMissing.has(dedupe)) continue;
+        seenMissing.add(dedupe);
+        missing.push({ key, source: ref.source });
+      }
+    }
+
+    const byCategory = report.reduce<Record<string, { count: number; bytes: number }>>((acc, r) => {
+      const slot = (acc[r.category] ??= { count: 0, bytes: 0 });
+      slot.count += 1;
+      slot.bytes += r.size;
+      return acc;
+    }, {});
 
     return {
       bucketPublicUrl: PUBLIC_URL,
       totalObjects: report.length,
       totalBytes: report.reduce((n, r) => n + r.size, 0),
-      orphanCount: report.filter((r) => !r.referenced).length,
+      orphanCount: report.filter((r) => !r.referenced && !r.protected).length,
       orphanBytes,
+      byCategory,
+      missingReferences: missing.slice(0, 200),
       scannedAt: new Date().toISOString(),
       objects: report,
     };
-  });
+}
+
+export const scanStorageOrphans = createServerFn({ method: "GET" })
+  .middleware([requireAdminAuth])
+  .handler(async () => buildStorageReport());
+
+export type StorageCategory =
+  | "active"
+  | "archival-master"
+  | "legacy-optimized-referenced"
+  | "legacy-optimized-unreferenced"
+  | "unreferenced";
 
 // Legacy migration helper — kept for backward compatibility but marked as
 // admin-only. Not used by the storage cleanup flow.

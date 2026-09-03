@@ -4,11 +4,15 @@ import { useText } from "@/hooks/use-site-texts";
 import { ContactForm } from "@/components/ContactForm";
 import data from "@/data/contact.json";
 import { useTr } from "@/i18n";
+import { withoutBrandingAssets } from "@/lib/branding-assets";
 
 
 export function ContactPage() {
   const t = useTr();
-  const bg = data.find((d) => /jpg|jpeg/i.test(d.src)) || data[0];
+  // FD+Book58417.jpg (R2 original 9da6838c-…): the studio photograph that backs
+  // the Contact hero. The Point Studio wordmark is branding and never used here.
+  const photos = withoutBrandingAssets(data);
+  const bg = photos.find((d) => d.src.includes("9da6838c-cccb-4ebc-a67c-979385654561")) || photos[0];
   const email = useText("contact.email", "andrei@pointstudio.ro");
   const phone = useText("contact.phone", "+40 744 341 286");
   const mapsQuery = useText(

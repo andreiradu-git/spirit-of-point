@@ -40,6 +40,8 @@ import { Route as AdminContactsRouteImport } from './routes/admin.contacts'
 import { Route as AdminAssetsRouteImport } from './routes/admin.assets'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as RoWorkSlugRouteImport } from './routes/ro.work.$slug'
+import { Route as ApiPublicVitalsRouteImport } from './routes/api/public/vitals'
+import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
 import { Route as ApiDebugR2RouteImport } from './routes/api/debug/r2'
 import { Route as ApiDebugD1RouteImport } from './routes/api/debug/d1'
 import { Route as ApiDebugAiRouteImport } from './routes/api/debug/ai'
@@ -201,6 +203,16 @@ const RoWorkSlugRoute = RoWorkSlugRouteImport.update({
   path: '/ro/work/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVitalsRoute = ApiPublicVitalsRouteImport.update({
+  id: '/api/public/vitals',
+  path: '/api/public/vitals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTrackRoute = ApiPublicTrackRouteImport.update({
+  id: '/api/public/track',
+  path: '/api/public/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDebugR2Route = ApiDebugR2RouteImport.update({
   id: '/api/debug/r2',
   path: '/api/debug/r2',
@@ -251,6 +263,8 @@ export interface FileRoutesByFullPath {
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/d1': typeof ApiDebugD1Route
   '/api/debug/r2': typeof ApiDebugR2Route
+  '/api/public/track': typeof ApiPublicTrackRoute
+  '/api/public/vitals': typeof ApiPublicVitalsRoute
   '/ro/work/$slug': typeof RoWorkSlugRoute
 }
 export interface FileRoutesByTo {
@@ -287,6 +301,8 @@ export interface FileRoutesByTo {
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/d1': typeof ApiDebugD1Route
   '/api/debug/r2': typeof ApiDebugR2Route
+  '/api/public/track': typeof ApiPublicTrackRoute
+  '/api/public/vitals': typeof ApiPublicVitalsRoute
   '/ro/work/$slug': typeof RoWorkSlugRoute
 }
 export interface FileRoutesById {
@@ -324,6 +340,8 @@ export interface FileRoutesById {
   '/api/debug/ai': typeof ApiDebugAiRoute
   '/api/debug/d1': typeof ApiDebugD1Route
   '/api/debug/r2': typeof ApiDebugR2Route
+  '/api/public/track': typeof ApiPublicTrackRoute
+  '/api/public/vitals': typeof ApiPublicVitalsRoute
   '/ro/work/$slug': typeof RoWorkSlugRoute
 }
 export interface FileRouteTypes {
@@ -362,6 +380,8 @@ export interface FileRouteTypes {
     | '/api/debug/ai'
     | '/api/debug/d1'
     | '/api/debug/r2'
+    | '/api/public/track'
+    | '/api/public/vitals'
     | '/ro/work/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -398,6 +418,8 @@ export interface FileRouteTypes {
     | '/api/debug/ai'
     | '/api/debug/d1'
     | '/api/debug/r2'
+    | '/api/public/track'
+    | '/api/public/vitals'
     | '/ro/work/$slug'
   id:
     | '__root__'
@@ -434,6 +456,8 @@ export interface FileRouteTypes {
     | '/api/debug/ai'
     | '/api/debug/d1'
     | '/api/debug/r2'
+    | '/api/public/track'
+    | '/api/public/vitals'
     | '/ro/work/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -471,6 +495,8 @@ export interface RootRouteChildren {
   ApiDebugAiRoute: typeof ApiDebugAiRoute
   ApiDebugD1Route: typeof ApiDebugD1Route
   ApiDebugR2Route: typeof ApiDebugR2Route
+  ApiPublicTrackRoute: typeof ApiPublicTrackRoute
+  ApiPublicVitalsRoute: typeof ApiPublicVitalsRoute
   RoWorkSlugRoute: typeof RoWorkSlugRoute
 }
 
@@ -693,6 +719,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RoWorkSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/vitals': {
+      id: '/api/public/vitals'
+      path: '/api/public/vitals'
+      fullPath: '/api/public/vitals'
+      preLoaderRoute: typeof ApiPublicVitalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/track': {
+      id: '/api/public/track'
+      path: '/api/public/track'
+      fullPath: '/api/public/track'
+      preLoaderRoute: typeof ApiPublicTrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/debug/r2': {
       id: '/api/debug/r2'
       path: '/api/debug/r2'
@@ -751,6 +791,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDebugAiRoute: ApiDebugAiRoute,
   ApiDebugD1Route: ApiDebugD1Route,
   ApiDebugR2Route: ApiDebugR2Route,
+  ApiPublicTrackRoute: ApiPublicTrackRoute,
+  ApiPublicVitalsRoute: ApiPublicVitalsRoute,
   RoWorkSlugRoute: RoWorkSlugRoute,
 }
 export const routeTree = rootRouteImport

@@ -7,6 +7,7 @@ import { Editable } from "./Editable";
 import { GallerySeoSection } from "./GallerySeoSection";
 import { useGalleryCover } from "@/hooks/use-gallery-covers";
 import { useLang, useTr } from "@/i18n";
+import { withoutBrandingAssets } from "@/lib/branding-assets";
 
 type Img = { src: string; alt?: string; title?: string };
 
@@ -37,9 +38,11 @@ export function PortfolioPage({
   const t = useTr();
   const { data: gallery } = useGallery(slug);
   const cover = useGalleryCover(slug);
-  const rawImages: Img[] =
+  const rawImages: Img[] = withoutBrandingAssets(
     gallery?.images.map((img) => ({ src: img.src, alt: img.alt ?? undefined, title: img.title ?? undefined })) ??
-    fallbackImages.filter((i) => !/LOGO_PSP/i.test(i.src));
+      fallbackImages,
+  );
+
   // The chosen cover leads the page; otherwise the first uploaded image does.
   const images: Img[] = cover
     ? [...rawImages].sort((a, b) => Number(b.src === cover) - Number(a.src === cover))
