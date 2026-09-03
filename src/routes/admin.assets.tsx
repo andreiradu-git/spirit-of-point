@@ -17,7 +17,6 @@ import { uploadImageWithProtection } from "@/lib/image-upload";
 import {
   Sparkles,
   Loader2,
-  Zap,
   ExternalLink,
   Trash2,
   Cloud,
