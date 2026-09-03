@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useRouterState } from "@tanstack/react-router";
 import { submitContactMessage } from "@/lib/contact.functions";
+import { useTr } from "@/i18n";
 
 export function ContactForm() {
   const submit = useServerFn(submitContactMessage);
+  const t = useTr();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [err, setErr] = useState<string>("");
