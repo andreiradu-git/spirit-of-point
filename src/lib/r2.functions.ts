@@ -201,8 +201,7 @@ export const replaceR2Object = createServerFn({ method: "POST" })
 export const scanStorageOrphans = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
-    const db = context?.supabase as AdminDb | undefined;
-    if (!db) throw new Error("Admin database client unavailable");
+    const db = serverDb() as unknown as AdminDb;
     const safe = async <T,>(p: PromiseLike<{ data: T | null }>): Promise<{ data: T | null }> => {
       try {
         return await p;

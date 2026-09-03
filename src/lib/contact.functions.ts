@@ -69,8 +69,7 @@ export const submitContactMessage = createServerFn({ method: "POST" })
 export const listContactMessages = createServerFn({ method: "GET" })
   .middleware([requireAdminAuth])
   .handler(async ({ context }) => {
-    const db = context?.supabase as AnyDb | undefined;
-    if (!db) throw new Error("Admin database client unavailable");
+    const db = serverDb() as unknown as AnyDb;
     const { data, error } = await db
       .from("contact_messages")
       .select("*")
@@ -90,8 +89,7 @@ export const updateContactMessage = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const db = context?.supabase as AnyDb | undefined;
-    if (!db) throw new Error("Admin database client unavailable");
+    const db = serverDb() as unknown as AnyDb;
     const patch: { read_at?: string | null; archived?: boolean } = {};
     if (data.read !== undefined) patch.read_at = data.read ? new Date().toISOString() : null;
     if (data.archived !== undefined) patch.archived = data.archived;
@@ -104,8 +102,7 @@ export const deleteContactMessage = createServerFn({ method: "POST" })
   .middleware([requireAdminAuth])
   .validator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const db = context?.supabase as AnyDb | undefined;
-    if (!db) throw new Error("Admin database client unavailable");
+    const db = serverDb() as unknown as AnyDb;
     const { error } = await db.from("contact_messages").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
