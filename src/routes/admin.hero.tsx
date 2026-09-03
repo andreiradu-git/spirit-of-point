@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadToR2 } from "@/lib/r2.functions";
+import { uploadImageWithProtection } from "@/lib/image-upload";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
 import { cdn } from "@/components/SiteLayout";
 import {
