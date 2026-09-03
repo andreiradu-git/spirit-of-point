@@ -571,50 +571,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
                 <Trash2 className="w-3 h-3" /> Delete original
               </button>
             </div>
-            {/* Optimized */}
-            <div className="p-2 flex items-center gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-500">Optimized (WebP)</div>
-                {asset.optimizedKey ? (
-                  <>
-                    <div className="truncate font-mono" title={asset.optimizedKey}>
-                      {asset.optimizedKey.split("/").pop()}
-                    </div>
-                    <div className="text-neutral-500">
-                      {humanSize(asset.optimizedSize)}
-                      {asset.size && asset.optimizedSize
-                        ? ` · −${Math.max(0, Math.round((1 - asset.optimizedSize / asset.size) * 100))}%`
-                        : ""}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-neutral-500 italic">Not generated yet</div>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  onClick={() => doOptimize()}
-                  disabled={optBusy}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
-                  title="Regenerate optimized WebP from original"
-                >
-                  {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                  {asset.optimizedKey ? "Regenerate" : "Optimize"}
-                </button>
-                {asset.optimizedKey && (
-                  <button
-                    type="button"
-                    onClick={() => doDeleteKey(asset.optimizedKey!, "optimized")}
-                    disabled={deleting}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
-                  >
-                    <Trash2 className="w-3 h-3" /> Delete optimized
-                  </button>
-                )}
-              </div>
-            </div>
-            {optInfo && <div className="p-2 text-[10px] text-emerald-700 truncate">{optInfo}</div>}
           </div>
         )}
 
