@@ -209,15 +209,26 @@ async function runWrite(d: DbDescriptor) {
   return inserted.map((row) => decodeRow(d.table, row));
 }
 
-/** Single data endpoint used by the browser CMS client. */
+/**
+ * Single data endpoint used by the browser CMS client.
+ *
+ * Failures are returned as data (`error`) instead of thrown: a throw here is
+ * turned into a 500 HTML response by the request middleware, which the client
+ * cannot parse and which blanks the page behind an error boundary.
+ */
 export const dbExec = createServerFn({ method: "POST" })
   .inputValidator((input) => descriptorSchema.parse(input))
   .handler(async ({ data }) => {
-    const r = rule(data.table);
-    if (data.op === "select") {
-      await authorize(data.table, r.read);
-      return { rows: (await runSelect(data)) as unknown as Array<Record<string, any>> };
+    try {
+      const r = rule(data.table);
+      const rows =
+        data.op === "select"
+          ? (await authorize(data.table, r.read), await runSelect(data))
+          : (await authorize(data.table, r.write), await runWrite(data));
+      return { rows: rows as unknown as Array<Record<string, any>>, error: null as string | null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Database request failed";
+      console.error(`[dbExec] ${data.op} ${data.table}: ${message}`);
+      return { rows: [] as Array<Record<string, any>>, error: message };
     }
-    await authorize(data.table, r.write);
-    return { rows: (await runWrite(data)) as unknown as Array<Record<string, any>> };
   });
