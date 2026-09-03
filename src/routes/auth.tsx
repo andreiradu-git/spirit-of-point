@@ -74,6 +74,11 @@ function AuthPage() {
             ? "The first account created becomes the site administrator."
             : "Sign in to edit your site."}
         </p>
+        {mode === "signup" && adminExistsState === true && (
+          <p className="text-sm text-center text-neutral-600">
+            An administrator already exists. Please sign in instead.
+          </p>
+        )}
 
         <div className="space-y-2">
           <label className="block text-sm">Email</label>
