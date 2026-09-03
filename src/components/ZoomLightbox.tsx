@@ -69,20 +69,25 @@ export function ZoomLightbox({
     return () => window.removeEventListener("keydown", onKey);
   }, [go, onClose]);
 
-  const zoomAt = useCallback((next: number, px?: number, py?: number) => {
+  // px/py are anchor coordinates relative to the container CENTER, matching the
+  // image's `transform-origin: center`. Omitted anchor = zoom about the centre.
+  const zoomAt = useCallback((next: number, px = 0, py = 0) => {
     setZoom((z) => {
       const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
       const k = clamped / z;
       setOffset((o) => {
         if (clamped === MIN_ZOOM) return { x: 0, y: 0 };
-        const rect = containerRef.current?.getBoundingClientRect();
-        const cx = px ?? (rect ? rect.width / 2 : 0);
-        const cy = py ?? (rect ? rect.height / 2 : 0);
-        return { x: cx - (cx - o.x) * k, y: cy - (cy - o.y) * k };
+        return { x: px - (px - o.x) * k, y: py - (py - o.y) * k };
       });
       return clamped;
     });
   }, []);
+
+  const anchor = (clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return [0, 0] as const;
+    return [clientX - (rect.left + rect.width / 2), clientY - (rect.top + rect.height / 2)] as const;
+  };
 
   // Non-passive wheel listener so trackpad pinch does not zoom the page.
   const zoomAtRef = useRef(zoomAt);
@@ -98,10 +103,11 @@ export function ZoomLightbox({
       const rect = el.getBoundingClientRect();
       zoomAtRef.current(
         zoomRef.current * Math.exp(-dy * 0.0018),
-        e.clientX - rect.left,
-        e.clientY - rect.top,
+        e.clientX - (rect.left + rect.width / 2),
+        e.clientY - (rect.top + rect.height / 2),
       );
     };
+
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
