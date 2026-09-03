@@ -651,7 +651,7 @@ function DropZoneUploader() {
         try {
           if (isImage) {
             patch(id, { progress: 15, status: "reading image" });
-            const result = await uploadImageWithProtection(file, doUploadR2);
+            const result = await uploadImageWithProtection(file, async (input) => doUploadR2(input));
             patch(id, {
               progress: 100,
               done: true,

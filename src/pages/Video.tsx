@@ -95,7 +95,7 @@ export function VideoPage() {
   const uploadVideoFile = async (file: File, index: number) => {
     setUploadingFor(index);
     try {
-      const dataBase64 = await fileToBase64(file);
+      const dataBase64 = await blobToBase64(file);
       const { url } = await upload({
         data: {
           filename: file.name,
