@@ -75,6 +75,7 @@ class ServerQuery implements PromiseLike<{ data: any; error: { message: string }
   private conflict?: string;
   private mode: "many" | "single" | "maybe" = "many";
   private wantCount = false;
+  private embed?: { table: string; foreignKey: string; orderBy?: string };
 
   constructor(private table: string) {}
 
