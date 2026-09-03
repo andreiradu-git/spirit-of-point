@@ -2,7 +2,7 @@ import { useState, useRef, type ReactNode } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useGallery, useInvalidateGallery, type GalleryImage } from "@/hooks/use-gallery";
-import { cdn, cdnSrcSet } from "@/components/SiteLayout";
+import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "@/components/SiteLayout";
 import { useServerFn } from "@tanstack/react-start";
 import { uploadToR2 } from "@/lib/r2.functions";
 import {
@@ -102,12 +102,13 @@ function SortableImage({
       >
         <img
           src={cdn(image.src, 500)}
-          srcSet={cdnSrcSet(image.src, [300, 500, 800])}
+          srcSet={cdnSrcSet(image.src, [400, 800, 1200, 1600])}
           sizes="(min-width:1024px) 20vw, (min-width:768px) 33vw, 50vw"
           alt={image.alt ?? ""}
           loading="lazy"
           decoding="async"
           className={`w-full h-full object-cover ${aspectClass}`}
+          onError={onTransformError}
         />
       </button>
       {editable && (
@@ -328,12 +329,13 @@ export function EditableGallery({
           >
             <img
               src={cdn(img.src, 500)}
-              srcSet={cdnSrcSet(img.src, [300, 500, 800])}
+              srcSet={cdnSrcSet(img.src, [400, 800, 1200, 1600])}
               sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
               alt={img.alt ?? ""}
               loading="lazy"
               decoding="async"
               className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+              onError={onTransformError}
             />
           </button>
         ))}
@@ -384,11 +386,14 @@ export function EditableGallery({
               ‹
             </button>
             <img
-              src={cdn(images[activeIndex].src, 2000)}
+              src={cdn(images[activeIndex].src, 2400, IMAGE_QUALITY_LARGE)}
+              srcSet={cdnSrcSet(images[activeIndex].src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)}
+              sizes="(min-width:1024px) 90vw, 100vw"
               alt={images[activeIndex].alt ?? ""}
               decoding="async"
               className="max-h-[90vh] max-w-[90vw] object-contain"
               onClick={(e) => e.stopPropagation()}
+              onError={onTransformError}
             />
             <button
               className="absolute right-4 md:right-8 text-white text-3xl px-3"
@@ -547,11 +552,14 @@ export function EditableGallery({
             ‹
           </button>
           <img
-            src={cdn(images[activeIndex].src, 2000)}
+            src={cdn(images[activeIndex].src, 2400, IMAGE_QUALITY_LARGE)}
+            srcSet={cdnSrcSet(images[activeIndex].src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)}
+            sizes="(min-width:1024px) 90vw, 100vw"
             alt={images[activeIndex].alt ?? ""}
             decoding="async"
             className="max-h-[90vh] max-w-[90vw] object-contain"
             onClick={(e) => e.stopPropagation()}
+            onError={onTransformError}
           />
           <button
             className="absolute right-4 md:right-8 text-white text-3xl px-3"

@@ -1,4 +1,4 @@
-import { cdn } from "./SiteLayout";
+import { onTransformError, cdn } from "./SiteLayout";
 import home from "@/data/home.json";
 
 const logos = home.filter(
@@ -17,6 +17,7 @@ export function ClientLogos() {
               src={cdn(l.src, 200)}
               alt="Client logo"
               className="h-7 md:h-8 w-auto object-contain opacity-80 hover:opacity-100 transition shrink-0"
+              onError={onTransformError}
             />
           ))}
         </div>

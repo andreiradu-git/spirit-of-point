@@ -4,6 +4,7 @@ import { useEditMode } from "@/hooks/use-edit-mode";
 import { useServerFn } from "@tanstack/react-start";
 import { uploadToR2 } from "@/lib/r2.functions";
 import { Upload, Loader2 } from "lucide-react";
+import { cdn, cdnSrcSet, onTransformError } from "@/components/SiteLayout";
 
 type Props = {
   src: string;
@@ -86,7 +87,16 @@ export function EditableImage({
       {children ? (
         children
       ) : (
-        <img src={src || "/placeholder.svg"} alt={alt} className={imgClassName} />
+        <img
+          src={src ? cdn(src, 1600) : "/placeholder.svg"}
+          srcSet={src ? cdnSrcSet(src, [400, 800, 1200, 1600]) : undefined}
+          sizes="100vw"
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onError={onTransformError}
+          className={imgClassName}
+        />
       )}
       {editable && (
         <>

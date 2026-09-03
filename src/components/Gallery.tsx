@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { cdn, cdnSrcSet } from "./SiteLayout";
+import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "./SiteLayout";
 import { useTr } from "@/i18n";
 
 type Img = { src: string; alt: string };
@@ -41,12 +41,13 @@ export function Gallery({
             >
               <img
                 src={cdn(img.src, 1200)}
-                srcSet={cdnSrcSet(img.src, [600, 900, 1200, 1600])}
+                srcSet={cdnSrcSet(img.src)}
                 sizes="100vw"
                 alt={img.alt || "Point Studio photograph"}
                 loading="lazy"
                 decoding="async"
                 className="block w-full h-auto"
+                onError={onTransformError}
               />
             </button>
           ))}
@@ -79,12 +80,13 @@ export function Gallery({
               >
                 <img
                   src={cdn(img.src, 500)}
-                  srcSet={cdnSrcSet(img.src, [300, 500, 800])}
+                  srcSet={cdnSrcSet(img.src, [400, 800, 1200, 1600])}
                   sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
                   alt={img.alt || "Point Studio photograph"}
                   loading="lazy"
                   decoding="async"
                   className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+                  onError={onTransformError}
                 />
               </button>
             ))}
@@ -121,12 +123,13 @@ export function Gallery({
           >
             <img
               src={cdn(img.src, 500)}
-              srcSet={cdnSrcSet(img.src, [300, 500, 800])}
+              srcSet={cdnSrcSet(img.src, [400, 800, 1200, 1600])}
               sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
               alt={img.alt || "Point Studio photograph"}
               loading="lazy"
               decoding="async"
               className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+              onError={onTransformError}
             />
           </button>
         ))}
@@ -159,10 +162,13 @@ export function Gallery({
           ‹
         </button>
         <img
-          src={cdn(images[active].src, 2000)}
+          src={cdn(images[active].src, 2400, IMAGE_QUALITY_LARGE)}
+          srcSet={cdnSrcSet(images[active].src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)}
+          sizes="(min-width:1024px) 90vw, 100vw"
           alt={images[active].alt || ""}
           className="max-h-[90vh] max-w-[90vw] object-contain"
           onClick={(e) => e.stopPropagation()}
+          onError={onTransformError}
         />
         <button
           className="absolute right-4 md:right-8 text-white text-3xl px-3"

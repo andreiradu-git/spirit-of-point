@@ -1,4 +1,4 @@
-import { SiteLayout, cdn } from "@/components/SiteLayout";
+import { SiteLayout, cdn, cdnSrcSet, onTransformError } from "@/components/SiteLayout";
 import { Editable } from "@/components/Editable";
 import { useText } from "@/hooks/use-site-texts";
 import { ContactForm } from "@/components/ContactForm";
@@ -21,9 +21,12 @@ export function ContactPage() {
         {bg && (
           <>
             <img
-              src={cdn(bg.src, 2000)}
+              src={cdn(bg.src, 2400)}
+              srcSet={cdnSrcSet(bg.src, [800, 1200, 1600, 2400])}
+              sizes="100vw"
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
+              onError={onTransformError}
             />
             <div className="absolute inset-0 bg-black/55" />
           </>
