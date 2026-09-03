@@ -61,51 +61,39 @@ export function usePageSeoAndTrack() {
     }
   }, [all, path]);
 
-  // Track pageview
+  // Track pageview — one anonymous event per SPA navigation.
+  // Country/city/device are derived by the Worker from the request itself, so
+  // no IP address, user-agent string or fingerprint leaves the browser.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // Skip admin routes
     if (path.startsWith("/admin") || path.startsWith("/auth")) return;
+    // React StrictMode / rerenders must not double-count the same navigation.
+    const marker = `${path}?${window.location.search}`;
+    if (lastTracked === marker) return;
+    lastTracked = marker;
+
     let sid = window.sessionStorage.getItem("ps_sid");
     if (!sid) {
       sid = crypto.randomUUID();
       window.sessionStorage.setItem("ps_sid", sid);
     }
 
-    // Best-effort geo lookup, cached per session
-    const geoKey = "ps_geo";
-    const cached = window.sessionStorage.getItem(geoKey);
-    const geoPromise: Promise<{ country?: string; city?: string }> = cached
-      ? Promise.resolve(JSON.parse(cached))
-      : fetch("https://ipapi.co/json/")
-          .then((r) => (r.ok ? r.json() : {}))
-          .then((j: { country_name?: string; city?: string }) => {
-            const g = { country: j.country_name, city: j.city };
-            try {
-              window.sessionStorage.setItem(geoKey, JSON.stringify(g));
-            } catch {}
-            return g;
-          })
-          .catch(() => ({}));
-
-    // Extract search query from URL (?q= or ?s= or ?search=)
     const params = new URLSearchParams(window.location.search);
     const searchQuery = params.get("q") || params.get("s") || params.get("search") || null;
 
-    geoPromise.then((geo) => {
-      db
-        .from("page_views")
-        .insert({
-          path,
-          referrer: document.referrer || null,
-          user_agent: navigator.userAgent,
-          session_id: sid,
-          country: geo.country ?? null,
-          city: geo.city ?? null,
-          search_query: searchQuery,
-        })
-        .then(() => {}, () => {});
-    });
+    void fetch("/api/public/track", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        path,
+        lang: path === "/ro" || path.startsWith("/ro/") ? "ro" : "en",
+        referrer: document.referrer || null,
+        sessionId: sid,
+        searchQuery,
+      }),
+    }).catch(() => {});
   }, [path]);
+
 }
 
