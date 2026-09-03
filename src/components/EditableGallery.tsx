@@ -105,9 +105,13 @@ function SortableImage({
         disabled={editable}
       >
         <img
-          src={cdn(image.src, 500)}
-          srcSet={cdnSrcSet(image.src, [400, 800, 1200, 1600])}
-          sizes="(min-width:1024px) 20vw, (min-width:768px) 33vw, 50vw"
+          src={cdn(image.src, archive ? 400 : 500)}
+          srcSet={cdnSrcSet(image.src, archive ? [400, 800, 1200] : [400, 800, 1200, 1600])}
+          sizes={
+            archive
+              ? "(min-width:1024px) 15vw, (min-width:768px) 31vw, 92vw"
+              : "(min-width:1024px) 20vw, (min-width:768px) 33vw, 50vw"
+          }
           alt={image.alt ?? caption}
           loading="lazy"
           decoding="async"
