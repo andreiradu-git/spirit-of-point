@@ -616,8 +616,6 @@ type UploadItem = {
   status: string;
   error?: string;
   done?: boolean;
-  reductionPct?: number;
-  optimizedSize?: number;
 };
 
 function DropZoneUploader() {
@@ -628,7 +626,6 @@ function DropZoneUploader() {
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const doUploadR2 = useServerFn(uploadToR2);
-  const writeVariants = useServerFn(writeR2Variants);
 
   const patch = (id: string, changes: Partial<UploadItem>) =>
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...changes } : it)));
