@@ -197,6 +197,7 @@ export function EditableGallery({
   const { data: covers } = useGalleryCovers();
   const setCover = useSetGalleryCover();
   const coverSrc = covers?.[slug];
+  const t = useTr();
 
   const onSetCover = async (src: string) => {
     try {
@@ -304,6 +305,8 @@ export function EditableGallery({
       ? "grid-cols-1"
       : layout === "masonry"
       ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+      : archive
+      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
       : columns === 2
       ? "grid-cols-2"
       : columns === 4
@@ -312,8 +315,6 @@ export function EditableGallery({
       ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
       : columns === 6
       ? "grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
-      : archive
-      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
       : "grid-cols-2 md:grid-cols-3";
 
   // Masonry (non-editable): flex columns with tops aligned at the first row
@@ -570,7 +571,7 @@ export function EditableGallery({
             onError={onTransformError}
           />
           <div className="mt-3 max-w-[88vw] text-center text-xs tracking-wide text-white/70">
-            {images[activeIndex].title || images[activeIndex].alt || "Personal work"}
+            {t(images[activeIndex].title || images[activeIndex].alt || "Personal work")}
           </div>
           <button
             type="button"
