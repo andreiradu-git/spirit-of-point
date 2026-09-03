@@ -9,9 +9,11 @@ import { useLang } from "@/i18n";
 export function FoodPage() {
   const { settings, ready } = useSiteSettings();
   const lang = useLang();
-  // The landing page is written in Romanian, so it is linked only from the RO site.
-  const showLink =
-    lang === "ro" && ready && settings.showFotografieCulinara && fotografieCulinaraContent.isVisibleInNav;
+  const showLink = ready && settings.showFotografieCulinara && fotografieCulinaraContent.isVisibleInNav;
+  const linkLabel =
+    lang === "ro"
+      ? fotografieCulinaraContent.navLinkLabel
+      : "Read more about food photography in Bucharest →";
   return (
     <>
       <PortfolioPage slug="food" tagline="Food, Product & Tabletop Photography" fallbackImages={data} />
@@ -21,7 +23,7 @@ export function FoodPage() {
             to="/fotografie-culinara-bucuresti"
             className="inline-block text-sm underline underline-offset-4 text-muted-foreground hover:text-foreground"
           >
-            {fotografieCulinaraContent.navLinkLabel}
+            {linkLabel}
           </Link>
         </div>
       )}

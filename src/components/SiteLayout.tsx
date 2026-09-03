@@ -9,14 +9,17 @@ import { useLang, useTr, localizePath, tr } from "@/i18n";
 
 function FotografieCulinaraFooterLink({ visible }: { visible: boolean }) {
   const linkLang = useLang();
-  // Romanian-language landing page: only surfaced on the Romanian site.
-  if (linkLang !== "ro" || !visible || !fotografieCulinaraContent.isVisibleInNav) return null;
+  if (!visible || !fotografieCulinaraContent.isVisibleInNav) return null;
+  const label =
+    linkLang === "ro"
+      ? fotografieCulinaraContent.navLinkLabel
+      : "Read more about food photography in Bucharest →";
   return (
     <Link
       to="/fotografie-culinara-bucuresti"
       className="mt-2 block text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
     >
-      {fotografieCulinaraContent.navLinkLabel}
+      {label}
     </Link>
   );
 }
