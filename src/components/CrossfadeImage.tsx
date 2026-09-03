@@ -97,6 +97,9 @@ export function CrossfadeImage({
   const [progress, setProgress] = useState(1);
   const tokenRef = useRef(0);
   const idRef = useRef(0);
+  useEffect(() => {
+    (window as any).__xfMounts = ((window as any).__xfMounts || 0) + 1;
+  }, []);
 
   useEffect(() => {
     if (src === shown.src) return;
