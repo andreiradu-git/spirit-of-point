@@ -238,7 +238,7 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
         return { data: null };
       }
     };
-    const [objects, galleries, settings, pages, pageSeo, assetMeta] = await Promise.all([
+    const [objects, galleries, settings, pages, pageSeo, assetMeta, mediaAssets] = await Promise.all([
       listR2ObjectsDirect().catch((e) => {
         console.error("[storage-cleanup] R2 list failed", e);
         return [] as Awaited<ReturnType<typeof listR2ObjectsDirect>>;
@@ -248,6 +248,9 @@ export const scanStorageOrphans = createServerFn({ method: "GET" })
       safe<Array<{ slug?: string; body?: unknown }>>(db.from("pages").select("slug, body")),
       safe<Array<{ path?: string; og_image?: string }>>(db.from("page_seo").select("path, og_image")),
       safe<Array<{ url?: string }>>(db.from("asset_meta").select("url")),
+      safe<Array<{ object_key?: string; optimized_object_key?: string; original_object_key?: string; url?: string; optimized_url?: string; original_url?: string }>>(
+        db.from("media_assets").select("object_key, optimized_object_key, original_object_key, url, optimized_url, original_url"),
+      ),
     ]);
 
     // Build one big haystack containing every referenced URL/string in the CMS.
