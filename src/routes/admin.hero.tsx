@@ -295,10 +295,16 @@ function AdminHero() {
       let next = items;
       for (const file of Array.from(files)) {
         const kind = file.type.startsWith("video/") ? "video" : "image";
-        const result = kind === "image"
-          ? await uploadImageWithProtection(file, async (input) => upload(input))
-          : await upload({ data: { filename: file.name, contentType: file.type, dataBase64: await blobToBase64(file), kind } });
-        const src = kind === "image" ? result.deliveryUrl : result.url;
+        let src: string;
+        if (kind === "image") {
+          const result = await uploadImageWithProtection(file, async (input) => upload(input));
+          src = result.deliveryUrl;
+        } else {
+          const result = await upload({
+            data: { filename: file.name, contentType: file.type, dataBase64: await blobToBase64(file), kind },
+          });
+          src = result.url;
+        }
         if (replaceId) {
           next = next.map((it) => (it.id === replaceId ? { ...it, src, kind } : it));
         } else {
