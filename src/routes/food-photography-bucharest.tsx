@@ -4,6 +4,7 @@ import { FoodPhotographyLanding } from "@/pages/FoodPhotographyLanding";
 
 const URL_CANON = "https://www.pointstudio.ro/food-photography-bucharest";
 const URL_RO = "https://www.pointstudio.ro/fotografie-culinara-bucuresti";
+const FAQ = C.faq.filter((f) => f.q && f.a && !/\[[A-Z ĂÂÎȘȚ]+\]/.test(f.a));
 const NS = "food-photography-en";
 
 export const Route = createFileRoute("/food-photography-bucharest")({
@@ -48,18 +49,24 @@ export const Route = createFileRoute("/food-photography-bucharest")({
           areaServed: "Bucharest",
         }),
       },
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: C.faq.map((f) => ({
-            "@type": "Question",
-            name: f.q,
-            acceptedAnswer: { "@type": "Answer", text: f.a },
-          })),
-        }),
-      },
+      // Only questions with a real answer are described; unanswered entries are
+      // omitted rather than published as placeholder text.
+      ...(FAQ.length
+        ? [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: FAQ.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              }),
+            },
+          ]
+        : []),
     ],
   }),
 });
