@@ -20,7 +20,7 @@ export function FoodPage() {
       {showLink && (
         <div className="mx-auto max-w-3xl px-6 pb-10 text-center">
           <Link
-            to="/fotografie-culinara-bucuresti"
+            to={lang === "ro" ? "/fotografie-culinara-bucuresti" : "/food-photography-bucharest"}
             className="inline-block text-sm underline underline-offset-4 text-muted-foreground hover:text-foreground"
           >
             {linkLabel}

@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as PatternsRouteImport } from './routes/patterns'
 import { Route as FotografieCulinaraBucurestiRouteImport } from './routes/fotografie-culinara-bucuresti'
+import { Route as FoodPhotographyBucharestRouteImport } from './routes/food-photography-bucharest'
 import { Route as FoodRouteImport } from './routes/food'
 import { Route as EditorialRouteImport } from './routes/editorial'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -64,6 +65,12 @@ const FotografieCulinaraBucurestiRoute =
   FotografieCulinaraBucurestiRouteImport.update({
     id: '/fotografie-culinara-bucuresti',
     path: '/fotografie-culinara-bucuresti',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const FoodPhotographyBucharestRoute =
+  FoodPhotographyBucharestRouteImport.update({
+    id: '/food-photography-bucharest',
+    path: '/food-photography-bucharest',
     getParentRoute: () => rootRouteImport,
   } as any)
 const FoodRoute = FoodRouteImport.update({
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/food-photography-bucharest': typeof FoodPhotographyBucharestRoute
   '/fotografie-culinara-bucuresti': typeof FotografieCulinaraBucurestiRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
@@ -230,6 +238,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/food-photography-bucharest': typeof FoodPhotographyBucharestRoute
   '/fotografie-culinara-bucuresti': typeof FotografieCulinaraBucurestiRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
@@ -263,6 +272,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/editorial': typeof EditorialRoute
   '/food': typeof FoodRoute
+  '/food-photography-bucharest': typeof FoodPhotographyBucharestRoute
   '/fotografie-culinara-bucuresti': typeof FotografieCulinaraBucurestiRoute
   '/patterns': typeof PatternsRoute
   '/people': typeof PeopleRoute
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/food-photography-bucharest'
     | '/fotografie-culinara-bucuresti'
     | '/patterns'
     | '/people'
@@ -329,6 +340,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/food-photography-bucharest'
     | '/fotografie-culinara-bucuresti'
     | '/patterns'
     | '/people'
@@ -361,6 +373,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/editorial'
     | '/food'
+    | '/food-photography-bucharest'
     | '/fotografie-culinara-bucuresti'
     | '/patterns'
     | '/people'
@@ -394,6 +407,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   EditorialRoute: typeof EditorialRoute
   FoodRoute: typeof FoodRoute
+  FoodPhotographyBucharestRoute: typeof FoodPhotographyBucharestRoute
   FotografieCulinaraBucurestiRoute: typeof FotografieCulinaraBucurestiRoute
   PatternsRoute: typeof PatternsRoute
   PeopleRoute: typeof PeopleRoute
@@ -456,6 +470,13 @@ declare module '@tanstack/react-router' {
       path: '/fotografie-culinara-bucuresti'
       fullPath: '/fotografie-culinara-bucuresti'
       preLoaderRoute: typeof FotografieCulinaraBucurestiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/food-photography-bucharest': {
+      id: '/food-photography-bucharest'
+      path: '/food-photography-bucharest'
+      fullPath: '/food-photography-bucharest'
+      preLoaderRoute: typeof FoodPhotographyBucharestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/food': {
@@ -642,6 +663,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   EditorialRoute: EditorialRoute,
   FoodRoute: FoodRoute,
+  FoodPhotographyBucharestRoute: FoodPhotographyBucharestRoute,
   FotografieCulinaraBucurestiRoute: FotografieCulinaraBucurestiRoute,
   PatternsRoute: PatternsRoute,
   PeopleRoute: PeopleRoute,
