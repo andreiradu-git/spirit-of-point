@@ -18,8 +18,16 @@ export function basePath(pathname: string): string {
   return pathname || "/";
 }
 
+/** Pages whose EN/RO URLs differ (not just a /ro prefix). */
+const PATH_PAIRS: Record<string, string> = {
+  "/food-photography-bucharest": "/fotografie-culinara-bucuresti",
+  "/fotografie-culinara-bucuresti": "/food-photography-bucharest",
+};
+
 /** Same page, in the requested language. */
 export function localizePath(path: string, lang: Lang): string {
+  const pair = PATH_PAIRS[basePath(path)];
+  if (pair) return pair;
   const base = basePath(path);
   if (lang === "en") return base;
   return base === "/" ? "/ro" : `/ro${base}`;
