@@ -29,6 +29,14 @@ const STATIC_ENTRIES: Entry[] = [
   { path: "/fotografie-culinara-bucuresti", changefreq: "monthly", priority: "0.9" },
 ];
 
+// Romanian equivalents of every public page (English keeps the bare URL).
+const RO_ENTRIES: Entry[] = STATIC_ENTRIES.filter(
+  (e) => e.path !== "/fotografie-culinara-bucuresti",
+).map((e) => ({
+  ...e,
+  path: e.path === "/" ? "/ro" : `/ro${e.path}`,
+}));
+
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
@@ -36,7 +44,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         // touch the content module so the entry stays coupled to the page
         void fotografieCulinaraContent.h1;
 
-        const urls = STATIC_ENTRIES.map((e) =>
+        const urls = [...STATIC_ENTRIES, ...RO_ENTRIES].map((e) =>
           [
             "  <url>",
             `    <loc>${BASE_URL}${e.path}</loc>`,
