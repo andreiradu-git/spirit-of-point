@@ -188,7 +188,7 @@ export function EditableGallery({
 }: Props) {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
-  const { data: gallery } = useGallery(slug);
+  const { data: gallery, isPending } = useGallery(slug);
   const invalidate = useInvalidateGallery();
   const addImage = useServerFn(addGalleryImage);
   const removeImage = useServerFn(removeGalleryImage);
