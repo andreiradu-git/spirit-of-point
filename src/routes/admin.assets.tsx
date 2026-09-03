@@ -383,15 +383,22 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
       const optimized = await optimizeImageBlob(origBlob);
       const optKey = optimizedKeyFor(asset.r2Key);
 
+      const newSize = optimized.webp.size;
+      if (!isWorthStoring(newSize, origSize)) {
+        // Never publish a derivative that is not smaller than its source.
+        setOptInfo(NOT_SMALLER_MESSAGE);
+        return;
+      }
+
       setOptInfo("Uploading optimized WebP…");
       const optB64 = await optBlobToBase64(optimized.webp);
       await writeVariants({
         data: {
-          main: { key: optKey, contentType: "image/webp", dataBase64: optB64 },
+          // Use the validated blob MIME type, never a hardcoded value.
+          main: { key: optKey, contentType: optimized.mimeType, dataBase64: optB64 },
         },
       });
 
-      const newSize = optimized.webp.size;
       const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
       setOptInfo(
         `${Math.round(origSize / 1024)} → ${Math.round(newSize / 1024)} KB (−${pct}%) · ${optimized.width}×${optimized.height} webp`,
