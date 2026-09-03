@@ -20,10 +20,17 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [adminExistsState, setAdminExistsState] = useState<boolean | null>(null);
 
   useEffect(() => {
     db.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: "/" });
+    });
+    // Signup is only available for the very first administrator. Once one
+    // exists in D1, this page permanently shows sign-in only.
+    adminExists().then(({ exists }) => {
+      setAdminExistsState(exists);
+      if (exists) setMode("signin");
     });
   }, [navigate]);
 
