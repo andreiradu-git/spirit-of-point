@@ -1,6 +1,7 @@
 // Administrator authentication backed by Cloudflare D1.
 //
-// - Passwords: PBKDF2-SHA256 (WebCrypto), 210_000 iterations, per-user random salt.
+// - Passwords: PBKDF2-SHA256 (WebCrypto), 100_000 iterations (Workers maximum),
+//   per-user random salt, versioned hash string.
 // - Sessions:  random 32-byte token in an HttpOnly cookie; only its SHA-256 hash is stored.
 // No third-party auth provider is involved; everything runs on the Worker + D1.
 import { getCookie, setCookie, deleteCookie } from "@tanstack/react-start/server";
