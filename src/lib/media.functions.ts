@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { serverDb } from "@/lib/db-client.server";
 import { requireAdminAuth } from "@/lib/admin-auth";
 import { getMediaDbClient, inferMediaAssetForUrlDirect } from "@/lib/media-assets.server";
 type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
