@@ -374,7 +374,9 @@ export function EditableGallery({
       : layout === "masonry"
       ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
       : archive
-      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+      ? // Wanders-only: thumbnails ~70% of previous displayed width
+        // (desktop 4→6 cols, tablet 2→3 cols); mobile stays single column.
+        "grid-cols-1 md:grid-cols-3 lg:grid-cols-6"
       : columns === 2
       ? "grid-cols-2"
       : columns === 4
