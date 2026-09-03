@@ -3,9 +3,11 @@ import { Editable } from "@/components/Editable";
 import { useText } from "@/hooks/use-site-texts";
 import { ContactForm } from "@/components/ContactForm";
 import data from "@/data/contact.json";
+import { useTr } from "@/i18n";
 
 
 export function ContactPage() {
+  const t = useTr();
   const bg = data.find((d) => /jpg|jpeg/i.test(d.src)) || data[0];
   const email = useText("contact.email", "andrei@pointstudio.ro");
   const phone = useText("contact.phone", "+40 744 341 286");
@@ -69,7 +71,7 @@ export function ContactPage() {
 
       <section className="w-full">
         <iframe
-          title="Point Studio location"
+          title={t("Point Studio location")}
           src={`https://www.google.com/maps?q=${encodeURIComponent(mapsQuery)}&output=embed`}
           width="100%"
           height="450"
