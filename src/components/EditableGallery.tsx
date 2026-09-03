@@ -29,6 +29,7 @@ import {
   removeGalleryImage,
   reorderGalleryImages,
   updateImageMeta,
+  materializeGallery,
 } from "@/lib/media.functions";
 import { MediaLibraryPicker } from "./MediaLibraryPicker";
 import { useGalleryCovers, useSetGalleryCover } from "@/hooks/use-gallery-covers";
@@ -195,6 +196,7 @@ export function EditableGallery({
   const reorder = useServerFn(reorderGalleryImages);
   const updateMeta = useServerFn(updateImageMeta);
   const upload = useServerFn(uploadToR2);
+  const materialize = useServerFn(materializeGallery);
   const { data: covers } = useGalleryCovers();
   const setCover = useSetGalleryCover();
   const coverSrc = covers?.[slug];
