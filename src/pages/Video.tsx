@@ -9,6 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { saveAssetMeta, generateAssetMeta } from "@/lib/asset-meta.functions";
 import { useAiLanguage } from "@/hooks/use-ai-language";
 import { uploadToR2 } from "@/lib/r2.functions";
+import { uploadImageWithProtection } from "@/lib/image-upload";
 import { derivePoster, derivePosterSync } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
 import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
@@ -63,13 +64,11 @@ function embedUrl(url: string): string | null {
   return null;
 }
 
-async function fileToBase64(file: File): Promise<string> {
-  const buf = await file.arrayBuffer();
-  const bytes = new Uint8Array(buf);
+async function blobToBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
   let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   }
   return btoa(bin);
 }
@@ -96,7 +95,7 @@ export function VideoPage() {
   const uploadVideoFile = async (file: File, index: number) => {
     setUploadingFor(index);
     try {
-      const dataBase64 = await fileToBase64(file);
+      const dataBase64 = await blobToBase64(file);
       const { url } = await upload({
         data: {
           filename: file.name,
@@ -134,21 +133,9 @@ export function VideoPage() {
         posterAuto: true,
       };
       if (res.needsUpload && res.blob) {
-        // Convert blob → base64 and push to R2 as an image asset.
-        const buf = new Uint8Array(await res.blob.arrayBuffer());
-        let bin = "";
-        for (let i = 0; i < buf.length; i += 0x8000) {
-          bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + 0x8000)));
-        }
-        const { url: posterUrl } = await upload({
-          data: {
-            filename: `poster-${Date.now()}.webp`,
-            contentType: "image/webp",
-            dataBase64: btoa(bin),
-            kind: "image",
-          },
-        });
-        return { ...meta, posterUrl, poster: posterUrl };
+        const posterFile = new File([res.blob], `poster-${Date.now()}.webp`, { type: res.blob.type || "image/webp" });
+        const result = await uploadImageWithProtection(posterFile, async (input) => upload(input));
+        return { ...meta, posterUrl: result.deliveryUrl, poster: result.deliveryUrl };
       }
       if (res.posterUrl) {
         return { ...meta, posterUrl: res.posterUrl, poster: res.posterUrl };

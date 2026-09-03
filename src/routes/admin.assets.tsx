@@ -11,24 +11,12 @@ import {
   generateAssetMeta,
   type AssetMeta,
 } from "@/lib/asset-meta.functions";
-import {
-  uploadToR2,
-  migrateSupabaseToR2,
-  renameR2Object,
-  readR2Object,
-  writeR2Variants,
-} from "@/lib/r2.functions";
-import {
-  optimizeImageBlob,
-  blobToBase64 as optBlobToBase64,
-  isWorthStoring,
-  NOT_SMALLER_MESSAGE,
-} from "@/lib/optimize-image";
+import { uploadToR2, migrateSupabaseToR2, renameR2Object } from "@/lib/r2.functions";
+import { uploadImageWithProtection } from "@/lib/image-upload";
 
 import {
   Sparkles,
   Loader2,
-  Zap,
   ExternalLink,
   Trash2,
   Cloud,
@@ -254,8 +242,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
   const removeAsset = useServerFn(deleteMediaAsset);
   const rename = useServerFn(renameR2Object);
 
-  const readSource = useServerFn(readR2Object);
-  const writeVariants = useServerFn(writeR2Variants);
   const qc = useQueryClient();
 
   const [label, setLabel] = useState(meta?.label ?? "");
@@ -266,8 +252,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
 
   const [saving, setSaving] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
-  const [optBusy, setOptBusy] = useState(false);
-  const [optInfo, setOptInfo] = useState<string | null>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -362,58 +346,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
     }
   };
 
-  const optimizedKeyFor = (originalKey: string) => {
-    const base = originalKey.split("/").pop() || originalKey;
-    const dot = base.lastIndexOf(".");
-    const stem = dot > 0 ? base.slice(0, dot) : base;
-    return `optimized/${stem}.webp`;
-  };
-
-  const doOptimize = async () => {
-    if (!asset.r2Key || asset.kind !== "image") return;
-    setOptBusy(true);
-    setOptInfo("Reading original from R2…");
-    try {
-      const source = await readSource({ data: { key: asset.r2Key } });
-      const origSize = source.size;
-      const origBlob = new Blob(
-        [Uint8Array.from(atob(source.dataBase64), (c) => c.charCodeAt(0))],
-        { type: source.contentType },
-      );
-
-      setOptInfo(`Encoding WebP (${Math.round(origSize / 1024)} KB original)…`);
-      const optimized = await optimizeImageBlob(origBlob);
-      const optKey = optimizedKeyFor(asset.r2Key);
-
-      const newSize = optimized.webp.size;
-      if (!isWorthStoring(newSize, origSize)) {
-        // Never publish a derivative that is not smaller than its source.
-        setOptInfo(NOT_SMALLER_MESSAGE);
-        return;
-      }
-
-      setOptInfo("Uploading optimized WebP…");
-      const optB64 = await optBlobToBase64(optimized.webp);
-      await writeVariants({
-        data: {
-          // Use the validated blob MIME type, never a hardcoded value.
-          main: { key: optKey, contentType: optimized.mimeType, dataBase64: optB64 },
-        },
-      });
-
-      const pct = origSize > 0 ? Math.round((1 - newSize / origSize) * 100) : 0;
-      setOptInfo(
-        `${Math.round(origSize / 1024)} → ${Math.round(newSize / 1024)} KB (−${pct}%) · ${optimized.width}×${optimized.height} webp`,
-      );
-      qc.invalidateQueries({ queryKey: ["admin", "assets"] });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setOptInfo(null);
-      alert("Optimize failed: " + msg);
-    } finally {
-      setOptBusy(false);
-    }
-  };
 
   const doDeleteKey = async (key: string, kind: "original" | "optimized" | "asset") => {
     if (!window.confirm(`Delete this ${kind} file permanently?\n\n${key}\n\nThis cannot be undone.`)) return;
@@ -638,50 +570,6 @@ function AssetCard({ asset, meta }: { asset: SiteAsset; meta?: AssetMeta }) {
                 <Trash2 className="w-3 h-3" /> Delete original
               </button>
             </div>
-            {/* Optimized */}
-            <div className="p-2 flex items-center gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="text-[10px] uppercase tracking-wider text-neutral-500">Optimized (WebP)</div>
-                {asset.optimizedKey ? (
-                  <>
-                    <div className="truncate font-mono" title={asset.optimizedKey}>
-                      {asset.optimizedKey.split("/").pop()}
-                    </div>
-                    <div className="text-neutral-500">
-                      {humanSize(asset.optimizedSize)}
-                      {asset.size && asset.optimizedSize
-                        ? ` · −${Math.max(0, Math.round((1 - asset.optimizedSize / asset.size) * 100))}%`
-                        : ""}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-neutral-500 italic">Not generated yet</div>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  onClick={() => doOptimize()}
-                  disabled={optBusy}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
-                  title="Regenerate optimized WebP from original"
-                >
-                  {optBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                  {asset.optimizedKey ? "Regenerate" : "Optimize"}
-                </button>
-                {asset.optimizedKey && (
-                  <button
-                    type="button"
-                    onClick={() => doDeleteKey(asset.optimizedKey!, "optimized")}
-                    disabled={deleting}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-40"
-                  >
-                    <Trash2 className="w-3 h-3" /> Delete optimized
-                  </button>
-                )}
-              </div>
-            </div>
-            {optInfo && <div className="p-2 text-[10px] text-emerald-700 truncate">{optInfo}</div>}
           </div>
         )}
 
@@ -728,8 +616,6 @@ type UploadItem = {
   status: string;
   error?: string;
   done?: boolean;
-  reductionPct?: number;
-  optimizedSize?: number;
 };
 
 function DropZoneUploader() {
@@ -740,7 +626,6 @@ function DropZoneUploader() {
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const doUploadR2 = useServerFn(uploadToR2);
-  const writeVariants = useServerFn(writeR2Variants);
 
   const patch = (id: string, changes: Partial<UploadItem>) =>
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...changes } : it)));
@@ -765,34 +650,17 @@ function DropZoneUploader() {
         const isImage = (file.type || "").startsWith("image/");
         try {
           if (isImage) {
-            // Upload the untouched original — server places it under
-            // `originals/<uuid>.<ext>`. Public delivery now goes through
-            // Cloudflare Image Transformations on that original, so no
-            // browser-side WebP derivative is generated here any more.
-            // (The manual Optimize/Regenerate action still exists.)
-            patch(id, { progress: 20, status: "uploading original" });
-            const origB64 = await optBlobToBase64(file);
-            patch(id, { progress: 60, status: "uploading original" });
-            await doUploadR2({
-              data: {
-                filename: file.name,
-                contentType: file.type || "application/octet-stream",
-                dataBase64: origB64,
-                kind: "image",
-              },
-            });
+            patch(id, { progress: 15, status: "reading image" });
+            const result = await uploadImageWithProtection(file, async (input) => doUploadR2(input));
             patch(id, {
               progress: 100,
               done: true,
-              status: `${Math.round(file.size / 1024)} KB original stored`,
+              status: result.oversized ? "original + web master stored" : `${Math.round(file.size / 1024)} KB original stored`,
             });
-
-
-
-
+            if (result.warning) patch(id, { status: result.warning });
           } else {
             patch(id, { progress: 20, status: "uploading" });
-            const b64 = await optBlobToBase64(file);
+            const b64 = await blobToBase64(file);
             patch(id, { progress: 60, status: "uploading" });
             await doUploadR2({
               data: {
@@ -805,7 +673,6 @@ function DropZoneUploader() {
             patch(id, { progress: 100, done: true, status: "done" });
           }
         } catch (e) {
-
           patch(id, {
             error: e instanceof Error ? e.message : String(e),
             progress: 100,
@@ -817,7 +684,7 @@ function DropZoneUploader() {
       qc.invalidateQueries({ queryKey: ["media-picker", "assets"] });
       setBusy(false);
     },
-    [doUploadR2, folder, qc, writeVariants],
+    [doUploadR2, folder, qc],
   );
 
 

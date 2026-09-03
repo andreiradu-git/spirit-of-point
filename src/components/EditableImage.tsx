@@ -3,6 +3,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useServerFn } from "@tanstack/react-start";
 import { uploadToR2 } from "@/lib/r2.functions";
+import { uploadImageWithProtection } from "@/lib/image-upload";
 import { Upload, Loader2 } from "lucide-react";
 import { cdn, cdnSrcSet, onTransformError } from "@/components/SiteLayout";
 
@@ -18,14 +19,6 @@ type Props = {
 
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-
-async function fileToBase64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  return btoa(bin);
-}
 
 export function EditableImage({
   src,
@@ -56,11 +49,8 @@ export function EditableImage({
 
     setUploading(true);
     try {
-      const dataBase64 = await fileToBase64(file);
-      const res = await upload({
-        data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
-      });
-      onChange?.(res.url);
+      const result = await uploadImageWithProtection(file, async (input) => upload(input));
+      onChange?.(result.deliveryUrl);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.error("Upload failed", e);

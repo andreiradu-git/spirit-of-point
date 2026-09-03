@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadToR2 } from "@/lib/r2.functions";
+import { uploadImageWithProtection } from "@/lib/image-upload";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
 import { cdn } from "@/components/SiteLayout";
 import {
@@ -48,11 +49,12 @@ export const Route = createFileRoute("/admin/hero")({
   }),
 });
 
-async function fileToBase64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
+async function blobToBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
   let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
   return btoa(bin);
 }
 
@@ -293,12 +295,20 @@ function AdminHero() {
       let next = items;
       for (const file of Array.from(files)) {
         const kind = file.type.startsWith("video/") ? "video" : "image";
-        const dataBase64 = await fileToBase64(file);
-        const res = await upload({ data: { filename: file.name, contentType: file.type, dataBase64, kind } });
-        if (replaceId) {
-          next = next.map((it) => (it.id === replaceId ? { ...it, src: res.url, kind } : it));
+        let src: string;
+        if (kind === "image") {
+          const result = await uploadImageWithProtection(file, async (input) => upload(input));
+          src = result.deliveryUrl;
         } else {
-          next = [...next, { id: newId(), kind, src: res.url, alt: "", caption: "" }];
+          const result = await upload({
+            data: { filename: file.name, contentType: file.type, dataBase64: await blobToBase64(file), kind },
+          });
+          src = result.url;
+        }
+        if (replaceId) {
+          next = next.map((it) => (it.id === replaceId ? { ...it, src, kind } : it));
+        } else {
+          next = [...next, { id: newId(), kind, src, alt: "", caption: "" }];
         }
       }
       await persist(next);

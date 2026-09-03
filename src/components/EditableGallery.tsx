@@ -5,6 +5,7 @@ import { useGallery, useInvalidateGallery, type GalleryImage } from "@/hooks/use
 import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "@/components/SiteLayout";
 import { useServerFn } from "@tanstack/react-start";
 import { uploadToR2 } from "@/lib/r2.functions";
+import { uploadImageWithProtection } from "@/lib/image-upload";
 import {
   DndContext,
   closestCenter,
@@ -33,14 +34,6 @@ import { useGalleryCovers, useSetGalleryCover } from "@/hooks/use-gallery-covers
 
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-
-async function fileToBase64(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  return btoa(bin);
-}
 
 type Props = {
   slug: string;
@@ -238,11 +231,8 @@ export function EditableGallery({
     }
     setUploading(true);
     try {
-      const dataBase64 = await fileToBase64(file);
-      const res = await upload({
-        data: { filename: file.name, contentType: file.type, dataBase64, kind: "image" },
-      });
-      await addImage({ data: { gallerySlug: slug, src: res.url, alt: "" } });
+      const result = await uploadImageWithProtection(file, async (input) => upload(input));
+      await addImage({ data: { gallerySlug: slug, src: result.deliveryUrl, alt: "" } });
       invalidate(slug);
     } catch (e) {
       console.error("Upload failed", e);

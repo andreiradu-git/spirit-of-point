@@ -5,6 +5,7 @@ import { useEditMode } from "@/hooks/use-edit-mode";
 import { useSiteList } from "@/hooks/use-site-list";
 import { useServerFn } from "@tanstack/react-start";
 import { uploadToR2 } from "@/lib/r2.functions";
+import { uploadImageWithProtection } from "@/lib/image-upload";
 import { cdn } from "./SiteLayout";
 import { Play, X, Plus, Loader2, Upload, ChevronLeft, ChevronRight, Pause } from "lucide-react";
 
@@ -21,17 +22,6 @@ export type Testimonial = {
 const MAX_SIZE = 20 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const AUTOPLAY_MS = 5000;
-
-async function fileToBase64(file: File): Promise<string> {
-  const buf = await file.arrayBuffer();
-  const bytes = new Uint8Array(buf);
-  let bin = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
-  }
-  return btoa(bin);
-}
 
 export function EditableTestimonials({ fallback }: { fallback: Testimonial[] }) {
   const { isAdmin } = useAdmin();
@@ -239,16 +229,8 @@ function TestimonialCard({
     if (file.size > MAX_SIZE) return alert("Max 20 MB");
     setUploading(true);
     try {
-      const dataBase64 = await fileToBase64(file);
-      const { url } = await upload({
-        data: {
-          filename: file.name,
-          contentType: file.type,
-          dataBase64,
-          folder: "testimonials",
-        },
-      });
-      await onChange({ poster: url });
+      const result = await uploadImageWithProtection(file, async (input) => upload(input));
+      await onChange({ poster: result.deliveryUrl });
     } catch (e) {
       console.error(e);
       alert("Upload failed: " + (e instanceof Error ? e.message : String(e)));
