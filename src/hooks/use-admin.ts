@@ -29,7 +29,7 @@ function load(force = false): Promise<void> {
   if (inflight && !force) return inflight;
   inflight = db.auth
     .getUser()
-    .then(({ data }) => setState({ user: data.user, loading: false }))
+    .then((res) => setState({ user: res?.data?.user ?? null, loading: false }))
     .catch(() => setState({ user: null, loading: false }))
     .finally(() => {
       inflight = null;
