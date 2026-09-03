@@ -40,7 +40,13 @@ function AuthPage() {
       }
       navigate({ to: "/" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err !== null && "message" in err
+            ? String((err as { message: unknown }).message)
+            : String(err);
+      setError(message || "Something went wrong");
     } finally {
       setBusy(false);
     }
