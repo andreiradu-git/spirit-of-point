@@ -9,7 +9,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { saveAssetMeta, generateAssetMeta } from "@/lib/asset-meta.functions";
 import { useAiLanguage } from "@/hooks/use-ai-language";
 import { uploadToR2 } from "@/lib/r2.functions";
-import { derivePoster, DEFAULT_VIDEO_POSTER } from "@/lib/generate-video-poster";
+import { derivePoster, derivePosterSync } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/MediaLibraryPicker";
 import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
@@ -153,10 +153,10 @@ export function VideoPage() {
       if (res.posterUrl) {
         return { ...meta, posterUrl: res.posterUrl, poster: res.posterUrl };
       }
-      return { ...meta, posterUrl: DEFAULT_VIDEO_POSTER, poster: DEFAULT_VIDEO_POSTER };
+      return meta;
     } catch (e) {
       console.error("Poster generation failed", e);
-      return { posterUrl: DEFAULT_VIDEO_POSTER, poster: DEFAULT_VIDEO_POSTER, posterAuto: true };
+      return { posterAuto: true };
     }
   };
 
@@ -362,7 +362,7 @@ function VideoCard({
   const label = meta?.label || v.title;
   const alt = meta?.alt || v.title;
   const embed = detectEmbed(v.src);
-  const poster = posterOf(v) || DEFAULT_VIDEO_POSTER;
+  const poster = posterOf(v) || derivePosterSync(v.videoUrl || v.src) || "";
 
   return (
     <div ref={setNodeRef} style={style} className="flex flex-col gap-2">
@@ -371,15 +371,17 @@ function VideoCard({
           onClick={onOpen}
           className="group relative aspect-video overflow-hidden bg-neutral-900 text-left w-full"
         >
-          <img
-            src={cdn(poster, 1400)}
-            alt={alt}
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = DEFAULT_VIDEO_POSTER;
-            }}
-          />
+          {poster && (
+            <img
+              src={cdn(poster, 1400)}
+              alt={alt}
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
+          )}
 
           <div className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition" />
           <div className="absolute inset-0 flex items-center justify-center">

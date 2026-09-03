@@ -3,8 +3,13 @@
 // capture). Returns nulls gracefully on failure so callers can fall back to a
 // configurable placeholder.
 
-export const DEFAULT_VIDEO_POSTER =
-  "https://images.pointstudio.ro/originals/video-placeholder.webp";
+/** Synchronous best-effort poster for a video URL (currently YouTube only).
+ *  Returns null when no thumbnail can be derived without a network call. */
+export function derivePosterSync(url: string): string | null {
+  if (!url) return null;
+  const yt = ytMatch(url);
+  return yt ? `https://i.ytimg.com/vi/${yt}/hqdefault.jpg` : null;
+}
 
 export type PosterResult = {
   posterUrl: string | null;
