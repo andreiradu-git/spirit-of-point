@@ -112,15 +112,17 @@ function AuthPage() {
           {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>
 
-        <button
-          type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="w-full text-xs text-neutral-500 hover:text-black"
-        >
-          {mode === "signin"
-            ? "No account yet? Create one"
-            : "Already have an account? Sign in"}
-        </button>
+        {adminExistsState !== true && (
+          <button
+            type="button"
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            className="w-full text-xs text-neutral-500 hover:text-black"
+          >
+            {mode === "signin"
+              ? "No account yet? Create one"
+              : "Already have an account? Sign in"}
+          </button>
+        )}
       </form>
     </div>
   );
