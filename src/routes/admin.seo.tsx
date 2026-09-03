@@ -17,8 +17,8 @@ const DEFAULT_PAGES = [
   { path: "/food", label: "Food Photography" },
   { path: "/people", label: "People & Portrait" },
   { path: "/editorial", label: "Editorial" },
-  { path: "/patterns", label: "Patterns" },
   { path: "/video", label: "Video" },
+  { path: "/wanders", label: "Wanders" },
   { path: "/contact", label: "Contact" },
 ];
 

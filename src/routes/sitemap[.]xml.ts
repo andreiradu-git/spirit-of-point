@@ -15,8 +15,8 @@ const STATIC_ENTRIES: Entry[] = [
   { path: "/food", changefreq: "monthly", priority: "0.8" },
   { path: "/people", changefreq: "monthly", priority: "0.8" },
   { path: "/editorial", changefreq: "monthly", priority: "0.8" },
-  { path: "/patterns", changefreq: "monthly", priority: "0.6" },
   { path: "/video", changefreq: "monthly", priority: "0.7" },
+  { path: "/wanders", changefreq: "monthly", priority: "0.7" },
   { path: "/contact", changefreq: "yearly", priority: "0.6" },
   // Work categories (/work/$slug)
   { path: "/work/food", changefreq: "monthly", priority: "0.7" },

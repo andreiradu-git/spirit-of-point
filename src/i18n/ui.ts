@@ -4,6 +4,7 @@
  */
 export const UI_RO: Record<string, string> = {
   // Navigation
+  "Personal work": "Lucrare personală",
   Home: "Acasă",
   Food: "Mâncare",
   People: "Oameni",

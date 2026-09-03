@@ -44,6 +44,7 @@ type Props = {
   className?: string;
   renderItem?: (img: GalleryImage, props: { onClick: () => void; editable: boolean }) => ReactNode;
   lightbox?: boolean;
+  archive?: boolean;
 };
 
 function SortableImage({
@@ -54,6 +55,7 @@ function SortableImage({
   onTitleChange,
   onClick,
   aspect,
+  archive,
   isCover,
   onSetCover,
 }: {
@@ -64,6 +66,7 @@ function SortableImage({
   onTitleChange?: (id: string, title: string) => void;
   onClick: () => void;
   aspect: Props["aspect"];
+  archive?: boolean;
   isCover?: boolean;
   onSetCover?: (src: string) => void;
 }) {
@@ -72,38 +75,42 @@ function SortableImage({
   });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
-  const aspectClass =
-    aspect === "square"
-      ? "aspect-square"
-      : aspect === "landscape"
-      ? "aspect-[4/3]"
-      : aspect === "portrait"
-      ? "aspect-[3/4]"
-      : "";
+  const aspectClass = archive
+    ? "aspect-[4/3]"
+    : aspect === "square"
+    ? "aspect-square"
+    : aspect === "landscape"
+    ? "aspect-[4/3]"
+    : aspect === "portrait"
+    ? "aspect-[3/4]"
+    : "";
+  const caption = image.title || image.alt || "Personal work";
+  const t = useTr();
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative group overflow-hidden bg-muted ${isDragging ? "opacity-50 z-50" : ""}`}
+      className={`relative group ${isDragging ? "opacity-50 z-50" : ""}`}
     >
       <button
         type="button"
         onClick={onClick}
-        className="block w-full h-full p-0 m-0 border-0 bg-transparent cursor-pointer"
+        className="block w-full p-0 m-0 border-0 bg-transparent cursor-pointer"
         disabled={editable}
       >
         <img
           src={cdn(image.src, 500)}
           srcSet={cdnSrcSet(image.src, [400, 800, 1200, 1600])}
           sizes="(min-width:1024px) 20vw, (min-width:768px) 33vw, 50vw"
-          alt={image.alt ?? ""}
+          alt={image.alt ?? caption}
           loading="lazy"
           decoding="async"
-          className={`w-full h-full object-cover ${aspectClass}`}
+          className={`block w-full object-cover ${aspectClass}`}
           onError={onTransformError}
         />
       </button>
+      {archive && <div className="pt-2 pb-1 text-xs text-muted-foreground">{t(caption)}</div>}
       {editable && (
         <>
           <div
@@ -175,6 +182,7 @@ export function EditableGallery({
   className = "",
   renderItem,
   lightbox = false,
+  archive = false,
 }: Props) {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
@@ -303,6 +311,8 @@ export function EditableGallery({
       ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
       : columns === 6
       ? "grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+      : archive
+      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
       : "grid-cols-2 md:grid-cols-3";
 
   // Masonry (non-editable): flex columns with tops aligned at the first row
@@ -463,6 +473,7 @@ export function EditableGallery({
                   onTitleChange={onTitleChange}
                   onClick={() => lightbox && setActiveIndex(i)}
                   aspect={aspect}
+                  archive={archive}
                   isCover={coverSrc === img.src}
                   onSetCover={onSetCover}
                 />
@@ -522,17 +533,23 @@ export function EditableGallery({
       />
       {lightbox && activeIndex !== null && (
         <div
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 md:p-8"
           onClick={() => setActiveIndex(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image viewer"
         >
           <button
-            className="absolute top-4 right-6 text-white text-sm uppercase tracking-widest"
+            type="button"
+            className="absolute top-4 right-5 text-white text-2xl leading-none p-2"
             onClick={() => setActiveIndex(null)}
+            aria-label="Close"
           >
-            Close
+            ×
           </button>
           <button
-            className="absolute left-4 md:left-8 text-white text-3xl px-3"
+            type="button"
+            className="absolute left-2 md:left-8 text-white text-4xl p-3"
             onClick={(e) => {
               e.stopPropagation();
               setActiveIndex((a) => (a === null ? a : (a - 1 + images.length) % images.length));
@@ -545,14 +562,18 @@ export function EditableGallery({
             src={cdn(images[activeIndex].src, 2400, IMAGE_QUALITY_LARGE)}
             srcSet={cdnSrcSet(images[activeIndex].src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)}
             sizes="(min-width:1024px) 90vw, 100vw"
-            alt={images[activeIndex].alt ?? ""}
+            alt={images[activeIndex].alt ?? images[activeIndex].title ?? "Personal work"}
             decoding="async"
-            className="max-h-[90vh] max-w-[90vw] object-contain"
+            className="max-h-[calc(100vh-7rem)] max-w-[88vw] object-contain"
             onClick={(e) => e.stopPropagation()}
             onError={onTransformError}
           />
+          <div className="mt-3 max-w-[88vw] text-center text-xs tracking-wide text-white/70">
+            {images[activeIndex].title || images[activeIndex].alt || "Personal work"}
+          </div>
           <button
-            className="absolute right-4 md:right-8 text-white text-3xl px-3"
+            type="button"
+            className="absolute right-2 md:right-8 text-white text-4xl p-3"
             onClick={(e) => {
               e.stopPropagation();
               setActiveIndex((a) => (a === null ? a : (a + 1) % images.length));
