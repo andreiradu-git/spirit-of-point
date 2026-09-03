@@ -3,6 +3,7 @@ import { z } from "zod";
 import { serverDb } from "@/lib/db-client.server";
 import { requireAdminAuth } from "@/lib/admin-auth";
 import { getMediaDbClient, inferMediaAssetForUrlDirect } from "@/lib/media-assets.server";
+import { resolveGalleryIdDirect } from "@/lib/gallery-resolve.server";
 type AnyDb = Omit<ReturnType<typeof getMediaDbClient>, "from"> & { from: (table: string) => any };
 
 // NOTE: All file uploads/deletes are handled through Cloudflare R2
@@ -70,16 +71,17 @@ export const addGalleryImage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const db = serverDb() as unknown as AnyDb;
     const media = await inferMediaAssetForUrlDirect(data.src, data.alt);
-    const { data: gallery } = await db.from("galleries").select("id").eq("slug", data.gallerySlug).single();
-    if (!gallery) throw new Error("Gallery not found");
+    // Resolves (and, for a known site gallery, provisions) the persistent D1
+    // gallery identity for this slug. Never trusts the slug blindly.
+    const galleryId = await resolveGalleryIdDirect(data.gallerySlug);
 
     const { count } = await db
       .from("gallery_images")
       .select("*", { count: "exact", head: true })
-      .eq("gallery_id", gallery.id);
+      .eq("gallery_id", galleryId);
 
     const { error } = await db.from("gallery_images").insert({
-      gallery_id: gallery.id,
+      gallery_id: galleryId,
       media_asset_id: media.id,
       src: media.url,
       alt: data.alt,
