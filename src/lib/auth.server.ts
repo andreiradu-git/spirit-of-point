@@ -8,7 +8,12 @@ import { d1First, d1Run, newId, nowIso } from "@/lib/d1.server";
 
 export const SESSION_COOKIE = "ps_session";
 const SESSION_DAYS = 30;
-const PBKDF2_ITERATIONS = 210_000;
+// Cloudflare Workers' WebCrypto caps PBKDF2 at 100_000 iterations; anything
+// higher throws "iteration counts above 100000 are not supported".
+// The hash format stays versioned (`pbkdf2$<iterations>$<salt>$<derived>`)
+// so stored hashes remain verifiable if this value is raised later.
+const PBKDF2_MAX_ITERATIONS = 100_000;
+const PBKDF2_ITERATIONS = PBKDF2_MAX_ITERATIONS;
 
 export type AdminUser = { id: string; email: string; role: string };
 
