@@ -13,6 +13,7 @@ import {
 } from "@/lib/asset-meta.functions";
 import { uploadToR2, migrateSupabaseToR2, renameR2Object } from "@/lib/r2.functions";
 import { uploadImageWithProtection } from "@/lib/image-upload";
+import { blobToBase64 } from "@/lib/optimize-image";
 
 import {
   Sparkles,
