@@ -11,7 +11,7 @@ import path from "node:path";
 import { d1Query } from "./d1.mjs";
 
 const BOOL_COLUMNS = new Set(["used_on_site", "visible", "published", "archived"]);
-const BATCH = 40;
+const MAX_VARS = 90;
 
 function encode(column, value) {
   if (value === null || value === undefined) return null;
@@ -47,8 +47,9 @@ for (const file of files) {
 
   let imported = 0;
   for (const { columns, rows: group } of groups.values()) {
-    for (let i = 0; i < group.length; i += BATCH) {
-      const chunk = group.slice(i, i + BATCH);
+    const batch = Math.max(1, Math.floor(MAX_VARS / columns.length));
+    for (let i = 0; i < group.length; i += batch) {
+      const chunk = group.slice(i, i + batch);
       const params = chunk.flatMap((row) => columns.map((c) => encode(c, row[c])));
       const placeholders = chunk.map(() => `(${columns.map(() => "?").join(", ")})`).join(", ");
       await d1Query(
