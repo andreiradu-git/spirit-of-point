@@ -117,13 +117,35 @@ function isH3SwallowedErrorBody(body: string): boolean {
 const LEGACY_PARAMS = ["itemId", "itemid", "format", "category", "tag", "author", "month", "view"];
 
 // /patterns rendered exactly the same images as /wanders after the rename, so the
-// old path is a pure duplicate with one clear modern equivalent.
+// old path is a pure duplicate with one clear modern equivalent. The bare
+// Squarespace category paths map onto their current /work/... equivalents.
 const RETIRED_PATHS: Record<string, string> = {
   "/patterns": "/wanders",
   "/patterns/": "/wanders",
   "/ro/patterns": "/ro/wanders",
   "/ro/patterns/": "/ro/wanders",
+  "/industrial": "/work/industrial",
+  "/industrial/": "/work/industrial",
+  "/ro/industrial": "/ro/work/industrial",
+  "/corporate": "/work/corporate",
+  "/corporate/": "/work/corporate",
+  "/ro/corporate": "/ro/work/corporate",
+  "/landscape": "/work/landscape",
+  "/landscape/": "/work/landscape",
+  "/ro/landscape": "/ro/work/landscape",
 };
+
+// Squarespace pages that were intentionally removed and have no equivalent.
+// They answer 410 so crawlers drop them instead of re-queueing a soft 404.
+const GONE_PATHS = new Set([
+  "/new-page",
+  "/new-page/",
+  "/ro/new-page",
+  "/architecture",
+  "/architecture/",
+  "/ro/architecture",
+]);
+
 
 function canonicalRedirect(request: Request): Response | undefined {
   let url: URL;
