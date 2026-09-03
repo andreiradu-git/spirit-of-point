@@ -5,6 +5,9 @@ import { altLinks, tr } from "@/i18n";
 
 const LANG: "en" | "ro" = "en";
 
+const descLong = (title: string) => `${title} photography portfolio by Point Studio.`;
+const descShort = (title: string) => `${title} photography by Point Studio.`;
+
 export const Route = createFileRoute("/work/$slug")({
   component: WorkRoute,
   loader: ({ params }) => {
@@ -51,16 +54,12 @@ export const Route = createFileRoute("/work/$slug")({
         { title: `${title} — Point Studio` },
         {
           name: "description",
-          content: LANG === "ro"
-            ? `Portofoliu de fotografie ${title} realizat de Point Studio, București.`
-            : `${title} photography portfolio by Point Studio.`,
+          content: descLong(title),
         },
         { property: "og:title", content: `${title} — Point Studio` },
         {
           property: "og:description",
-          content: LANG === "ro"
-            ? `Fotografie ${title} realizată de Point Studio.`
-            : `${title} photography by Point Studio.`,
+          content: descShort(title),
         },
         ...alt.meta,
       ],
