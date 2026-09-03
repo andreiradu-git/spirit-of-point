@@ -215,17 +215,26 @@ export function EditableGallery({
   const inputRef = useRef<HTMLInputElement>(null);
 
 
-  const editable = isAdmin && editMode;
+  // A canonical D1 gallery is the single source of truth once it exists.
+  // Static source data is only ever shown for a page whose gallery has not been
+  // created yet, or while the gallery request is still in flight — never merged
+  // with D1 content, so a removed image can't reappear from the source file.
+  const usingFallback = !gallery;
+
+  // Editing is disabled while the gallery identity is unknown, so admins never
+  // act on placeholder rows.
+  const editable = isAdmin && editMode && !isPending;
 
   const images: GalleryImage[] = withoutBrandingAssets(
-    gallery?.images.map((img) => ({ ...img, src: img.src })) ??
-    fallbackImages.map((img, i) => ({
-      id: `fallback-${i}`,
-      src: img.src,
-      alt: img.alt ?? null,
-      title: img.title ?? null,
-      position: i + 1,
-    })),
+    gallery
+      ? gallery.images.map((img) => ({ ...img, src: img.src }))
+      : fallbackImages.map((img, i) => ({
+          id: `fallback-${i}`,
+          src: img.src,
+          alt: img.alt ?? null,
+          title: img.title ?? null,
+          position: i + 1,
+        })),
   );
 
   const sensors = useSensors(
