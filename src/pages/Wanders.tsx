@@ -8,6 +8,8 @@ export function WandersPage() {
   return (
     <PortfolioPage
       slug="wanders"
+      title="Wanders"
+      titleId="wanders.title"
       tagline="Moments woven into personal, artistic work."
       taglineId="wanders.description"
       fallbackImages={data}

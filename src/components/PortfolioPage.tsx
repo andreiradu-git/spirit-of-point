@@ -12,6 +12,8 @@ type Img = { src: string; alt?: string; title?: string };
 
 export function PortfolioPage({
   slug,
+  title,
+  titleId,
   tagline,
   taglineId,
   fallbackImages,
@@ -21,6 +23,8 @@ export function PortfolioPage({
   belowGallery,
 }: {
   slug: string;
+  title?: string;
+  titleId?: string;
   tagline: string;
   taglineId?: string;
   fallbackImages: Img[];
@@ -51,7 +55,12 @@ export function PortfolioPage({
 
   return (
     <SiteLayout>
-      <div className="pt-10 md:pt-14 pb-10 md:pb-16">
+      <div className={`${title ? "pt-10 md:pt-14" : "pt-10 md:pt-14"} pb-10 md:pb-16`}>
+        {title && (
+          <h1 className="text-center text-2xl md:text-3xl font-serif text-foreground px-4 mb-3">
+            {titleId ? <Editable id={titleId}>{title}</Editable> : t(title)}
+          </h1>
+        )}
         <p className="text-center text-[11px] md:text-xs uppercase tracking-[0.35em] md:tracking-[0.5em] text-foreground/70 px-4">
           {taglineId ? (
             <Editable id={taglineId} className="inline">
