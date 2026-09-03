@@ -215,7 +215,7 @@ export function VideoPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto max-w-7xl px-6 pt-16 pb-24">
+      <div className="mx-auto max-w-2xl px-6 pt-16 pb-24">
         {editable && (
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
             <span className="inline-flex items-center gap-1 text-neutral-500 uppercase tracking-widest">
