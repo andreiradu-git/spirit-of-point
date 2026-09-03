@@ -189,7 +189,7 @@ export function EditableGallery({
 }: Props) {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
-  const { data: gallery, isPending } = useGallery(slug);
+  const { data: gallery, isPending, isError, error: galleryError, refetch } = useGallery(slug);
   const invalidate = useInvalidateGallery();
   const addImage = useServerFn(addGalleryImage);
   const removeImage = useServerFn(removeGalleryImage);
@@ -223,9 +223,10 @@ export function EditableGallery({
   // with D1 content, so a removed image can't reappear from the source file.
   const usingFallback = !gallery;
 
-  // Editing is disabled while the gallery identity is unknown, so admins never
-  // act on placeholder rows.
-  const editable = isAdmin && editMode && !isPending;
+  // Editing requires a resolved gallery identity: while the query is in flight,
+  // or when it failed, the rendered items are bundled placeholders with synthetic
+  // ids that must never reach a mutation.
+  const editable = isAdmin && editMode && !isPending && !isError;
 
   const images: GalleryImage[] = withoutBrandingAssets(
     gallery
@@ -255,8 +256,16 @@ export function EditableGallery({
     setUploading(true);
     try {
       const result = await uploadImageWithProtection(file, async (input) => upload(input));
-      await addImage({ data: { gallerySlug: slug, src: result.deliveryUrl, alt: "" } });
-      invalidate(slug);
+      try {
+        await addImage({ data: { gallerySlug: slug, src: result.deliveryUrl, alt: "" } });
+      } catch (e) {
+        throw new Error(
+          "The file was uploaded to your media library, but it could not be added to this gallery: " +
+            (e instanceof Error ? e.message : String(e)),
+        );
+      }
+      await invalidate(slug);
+      await refetch();
     } catch (e) {
       console.error("Upload failed", e);
       alert("Upload failed: " + (e instanceof Error ? e.message : String(e)));
@@ -269,7 +278,8 @@ export function EditableGallery({
   // so any visible image can be managed like an uploaded one.
   const materializeAndMap = async () => {
     const res = await materialize({ data: { gallerySlug: slug } });
-    invalidate(slug);
+    await invalidate(slug);
+    await refetch();
     const byKey = new Map<string, string>();
     for (const row of res.images as Array<{ id: string; src: string }>) {
       byKey.set(row.src.split("/").pop() ?? row.src, row.id);
@@ -291,7 +301,8 @@ export function EditableGallery({
       const realId = await resolveRealId(id);
       if (!realId) throw new Error("This image could not be matched to a gallery entry.");
       await removeImage({ data: { imageId: realId } });
-      invalidate(slug);
+      await invalidate(slug);
+      await refetch();
     } catch (e) {
       console.error("Delete failed", e);
       alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
@@ -300,8 +311,10 @@ export function EditableGallery({
 
   const pickFromLibrary = async (url: string) => {
     try {
-      await addImage({ data: { gallerySlug: slug, src: url, alt: "" } });
-      invalidate(slug);
+      const res = await addImage({ data: { gallerySlug: slug, src: url, alt: "" } });
+      await invalidate(slug);
+      await refetch();
+      if (res?.duplicate) alert("That image is already in this gallery.");
     } catch (e) {
       alert("Add failed: " + (e instanceof Error ? e.message : String(e)));
     }
@@ -311,15 +324,23 @@ export function EditableGallery({
   const onAltChange = async (id: string, alt: string) => {
     const realId = await resolveRealId(id);
     if (!realId) return;
-    await updateMeta({ data: { imageId: realId, alt } });
-    invalidate(slug);
+    try {
+      await updateMeta({ data: { imageId: realId, alt } });
+      await invalidate(slug);
+    } catch (e) {
+      alert("Could not save the alt text: " + (e instanceof Error ? e.message : String(e)));
+    }
   };
 
   const onTitleChange = async (id: string, title: string) => {
     const realId = await resolveRealId(id);
     if (!realId) return;
-    await updateMeta({ data: { imageId: realId, title } });
-    invalidate(slug);
+    try {
+      await updateMeta({ data: { imageId: realId, title } });
+      await invalidate(slug);
+    } catch (e) {
+      alert("Could not save the label: " + (e instanceof Error ? e.message : String(e)));
+    }
   };
 
   const onDragEnd = async (event: import("@dnd-kit/core").DragEndEvent) => {
@@ -336,8 +357,13 @@ export function EditableGallery({
       if (mapped.some((v) => !v)) return;
       ids = mapped as string[];
     }
-    await reorder({ data: { imageIds: ids } });
-    invalidate(slug);
+    try {
+      await reorder({ data: { imageIds: ids } });
+    } catch (e) {
+      alert("Reorder failed: " + (e instanceof Error ? e.message : String(e)));
+    }
+    await invalidate(slug);
+    await refetch();
   };
 
   const gridCols =
@@ -456,6 +482,19 @@ export function EditableGallery({
 
   return (
     <div className={className}>
+      {isAdmin && editMode && isError && (
+        <div className="mb-3 rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          Could not load this gallery, so editing is disabled to protect its contents.{" "}
+          <button type="button" className="underline" onClick={() => refetch()}>
+            Try again
+          </button>
+          {galleryError instanceof Error ? ` (${galleryError.message})` : null}
+        </div>
+      )}
+      {isAdmin && editMode && isPending && (
+        <div className="mb-3 text-xs text-muted-foreground">Loading gallery…</div>
+      )}
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

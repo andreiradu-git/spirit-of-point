@@ -14,7 +14,7 @@ export type SqlValue = string | number | null;
 type D1PreparedStatement = {
   bind: (...values: SqlValue[]) => D1PreparedStatement;
   all: <T>() => Promise<{ results: T[] }>;
-  run: () => Promise<unknown>;
+  run: () => Promise<{ meta?: { changes?: number } } | unknown>;
 };
 type D1Binding = { prepare: (sql: string) => D1PreparedStatement };
 
@@ -41,7 +41,10 @@ export function d1Transport(): "binding" | "http" {
   return bindingFromEnv() ? "binding" : "http";
 }
 
-async function httpQuery<T>(sql: string, params: SqlValue[]): Promise<T[]> {
+async function httpQueryFull<T>(
+  sql: string,
+  params: SqlValue[],
+): Promise<{ rows: T[]; changes: number }> {
   const accountId = readServerEnv("CLOUDFLARE_ACCOUNT_ID");
   const apiToken = readServerEnv("CLOUDFLARE_API_TOKEN");
   const databaseId = readServerEnv("CLOUDFLARE_D1_DATABASE_ID");
@@ -61,12 +64,19 @@ async function httpQuery<T>(sql: string, params: SqlValue[]): Promise<T[]> {
   const json = (await res.json()) as {
     success: boolean;
     errors?: Array<{ message?: string }>;
-    result?: Array<{ results?: T[] }>;
+    result?: Array<{ results?: T[]; meta?: { changes?: number } }>;
   };
   if (!json.success) {
     throw new Error(json.errors?.map((e) => e.message).join("; ") || "D1 query failed");
   }
-  return json.result?.[0]?.results ?? [];
+  return {
+    rows: json.result?.[0]?.results ?? [],
+    changes: Number(json.result?.[0]?.meta?.changes ?? 0),
+  };
+}
+
+async function httpQuery<T>(sql: string, params: SqlValue[]): Promise<T[]> {
+  return (await httpQueryFull<T>(sql, params)).rows;
 }
 
 /** Runs a query and returns all rows. */
@@ -91,14 +101,22 @@ export async function d1First<T = Record<string, unknown>>(
   return rows[0] ?? null;
 }
 
-/** Runs a statement that returns no rows. */
-export async function d1Run(sql: string, params: SqlValue[] = []): Promise<void> {
+/**
+ * Runs a statement that returns no rows and reports how many rows it changed.
+ *
+ * The row count lets mutations (remove-from-gallery, reorder, metadata edits)
+ * fail loudly when they matched nothing, instead of reporting a false success.
+ */
+export async function d1Run(sql: string, params: SqlValue[] = []): Promise<{ changes: number }> {
   const binding = bindingFromEnv();
   if (binding) {
-    await binding.prepare(sql).bind(...params).run();
-    return;
+    const result = (await binding.prepare(sql).bind(...params).run()) as {
+      meta?: { changes?: number };
+    };
+    return { changes: Number(result?.meta?.changes ?? 0) };
   }
-  await httpQuery(sql, params);
+  const { changes } = await httpQueryFull(sql, params);
+  return { changes };
 }
 
 export function nowIso(): string {

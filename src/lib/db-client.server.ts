@@ -242,9 +242,12 @@ class ServerQuery implements PromiseLike<{ data: any; error: { message: string }
 
       if (this.op === "delete") {
         const params: SqlValue[] = [];
+        if (!this.conditions.length) {
+          return { data: null, error: { message: "Refusing to delete without a filter" } };
+        }
         const sql = `DELETE FROM ${this.table}${this.where(params)}`;
-        await d1Run(sql, params);
-        return { data: null, error: null };
+        const { changes } = await d1Run(sql, params);
+        return { data: null, error: null, count: changes };
       }
 
       if (this.op === "update") {
@@ -255,9 +258,12 @@ class ServerQuery implements PromiseLike<{ data: any; error: { message: string }
         const cols = Object.keys(row).filter((c) => IDENT.test(c));
         if (!cols.length) return { data: null, error: null };
         const params: SqlValue[] = cols.map((c) => encode(this.table, c, row[c]));
+        if (!this.conditions.length) {
+          return { data: null, error: { message: "Refusing to update without a filter" } };
+        }
         const sql = `UPDATE ${this.table} SET ${cols.map((c) => `${c} = ?`).join(", ")}${this.where(params)}`;
-        await d1Run(sql, params);
-        return { data: null, error: null };
+        const { changes } = await d1Run(sql, params);
+        return { data: null, error: null, count: changes };
       }
 
       const conflict = this.conflict ?? pk(this.table);
