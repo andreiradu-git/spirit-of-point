@@ -85,7 +85,7 @@ export function SiteLayout({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 sm:h-20 md:h-24 flex items-center justify-between gap-3">
           <Link to={localizePath("/", lang)} className="flex items-center shrink-0" aria-label="Point Studio">
             <img
-              src="https://images.squarespace-cdn.com/content/v1/61698c11d84cc850768a6bf8/3236b78e-0c1c-48e9-83fd-bbfa1f67650f/LOGO_PSP.png?format=400w"
+              src="https://images.pointstudio.ro/originals/4d60d181-80a0-4944-8dd7-c6e0312db758.webp"
               alt="Point Studio"
               className="h-10 sm:h-12 md:h-14 lg:h-16 xl:h-[69px] w-auto object-contain"
             />
