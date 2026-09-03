@@ -3,11 +3,15 @@ import { PortfolioPage } from "@/components/PortfolioPage";
 import data from "@/data/food.json";
 import { fotografieCulinaraContent } from "@/data/fotografie-culinara";
 import { useSiteSettings } from "@/hooks/use-site-settings";
+import { useLang } from "@/i18n";
 
 
 export function FoodPage() {
   const { settings, ready } = useSiteSettings();
-  const showLink = ready && settings.showFotografieCulinara && fotografieCulinaraContent.isVisibleInNav;
+  const lang = useLang();
+  // The landing page is written in Romanian, so it is linked only from the RO site.
+  const showLink =
+    lang === "ro" && ready && settings.showFotografieCulinara && fotografieCulinaraContent.isVisibleInNav;
   return (
     <>
       <PortfolioPage slug="food" tagline="Food, Product & Tabletop Photography" fallbackImages={data} />
