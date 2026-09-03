@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useText } from "@/hooks/use-site-texts";
-import { useAiLanguage } from "@/hooks/use-ai-language";
+import { useLang } from "@/i18n";
 import { useAiCredits } from "@/hooks/use-ai-credits";
 import { useGalleries } from "@/hooks/use-galleries";
 import {
@@ -49,13 +49,15 @@ function upsertMeta(sel: string, attr: string, name: string, content: string) {
 export function GallerySeoSection({
   slug,
   title,
-  location = "Bucharest",
+  location,
   images = [],
+  lang: langProp,
 }: {
   slug: string;
   title: string;
   location?: string;
   images?: Array<{ src: string; alt?: string }>;
+  lang?: "en" | "ro";
 }) {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
@@ -64,17 +66,21 @@ export function GallerySeoSection({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: allSeo } = useAllGallerySeo();
   const saveSeo = useSaveGallerySeo();
-  const legacy = useText(`gallery-seo.${slug}`, "");
+  const legacy = useText(lang === "ro" ? `gallery-seo.${slug}#ro` : `gallery-seo.${slug}`, "");
   const { data: galleries } = useGalleries();
   const runAi = useServerFn(generateGallerySeo);
-  const { lang } = useAiLanguage();
+  const routeLang = useLang();
+  const lang = langProp ?? routeLang;
+  // Romanian SEO content is stored under a separate key so both languages coexist.
+  const seoKey = lang === "ro" ? `${slug}#ro` : slug;
+  const loc = location ?? (lang === "ro" ? "București" : "Bucharest");
   const { remaining, limit, consume } = useAiCredits();
 
   const stored: GallerySeoData = useMemo(() => {
-    const s = allSeo?.[slug];
+    const s = allSeo?.[seoKey];
     if (s) return s;
     return { ...EMPTY_GALLERY_SEO, html: legacy };
-  }, [allSeo, slug, legacy]);
+  }, [allSeo, seoKey, legacy]);
 
   const [draft, setDraft] = useState<GallerySeoData>(stored);
   const [busy, setBusy] = useState(false);
