@@ -61,6 +61,9 @@ export const signUpFirstAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<AuthResult> => {
     try {
       const { hasAnyAdmin, createAdminUser, createSession } = await import("@/lib/auth.server");
+      // Fast pre-check for a friendly error; createAdminUser enforces the
+      // "at most one admin" rule atomically in D1, so a direct call or a
+      // race between the two queries can never create a second account.
       if (await hasAnyAdmin()) {
         return { user: null, error: "An administrator already exists. Please sign in instead." };
       }
