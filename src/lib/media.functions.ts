@@ -131,3 +131,24 @@ export const updateImageMeta = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
+/**
+ * Provisions the canonical D1 gallery for a slug (seeding it with the images
+ * the page currently shows from its source file) and returns the resulting
+ * gallery rows. Used to convert source-file placeholders into real, editable
+ * gallery items the first time an admin manages an uninitialized gallery.
+ */
+export const materializeGallery = createServerFn({ method: "POST" })
+  .middleware([requireAdminAuth])
+  .validator((data) => z.object({ gallerySlug: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    const galleryId = await resolveGalleryIdDirect(data.gallerySlug);
+    const db = serverDb() as unknown as AnyDb;
+    const { data: images, error } = await db
+      .from("gallery_images")
+      .select("*")
+      .eq("gallery_id", galleryId)
+      .order("position");
+    if (error) throw error;
+    return { galleryId, images: images ?? [] };
+  });
