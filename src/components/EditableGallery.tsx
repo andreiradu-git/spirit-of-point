@@ -462,16 +462,29 @@ export function EditableGallery({
             >
               ‹
             </button>
-            <img
+            <CrossfadeImage
               src={cdn(images[activeIndex].src, 2400, IMAGE_QUALITY_LARGE)}
-              srcSet={cdnSrcSet(images[activeIndex].src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE)}
+              srcSet={cdnSrcSet(
+                images[activeIndex].src,
+                [800, 1200, 1600, 2400],
+                IMAGE_QUALITY_LARGE,
+              )}
               sizes="(min-width:1024px) 90vw, 100vw"
               alt={images[activeIndex].alt ?? ""}
-              decoding="async"
-              className="max-h-[90vh] max-w-[90vw] object-contain"
+              preload={[1, -1]
+                .map((d) => images[(activeIndex + d + images.length) % images.length])
+                .filter((n) => n && n !== images[activeIndex])
+                .map((n) => ({
+                  src: cdn(n.src, 2400, IMAGE_QUALITY_LARGE),
+                  srcSet: cdnSrcSet(n.src, [800, 1200, 1600, 2400], IMAGE_QUALITY_LARGE),
+                  sizes: "(min-width:1024px) 90vw, 100vw",
+                }))}
+              stageClassName="w-[90vw] h-[90vh]"
+              imgClassName="max-h-full max-w-full w-auto h-auto object-contain"
               onClick={(e) => e.stopPropagation()}
               onError={onTransformError}
             />
+
             <button
               className="absolute right-4 md:right-8 text-white text-3xl px-3"
               onClick={(e) => {
