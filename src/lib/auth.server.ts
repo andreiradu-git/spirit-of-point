@@ -130,10 +130,17 @@ export async function findAdminByEmail(email: string) {
 
 export async function createAdminUser(email: string, password: string): Promise<AdminUser> {
   const id = newId();
-  await d1Run(
-    "INSERT INTO admin_users (id, email, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, 'admin', ?, ?)",
+  // Atomic single-statement insert: the WHERE NOT EXISTS guard is evaluated
+  // inside the same D1 query as the insert, so concurrent first-signup
+  // requests cannot both succeed even if they race.
+  const inserted = await d1First<{ id: string }>(
+    `INSERT INTO admin_users (id, email, password_hash, role, created_at, updated_at)
+     SELECT ?, ?, ?, 'admin', ?, ?
+     WHERE NOT EXISTS (SELECT 1 FROM admin_users)
+     RETURNING id`,
     [id, email.toLowerCase(), await hashPassword(password), nowIso(), nowIso()],
   );
+  if (!inserted) throw new Error("An administrator already exists. Please sign in instead.");
   return { id, email: email.toLowerCase(), role: "admin" };
 }
 

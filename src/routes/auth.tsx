@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/cms-client";
+import { adminExists } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -19,10 +20,17 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [adminExistsState, setAdminExistsState] = useState<boolean | null>(null);
 
   useEffect(() => {
     db.auth.getUser().then(({ data }) => {
       if (data.user) navigate({ to: "/" });
+    });
+    // Signup is only available for the very first administrator. Once one
+    // exists in D1, this page permanently shows sign-in only.
+    adminExists().then(({ exists }) => {
+      setAdminExistsState(exists);
+      if (exists) setMode("signin");
     });
   }, [navigate]);
 
@@ -66,6 +74,11 @@ function AuthPage() {
             ? "The first account created becomes the site administrator."
             : "Sign in to edit your site."}
         </p>
+        {mode === "signup" && adminExistsState === true && (
+          <p className="text-sm text-center text-neutral-600">
+            An administrator already exists. Please sign in instead.
+          </p>
+        )}
 
         <div className="space-y-2">
           <label className="block text-sm">Email</label>
@@ -99,15 +112,17 @@ function AuthPage() {
           {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>
 
-        <button
-          type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="w-full text-xs text-neutral-500 hover:text-black"
-        >
-          {mode === "signin"
-            ? "No account yet? Create one"
-            : "Already have an account? Sign in"}
-        </button>
+        {adminExistsState !== true && (
+          <button
+            type="button"
+            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+            className="w-full text-xs text-neutral-500 hover:text-black"
+          >
+            {mode === "signin"
+              ? "No account yet? Create one"
+              : "Already have an account? Sign in"}
+          </button>
+        )}
       </form>
     </div>
   );
