@@ -70,9 +70,9 @@ async function notifyByEmail(
   idempotencyKey: string,
 ): Promise<{ sent: boolean; reason?: string; id?: string }> {
   const apiKey = readServerEnv("RESEND_API_KEY");
-  const to = readServerEnv("CONTACT_NOTIFY_EMAIL");
+  const to = readServerEnv("CONTACT_NOTIFY_EMAIL") || DEFAULT_TO;
   if (!apiKey) return { sent: false, reason: "RESEND_API_KEY is not set in the Worker environment" };
-  if (!to) return { sent: false, reason: "CONTACT_NOTIFY_EMAIL is not set in the Worker environment" };
+
 
   // Authenticated sender on our own domain. The visitor's address is only ever
   // used as Reply-To so SPF/DMARC stay intact.
