@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cdn, cdnSrcSet } from "./SiteLayout";
+import { useTr } from "@/i18n";
 
 type Img = { src: string; alt: string };
 
@@ -152,7 +153,7 @@ export function Gallery({
             e.stopPropagation();
             setActive((a) => (a === null ? a : (a - 1 + images.length) % images.length));
           }}
-          aria-label="Previous"
+          aria-label={t("Previous")}
         >
           ‹
         </button>
@@ -168,7 +169,7 @@ export function Gallery({
             e.stopPropagation();
             setActive((a) => (a === null ? a : (a + 1) % images.length));
           }}
-          aria-label="Next"
+          aria-label={t("Next")}
         >
           ›
         </button>
