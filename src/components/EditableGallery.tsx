@@ -211,7 +211,6 @@ export function EditableGallery({
   };
 
   const [uploading, setUploading] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
