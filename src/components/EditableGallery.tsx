@@ -1,5 +1,5 @@
 import { withoutBrandingAssets } from "@/lib/branding-assets";
-import { useState, useRef, type ReactNode } from "react";
+import { useState, useRef, lazy, Suspense, type ReactNode } from "react";
 import { useAdmin } from "@/hooks/use-admin";
 import { useTr } from "@/i18n";
 import { useEditMode } from "@/hooks/use-edit-mode";
@@ -8,21 +8,10 @@ import { cdn, cdnSrcSet, IMAGE_QUALITY_LARGE, onTransformError } from "@/compone
 import { useServerFn } from "@tanstack/react-start";
 import { uploadToR2 } from "@/lib/r2.functions";
 import { uploadImageWithProtection } from "@/lib/image-upload";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragOverlay,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  rectSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import type { DragProps } from "./gallery-dnd";
+
+const GalleryDnd = lazy(() => import("./gallery-dnd"));
+
 import { Upload, X, GripVertical, Loader2, Images, Star } from "lucide-react";
 import {
   addGalleryImage,
