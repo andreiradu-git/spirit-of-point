@@ -98,12 +98,43 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
     };
   }, [warm]);
 
+  // Autoplay must not start while the page is still painting: rotating slides
+  // during first render inflates Speed Index. Wait for window load, then idle.
+  const [autoplayReady, setAutoplayReady] = useState(false);
   useEffect(() => {
+    if (autoplayReady) return;
+    let idle = 0;
+    let timer = 0;
+    const arm = () => {
+      const ric = (window as unknown as {
+        requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+      }).requestIdleCallback;
+      if (ric) {
+        idle = ric(() => setAutoplayReady(true), { timeout: 2000 });
+      } else {
+        timer = window.setTimeout(() => setAutoplayReady(true), 1000);
+      }
+    };
+    if (document.readyState === "complete") {
+      arm();
+    } else {
+      window.addEventListener("load", arm, { once: true });
+    }
+    return () => {
+      window.removeEventListener("load", arm);
+      if (timer) window.clearTimeout(timer);
+      const cic = (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback;
+      if (idle && cic) cic(idle);
+    };
+  }, [autoplayReady]);
+
+  useEffect(() => {
+    if (!autoplayReady) return;
     if (mode !== "auto" || items.length < 2) return;
     if (videoBusy || activeIsEmbed) return;
     const t = window.setInterval(() => go(1), interval * 1000);
     return () => window.clearInterval(t);
-  }, [mode, interval, items.length, videoBusy, activeIsEmbed, go, index]);
+  }, [autoplayReady, mode, interval, items.length, videoBusy, activeIsEmbed, go, index]);
 
   const onClickSlide = () => {
     if (mode === "click" && items.length > 1) go(1);
