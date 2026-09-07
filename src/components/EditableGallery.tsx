@@ -729,12 +729,49 @@ export function EditableGallery({
           </button>
         </div>
       )}
+      {pendingRemoveId && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Remove from gallery"
+          onClick={() => setPendingRemoveId(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-background p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm text-foreground">Remove this image from this gallery?</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              The file stays in the Media Library and anywhere else it is used.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded border px-3 py-1.5 text-sm"
+                onClick={() => setPendingRemoveId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={removing}
+                className="rounded bg-destructive px-3 py-1.5 text-sm text-destructive-foreground disabled:opacity-60"
+                onClick={confirmRemove}
+              >
+                Remove from gallery
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <MediaLibraryPicker
         open={pickerOpen}
         kind="image"
         onClose={() => setPickerOpen(false)}
         onPick={(a) => pickFromLibrary(a.url)}
       />
+
     </div>
 
   );
