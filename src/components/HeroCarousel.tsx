@@ -212,7 +212,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
               aria-label={`Go to slide ${i + 1}`}
               onClick={(e) => {
                 e.stopPropagation();
-                setIndex(i);
+                select(i);
               }}
               className={`h-1.5 rounded-full transition-all ${
                 i === index ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"
