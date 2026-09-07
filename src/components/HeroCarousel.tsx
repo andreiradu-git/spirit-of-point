@@ -38,10 +38,16 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   const [index, setIndex] = useState(0);
   const [videoBusy, setVideoBusy] = useState(false);
   const touchX = useRef<number | null>(null);
+  // Only the slides that can be visible are mounted. Previously all hero
+  // slides were in the DOM at once, so the browser fetched every full-size
+  // hero image during first load (several MB) and starved the visible one.
+  const prevIndex = useRef(0);
+  const [warm, setWarm] = useState(false);
 
   useEffect(() => {
     if (index > items.length - 1) setIndex(0);
   }, [items.length, index]);
+
 
   const go = useCallback(
     (delta: number) => {
