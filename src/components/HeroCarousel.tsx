@@ -38,10 +38,17 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   const [index, setIndex] = useState(0);
   const [videoBusy, setVideoBusy] = useState(false);
   const touchX = useRef<number | null>(null);
+  // Only the slides that can be visible are mounted. Previously all hero
+  // slides were in the DOM at once, so the browser fetched every full-size
+  // hero image during first load (several MB) and starved the visible one.
+  const prevIndex = useRef(0);
+  const [warm, setWarm] = useState(false);
+  const [extra, setExtra] = useState<number | null>(null);
 
   useEffect(() => {
     if (index > items.length - 1) setIndex(0);
   }, [items.length, index]);
+
 
   const go = useCallback(
     (delta: number) => {
@@ -50,8 +57,46 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
     [items.length],
   );
 
+  /** Jump to a slide from the dots, mounting it first so it still fades in. */
+  const select = useCallback(
+    (i: number) => {
+      setExtra(i);
+      requestAnimationFrame(() => requestAnimationFrame(() => setIndex(i)));
+    },
+    [],
+  );
+
+
   const active = items[index] ?? items[0];
   const activeIsEmbed = active?.kind === "video" && !!embedUrl(active.src);
+
+  // Track the outgoing slide so the 700ms crossfade still has something to
+  // fade out from, without keeping every slide mounted.
+  const shownRef = useRef(index);
+  if (shownRef.current !== index) {
+    prevIndex.current = shownRef.current;
+    shownRef.current = index;
+  }
+
+  // The upcoming slide is only mounted once the page has finished loading, so
+  // it never competes with the LCP hero image for bandwidth.
+  useEffect(() => {
+    if (warm) return;
+    const arm = () => window.setTimeout(() => setWarm(true), 600);
+    if (document.readyState === "complete") {
+      const t = arm();
+      return () => window.clearTimeout(t);
+    }
+    let t = 0;
+    const onLoad = () => {
+      t = arm();
+    };
+    window.addEventListener("load", onLoad, { once: true });
+    return () => {
+      window.removeEventListener("load", onLoad);
+      if (t) window.clearTimeout(t);
+    };
+  }, [warm]);
 
   useEffect(() => {
     if (mode !== "auto" || items.length < 2) return;
@@ -63,6 +108,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   const onClickSlide = () => {
     if (mode === "click" && items.length > 1) go(1);
   };
+
 
   return (
     <div
@@ -86,6 +132,11 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
         {items.map((item, i) => {
           const isActive = i === index;
           const isNext = i === (index + 1) % items.length;
+          // Mounted slides: the visible one, the one fading out, the upcoming
+          // one (after page load) and any slide selected from the dots.
+          if (!(isActive || i === prevIndex.current || (warm && isNext) || i === extra)) {
+            return null;
+          }
           const embed = item.kind === "video" ? embedUrl(item.src) : null;
           const crop = { ...DEFAULT_HERO_CROP, ...(item.crop ?? {}) };
           const mediaStyle = {
@@ -94,6 +145,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
             transformOrigin: `${crop.x}% ${crop.y}%`,
           } as const;
           return (
+
             <div
               key={item.id}
               className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ease-out ${
@@ -160,7 +212,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
               aria-label={`Go to slide ${i + 1}`}
               onClick={(e) => {
                 e.stopPropagation();
-                setIndex(i);
+                select(i);
               }}
               className={`h-1.5 rounded-full transition-all ${
                 i === index ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"

@@ -7,7 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { uploadToR2 } from "@/lib/r2.functions";
 import { uploadImageWithProtection } from "@/lib/image-upload";
 import { ChevronLeft, ChevronRight, Loader2, MoveLeft, MoveRight, Plus, X, Image as ImageIcon } from "lucide-react";
-import { MediaLibraryPicker } from "./MediaLibraryPicker";
+import { MediaLibraryPicker } from "./LazyMediaLibraryPicker";
 
 
 type Logo = { id: string; src: string; alt?: string };
