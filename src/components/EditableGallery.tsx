@@ -130,7 +130,8 @@ function GalleryTile({
               onRemove(image.id);
             }}
             className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
-            aria-label="Remove image"
+            aria-label="Remove from gallery"
+            title="Remove from gallery (keeps the file in Media Library)"
           >
             <X className="w-4 h-4" />
           </button>
@@ -550,7 +551,8 @@ export function EditableGallery({
                       onRemove(img.id);
                     }}
                     className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
-                    aria-label="Remove image"
+                    aria-label="Remove from gallery"
+            title="Remove from gallery (keeps the file in Media Library)"
                   >
                     <X className="w-4 h-4" />
                   </button>
