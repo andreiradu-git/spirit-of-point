@@ -59,6 +59,34 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   const active = items[index] ?? items[0];
   const activeIsEmbed = active?.kind === "video" && !!embedUrl(active.src);
 
+  // Track the outgoing slide so the 700ms crossfade still has something to
+  // fade out from, without keeping every slide mounted.
+  const shownRef = useRef(index);
+  if (shownRef.current !== index) {
+    prevIndex.current = shownRef.current;
+    shownRef.current = index;
+  }
+
+  // The upcoming slide is only mounted once the page has finished loading, so
+  // it never competes with the LCP hero image for bandwidth.
+  useEffect(() => {
+    if (warm) return;
+    const arm = () => window.setTimeout(() => setWarm(true), 600);
+    if (document.readyState === "complete") {
+      const t = arm();
+      return () => window.clearTimeout(t);
+    }
+    let t = 0;
+    const onLoad = () => {
+      t = arm();
+    };
+    window.addEventListener("load", onLoad, { once: true });
+    return () => {
+      window.removeEventListener("load", onLoad);
+      if (t) window.clearTimeout(t);
+    };
+  }, [warm]);
+
   useEffect(() => {
     if (mode !== "auto" || items.length < 2) return;
     if (videoBusy || activeIsEmbed) return;
@@ -69,6 +97,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   const onClickSlide = () => {
     if (mode === "click" && items.length > 1) go(1);
   };
+
 
   return (
     <div
