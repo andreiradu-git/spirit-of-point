@@ -247,9 +247,8 @@ export function EditableGallery({
         })),
   );
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+
+
 
   const handleUpload = async (file: File) => {
     if (!ACCEPTED.includes(file.type)) {
