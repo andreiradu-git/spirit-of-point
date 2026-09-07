@@ -134,7 +134,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
     if (videoBusy || activeIsEmbed) return;
     const t = window.setInterval(() => go(1), interval * 1000);
     return () => window.clearInterval(t);
-  }, [mode, interval, items.length, videoBusy, activeIsEmbed, go, index]);
+  }, [autoplayReady, mode, interval, items.length, videoBusy, activeIsEmbed, go, index]);
 
   const onClickSlide = () => {
     if (mode === "click" && items.length > 1) go(1);
