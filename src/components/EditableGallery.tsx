@@ -31,7 +31,7 @@ import {
   updateImageMeta,
   materializeGallery,
 } from "@/lib/media.functions";
-import { MediaLibraryPicker } from "./MediaLibraryPicker";
+import { MediaLibraryPicker } from "./LazyMediaLibraryPicker";
 import { ZoomLightbox } from "./ZoomLightbox";
 import { CrossfadeImage } from "./CrossfadeImage";
 
