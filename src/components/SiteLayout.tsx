@@ -149,7 +149,7 @@ export function SiteLayout({
           </div>
           <div className="flex flex-col gap-3 md:items-end">
             <SocialIcons />
-            <Editable as="div" id="footer.copyright" className="block">{`© ${new Date().getFullYear()} Point Studio`}</Editable>
+            <div className="block">{`© ${new Date().getFullYear()} Point Studio`}</div>
           </div>
         </div>
       </footer>
