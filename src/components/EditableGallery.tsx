@@ -53,7 +53,7 @@ type Props = {
   archive?: boolean;
 };
 
-function SortableImage({
+function GalleryTile({
   image,
   editable,
   onRemove,
@@ -64,6 +64,7 @@ function SortableImage({
   archive,
   isCover,
   onSetCover,
+  drag,
 }: {
   image: GalleryImage;
   editable: boolean;
@@ -75,11 +76,13 @@ function SortableImage({
   archive?: boolean;
   isCover?: boolean;
   onSetCover?: (src: string) => void;
+  drag?: DragProps;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: image.id,
-  });
-  const style = { transform: CSS.Transform.toString(transform), transition };
+  const attributes = drag?.handleProps ?? {};
+  const listeners = {};
+  const setNodeRef = drag?.setNodeRef;
+  const style = drag?.style;
+  const isDragging = drag?.isDragging;
 
   const aspectClass = archive
     ? "aspect-[4/3]"
@@ -99,6 +102,7 @@ function SortableImage({
       style={style}
       className={`relative group ${isDragging ? "opacity-50 z-50" : ""}`}
     >
+
       <button
         type="button"
         onClick={onClick}
