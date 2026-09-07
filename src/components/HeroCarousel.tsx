@@ -43,6 +43,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   // hero image during first load (several MB) and starved the visible one.
   const prevIndex = useRef(0);
   const [warm, setWarm] = useState(false);
+  const [extra, setExtra] = useState<number | null>(null);
 
   useEffect(() => {
     if (index > items.length - 1) setIndex(0);
@@ -55,6 +56,16 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
     },
     [items.length],
   );
+
+  /** Jump to a slide from the dots, mounting it first so it still fades in. */
+  const select = useCallback(
+    (i: number) => {
+      setExtra(i);
+      requestAnimationFrame(() => requestAnimationFrame(() => setIndex(i)));
+    },
+    [],
+  );
+
 
   const active = items[index] ?? items[0];
   const activeIsEmbed = active?.kind === "video" && !!embedUrl(active.src);
