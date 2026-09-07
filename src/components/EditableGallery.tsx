@@ -130,7 +130,8 @@ function GalleryTile({
               onRemove(image.id);
             }}
             className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
-            aria-label="Remove image"
+            aria-label="Remove from gallery"
+            title="Remove from gallery (keeps the file in Media Library)"
           >
             <X className="w-4 h-4" />
           </button>
@@ -213,6 +214,9 @@ export function EditableGallery({
   const [uploading, setUploading] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
 
@@ -293,8 +297,15 @@ export function EditableGallery({
     return map.get(img.src.split("/").pop() ?? img.src) ?? null;
   };
 
-  const onRemove = async (id: string) => {
-    if (!confirm("Remove this image from the gallery?")) return;
+  // Removes ONLY the image↔gallery relationship. The media record, its R2
+  // object, optimized variants and any other usage stay untouched.
+  const onRemove = (id: string) => setPendingRemoveId(id);
+
+  const confirmRemove = async () => {
+    const id = pendingRemoveId;
+    if (!id) return;
+    setPendingRemoveId(null);
+    setRemoving(true);
     try {
       const realId = await resolveRealId(id);
       if (!realId) throw new Error("This image could not be matched to a gallery entry.");
@@ -302,10 +313,13 @@ export function EditableGallery({
       await invalidate(slug);
       await refetch();
     } catch (e) {
-      console.error("Delete failed", e);
-      alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+      console.error("Remove from gallery failed", e);
+      alert("Remove from gallery failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setRemoving(false);
     }
   };
+
 
   const pickFromLibrary = async (url: string) => {
     try {
@@ -537,7 +551,8 @@ export function EditableGallery({
                       onRemove(img.id);
                     }}
                     className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
-                    aria-label="Remove image"
+                    aria-label="Remove from gallery"
+            title="Remove from gallery (keeps the file in Media Library)"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -714,12 +729,49 @@ export function EditableGallery({
           </button>
         </div>
       )}
+      {pendingRemoveId && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Remove from gallery"
+          onClick={() => setPendingRemoveId(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-background p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm text-foreground">Remove this image from this gallery?</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              The file stays in the Media Library and anywhere else it is used.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded border px-3 py-1.5 text-sm"
+                onClick={() => setPendingRemoveId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={removing}
+                className="rounded bg-destructive px-3 py-1.5 text-sm text-destructive-foreground disabled:opacity-60"
+                onClick={confirmRemove}
+              >
+                Remove from gallery
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <MediaLibraryPicker
         open={pickerOpen}
         kind="image"
         onClose={() => setPickerOpen(false)}
         onPick={(a) => pickFromLibrary(a.url)}
       />
+
     </div>
 
   );
