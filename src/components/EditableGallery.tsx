@@ -350,13 +350,16 @@ export function EditableGallery({
     }
   };
 
-  const onDragEnd = async (event: import("@dnd-kit/core").DragEndEvent) => {
+  const onDragEnd = async (event: { active: { id: string | number }; over: { id: string | number } | null }) => {
     const { active, over } = event;
-    setActiveId(null);
     if (!over || active.id === over.id) return;
     const oldIndex = images.findIndex((i) => i.id === active.id);
     const newIndex = images.findIndex((i) => i.id === over.id);
-    const next = arrayMove(images, oldIndex, newIndex);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = images.slice();
+    const [moved] = next.splice(oldIndex, 1);
+    next.splice(newIndex, 0, moved!);
+
     let ids = next.map((i) => i.id);
     if (usingFallback) {
       const map = await materializeAndMap();
