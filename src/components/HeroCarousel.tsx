@@ -121,6 +121,11 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
         {items.map((item, i) => {
           const isActive = i === index;
           const isNext = i === (index + 1) % items.length;
+          // Mounted slides: the visible one, the one fading out, the upcoming
+          // one (after page load) and any slide selected from the dots.
+          if (!(isActive || i === prevIndex.current || (warm && isNext) || i === extra)) {
+            return null;
+          }
           const embed = item.kind === "video" ? embedUrl(item.src) : null;
           const crop = { ...DEFAULT_HERO_CROP, ...(item.crop ?? {}) };
           const mediaStyle = {
@@ -129,6 +134,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
             transformOrigin: `${crop.x}% ${crop.y}%`,
           } as const;
           return (
+
             <div
               key={item.id}
               className={`absolute inset-0 overflow-hidden transition-opacity duration-700 ease-out ${
