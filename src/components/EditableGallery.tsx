@@ -293,8 +293,15 @@ export function EditableGallery({
     return map.get(img.src.split("/").pop() ?? img.src) ?? null;
   };
 
-  const onRemove = async (id: string) => {
-    if (!confirm("Remove this image from the gallery?")) return;
+  // Removes ONLY the image↔gallery relationship. The media record, its R2
+  // object, optimized variants and any other usage stay untouched.
+  const onRemove = (id: string) => setPendingRemoveId(id);
+
+  const confirmRemove = async () => {
+    const id = pendingRemoveId;
+    if (!id) return;
+    setPendingRemoveId(null);
+    setRemoving(true);
     try {
       const realId = await resolveRealId(id);
       if (!realId) throw new Error("This image could not be matched to a gallery entry.");
@@ -302,10 +309,13 @@ export function EditableGallery({
       await invalidate(slug);
       await refetch();
     } catch (e) {
-      console.error("Delete failed", e);
-      alert("Delete failed: " + (e instanceof Error ? e.message : String(e)));
+      console.error("Remove from gallery failed", e);
+      alert("Remove from gallery failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setRemoving(false);
     }
   };
+
 
   const pickFromLibrary = async (url: string) => {
     try {
