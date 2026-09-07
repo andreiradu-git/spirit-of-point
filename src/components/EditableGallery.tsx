@@ -517,111 +517,126 @@ export function EditableGallery({
         <div className="mb-3 text-xs text-muted-foreground">Loading gallery…</div>
       )}
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={(e) => setActiveId(String(e.active.id))}
-        onDragEnd={onDragEnd}
-      >
-        <SortableContext items={images.map((i) => i.id)} strategy={rectSortingStrategy}>
-          <div className={`grid ${gridCols} ${archive ? "gap-6 md:gap-8 lg:gap-10" : "gap-2 md:gap-3"}`}>
-            {images.map((img, i) =>
-              renderItem ? (
-                <div key={img.id} className="relative group">
-                  {renderItem(img, { onClick: () => lightbox && setActiveIndex(i), editable })}
-                  {editable && (
-                    <>
-                      <div className="absolute top-2 left-2 p-1.5 bg-white/90 rounded cursor-grab opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <GripVertical className="w-4 h-4 text-foreground" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRemove(img.id);
-                        }}
-                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
-                        aria-label="Remove image"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onSetCover(img.src);
-                        }}
-                        title={coverSrc === img.src ? "Current cover image" : "Set as cover"}
-                        className={`absolute top-2 right-11 p-1.5 rounded shadow-lg z-10 ${
-                          coverSrc === img.src
-                            ? "bg-yellow-400 text-black"
-                            : "bg-white/90 text-foreground opacity-0 group-hover:opacity-100"
-                        }`}
-                        aria-label="Set as cover"
-                      >
-                        <Star className={`w-4 h-4 ${coverSrc === img.src ? "fill-black" : ""}`} />
-                      </button>
-
-                    </>
-                  )}
-                </div>
-              ) : (
-                <SortableImage
-                  key={img.id}
-                  image={img}
-                  editable={editable}
-                  onRemove={onRemove}
-                  onAltChange={onAltChange}
-                  onTitleChange={onTitleChange}
-                  onClick={() => lightbox && setActiveIndex(i)}
-                  aspect={aspect}
-                  archive={archive}
-                  isCover={coverSrc === img.src}
-                  onSetCover={onSetCover}
-                />
-              ),
-            )}
-            {editable && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  disabled={uploading}
-                  className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
-                    layout === "stacked" ? "py-8" : "aspect-square"
-                  }`}
-                >
-                  {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
-                  <span className="text-xs">{uploading ? "Uploading..." : "Upload new"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPickerOpen(true)}
-                  className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
-                    layout === "stacked" ? "py-8" : "aspect-square"
-                  }`}
-                >
-                  <Images className="w-6 h-6" />
-                  <span className="text-xs">Pick from library</span>
-                </button>
-              </>
-            )}
-          </div>
-        </SortableContext>
-
-        <DragOverlay>
-          {activeId ? (
-            <div className="opacity-80">
-              <img
-                src={images.find((i) => i.id === activeId)?.src}
-                alt=""
-                className="w-full h-full object-cover"
-              />
+      {(() => {
+        const gridClassName = `grid ${gridCols} ${archive ? "gap-6 md:gap-8 lg:gap-10" : "gap-2 md:gap-3"}`;
+        const tile = (img: GalleryImage, i: number, drag?: DragProps) =>
+          renderItem ? (
+            <div
+              key={img.id}
+              ref={drag?.setNodeRef}
+              style={drag?.style}
+              className="relative group"
+            >
+              {renderItem(img, { onClick: () => lightbox && setActiveIndex(i), editable })}
+              {editable && (
+                <>
+                  <div
+                    {...(drag?.handleProps ?? {})}
+                    className="absolute top-2 left-2 p-1.5 bg-white/90 rounded cursor-grab opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  >
+                    <GripVertical className="w-4 h-4 text-foreground" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(img.id);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded shadow-lg z-10 hover:bg-red-600"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onSetCover(img.src);
+                    }}
+                    title={coverSrc === img.src ? "Current cover image" : "Set as cover"}
+                    className={`absolute top-2 right-11 p-1.5 rounded shadow-lg z-10 ${
+                      coverSrc === img.src
+                        ? "bg-yellow-400 text-black"
+                        : "bg-white/90 text-foreground opacity-0 group-hover:opacity-100"
+                    }`}
+                    aria-label="Set as cover"
+                  >
+                    <Star className={`w-4 h-4 ${coverSrc === img.src ? "fill-black" : ""}`} />
+                  </button>
+                </>
+              )}
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+          ) : (
+            <GalleryTile
+              key={img.id}
+              image={img}
+              editable={editable}
+              onRemove={onRemove}
+              onAltChange={onAltChange}
+              onTitleChange={onTitleChange}
+              onClick={() => lightbox && setActiveIndex(i)}
+              aspect={aspect}
+              archive={archive}
+              isCover={coverSrc === img.src}
+              onSetCover={onSetCover}
+              drag={drag}
+            />
+          );
+
+        const extras = editable ? (
+          <>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
+                layout === "stacked" ? "py-8" : "aspect-square"
+              }`}
+            >
+              {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
+              <span className="text-xs">{uploading ? "Uploading..." : "Upload new"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded bg-muted hover:bg-accent transition-colors text-muted-foreground ${
+                layout === "stacked" ? "py-8" : "aspect-square"
+              }`}
+            >
+              <Images className="w-6 h-6" />
+              <span className="text-xs">Pick from library</span>
+            </button>
+          </>
+        ) : null;
+
+        const plainGrid = (
+          <div className={gridClassName}>
+            {images.map((img, i) => tile(img, i))}
+            {extras}
+          </div>
+        );
+
+        // Reordering (and the dnd-kit bundle it needs) is admin-only.
+        if (!editable) return plainGrid;
+
+        return (
+          <Suspense fallback={plainGrid}>
+            <GalleryDnd
+              ids={images.map((i) => i.id)}
+              overlaySrc={(id) => images.find((i) => i.id === id)?.src}
+              gridClassName={gridClassName}
+              onDragEnd={onDragEnd}
+              extras={extras}
+              renderItem={(id, i, drag) => {
+                const img = images[i];
+                return img ? tile(img, i, drag) : null;
+              }}
+            />
+          </Suspense>
+        );
+      })()}
+
       <input
         ref={inputRef}
         type="file"
