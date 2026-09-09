@@ -76,15 +76,22 @@ function googleFontsHref(t: ThemeConfig) {
 export function applyTheme(t: ThemeConfig) {
   if (typeof document === "undefined") return;
   // Fonts stylesheet
+  const defaultHref = googleFontsHref(DEFAULT_THEME);
   let link = document.getElementById("site-theme-fonts") as HTMLLinkElement | null;
-  if (!link) {
+  if (googleFontsHref(t) === defaultHref) {
+    // Default families are already loaded by the root <link>; avoid a second
+    // identical request (and the layout shift it can cause).
+    link?.remove();
+  } else if (!link) {
     link = document.createElement("link");
     link.rel = "stylesheet";
     link.id = "site-theme-fonts";
     document.head.appendChild(link);
   }
-  const href = googleFontsHref(t);
-  if (link.href !== href) link.href = href;
+  if (link && document.head.contains(link)) {
+    const href = googleFontsHref(t);
+    if (link.href !== href) link.href = href;
+  }
 
   // CSS variables
   const r = document.documentElement.style;
