@@ -13,6 +13,7 @@ export type SiteSettings = {
   showTestimonials: boolean;
   showFotografieCulinara: boolean;
   showPress: boolean;
+  showStudioRental: boolean;
 };
 
 export const SITE_FLAGS_KEY = "setting.site-flags";
@@ -23,6 +24,7 @@ export const SITE_FLAG_DEFAULTS: SiteSettings = {
   showTestimonials: true,
   showFotografieCulinara: true,
   showPress: true,
+  showStudioRental: true,
 };
 
 /** Normalises booleans stored as true/false, "true"/"false", 1/0 or null. */
@@ -46,6 +48,7 @@ export function coerceSiteFlags(raw: unknown): SiteSettings {
     showTestimonials: bool("showTestimonials", ["show_testimonials", "testimonials_enabled"]),
     showFotografieCulinara: bool("showFotografieCulinara", ["show_fotografie_culinara"]),
     showPress: bool("showPress", ["show_press"]),
+    showStudioRental: bool("showStudioRental", ["show_studio_rental"]),
   };
 }
 

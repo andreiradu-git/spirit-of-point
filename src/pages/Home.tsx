@@ -12,6 +12,7 @@ import { useSiteSettings } from "@/hooks/use-site-settings";
 import { useGalleryCovers } from "@/hooks/use-gallery-covers";
 import { useLang, useTr } from "@/i18n";
 import { PressBlock } from "@/components/PressBlock";
+import { StudioRentalCta } from "@/components/StudioRentalCta";
 
 
 
@@ -217,6 +218,8 @@ export function Index() {
               The fully equipped kitchen and the extensive prop room located on-site, coupled with long lasting relations with food stylists, prop researchers, hair stylists, makeup specialists and other collaborators, assure a great work experience.
             </Editable>
           </div>
+
+          {settingsReady && settings.showStudioRental && <StudioRentalCta />}
         </div>
 
       </section>
