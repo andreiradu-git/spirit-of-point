@@ -93,7 +93,7 @@ export function SiteLayout({
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <nav className="flex gap-8 text-xs uppercase tracking-[0.2em]">
+            <nav className="flex gap-8 type-nav">
               {localizedNav.map((n) => (
                 <Link
                   key={n.to}
@@ -109,7 +109,7 @@ export function SiteLayout({
           </div>
           <button
             onClick={() => setOpen(!open)}
-            className={`md:hidden text-xs uppercase tracking-widest ${light ? "text-white" : ""}`}
+            className={`md:hidden type-nav ${light ? "text-white" : ""}`}
             aria-label="Menu"
           >
             {open ? t("Close") : t("Menu")}
@@ -117,7 +117,7 @@ export function SiteLayout({
         </div>
         {open && (
           <nav
-            className={`md:hidden px-6 py-4 flex flex-col gap-3 text-sm uppercase tracking-[0.2em] ${
+            className={`md:hidden px-6 py-4 flex flex-col gap-3 type-nav text-sm ${
               light ? "bg-black/70 text-white" : "border-t border-border bg-background"
             }`}
           >
@@ -136,7 +136,7 @@ export function SiteLayout({
       <footer className="bg-[#e5e5e5]">
         <div className="mx-auto max-w-7xl px-6 pt-4 pb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6 text-sm text-muted-foreground">
           <div>
-            <Editable as="div" id="footer.brand" className="font-serif text-xl text-foreground block">Point Studio</Editable>
+            <Editable as="div" id="footer.brand" className="type-h3 text-foreground block">Point Studio</Editable>
             <Editable as="p" id="footer.tagline" multiline className="mt-2 max-w-sm italic block">
               First and foremost, we love what we do.
             </Editable>
@@ -217,7 +217,7 @@ function LangSwitch({ light, className = "" }: { light: boolean; className?: str
   const idle = light ? "text-white/60 hover:text-white" : "text-muted-foreground hover:text-foreground";
   const active = light ? "text-white" : "text-foreground";
   return (
-    <div className={`flex items-center gap-1 text-xs uppercase tracking-[0.2em] ${className}`}>
+    <div className={`flex items-center gap-1 type-nav ${className}`}>
       <Link
         to={localizePath(path, "en")}
         onClick={() => rememberLang("en")}

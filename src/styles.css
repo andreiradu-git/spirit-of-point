@@ -141,18 +141,172 @@
 
   html, body {
     font-family: var(--font-sans);
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-size: var(--type-body-size);
+    line-height: var(--leading-body);
   }
 
   .font-serif {
     font-family: var(--font-serif);
     font-weight: 300;
-    letter-spacing: 0.01em;
+    letter-spacing: var(--tracking-display);
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * Typography system — Point Studio
+ *
+ * Two families only:
+ *   FONT A  --font-sans  (Inter 400 / 500 / 700)  — UI, body, nav, captions
+ *   FONT B  --font-serif (Cormorant Garamond 300 / 400 / 400 italic)
+ *                                               — display & editorial accents
+ *
+ * Every public surface uses one of the `type-*` utilities below. Components
+ * must not invent their own family, weight or tracking.
+ * ------------------------------------------------------------------ */
+
+:root {
+  /* tracking */
+  --tracking-display: 0.01em;   /* large serif display */
+  --tracking-tight: -0.01em;    /* big uppercase sans display */
+  --tracking-ui: 0.2em;         /* nav, buttons, CTAs, small uppercase labels */
+  --tracking-eyebrow: 0.28em;   /* section eyebrows & page taglines */
+  --tracking-body: 0;           /* paragraphs — never tracked */
+
+  /* leading */
+  --leading-display: 1.02;
+  --leading-heading: 1.12;
+  --leading-body: 1.65;
+  --leading-ui: 1.2;
+
+  /* sizes */
+  --type-body-size: 1rem;
+}
+
+/* Display — hero statement (sans, bold, uppercase) */
+@utility type-display {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-display);
+}
+
+/* H1 — page title */
+@utility type-h1 {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-style: normal;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-heading);
+  font-size: clamp(1.75rem, 1.1rem + 2.6vw, 3rem);
+}
+
+/* H2 — editorial section title (the site's signature italic serif) */
+@utility type-h2 {
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.04;
+  font-size: clamp(2.5rem, 1.4rem + 4.4vw, 4.5rem);
+}
+
+/* H3 — sub-section / landing headings */
+@utility type-h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-heading);
+  font-size: clamp(1.375rem, 1.05rem + 1.4vw, 1.875rem);
+}
+
+/* Body large — section intros */
+@utility type-body-lg {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  letter-spacing: var(--tracking-body);
+  line-height: var(--leading-body);
+  font-size: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem);
+}
+
+/* Body */
+@utility type-body {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  letter-spacing: var(--tracking-body);
+  line-height: var(--leading-body);
+  font-size: var(--type-body-size);
+}
+
+/* Small / caption / metadata */
+@utility type-caption {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  letter-spacing: var(--tracking-body);
+  line-height: 1.5;
+  font-size: 0.8125rem;
+}
+
+/* Navigation */
+@utility type-nav {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-ui);
+  line-height: var(--leading-ui);
+  font-size: 0.75rem;
+}
+
+/* Button / CTA / small uppercase label — same tracking as navigation */
+@utility type-cta {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-ui);
+  line-height: var(--leading-ui);
+  font-size: 0.75rem;
+}
+
+/* Eyebrow — section numbering, page taglines */
+@utility type-eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  line-height: var(--leading-ui);
+  font-size: 0.6875rem;
+}
+
+/* Editorial italic — quotes, taglines, accents. Accent only, never body. */
+@utility type-editorial {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.35;
+}
+
+/* Highlight — controlled emphasis inside body copy (no colour, no decoration) */
+@utility type-highlight {
+  font-weight: 500;
+  color: var(--color-foreground);
+}
+
+/* Highlight, editorial variant — a key statement lifted out of a paragraph */
+@utility type-highlight-editorial {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: var(--tracking-display);
+  color: var(--color-foreground);
 }
 
 /* Thin visible scrollbar for the client logo band */
@@ -160,3 +314,4 @@
 .logo-scroll::-webkit-scrollbar-track { background: transparent; }
 .logo-scroll::-webkit-scrollbar-thumb { background: hsl(var(--border) / 0.8); border-radius: 9999px; }
 .logo-scroll::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.6); }
+

@@ -39,14 +39,14 @@ export function ContactPage() {
           <Editable
             as="p"
             id="contact.eyebrow"
-            className="text-xs uppercase tracking-[0.4em] mb-6 opacity-80 block"
+            className="type-eyebrow mb-6 opacity-80 block"
           >
             Get in touch
           </Editable>
           <Editable
             as="h1"
             id="contact.title"
-            className="font-serif text-5xl md:text-6xl mb-10 block"
+            className="type-h1 text-5xl md:text-6xl mb-10 block"
           >
             Let's create together.
           </Editable>

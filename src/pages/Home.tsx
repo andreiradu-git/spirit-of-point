@@ -99,7 +99,7 @@ export function Index() {
                   as="h1"
                   id="hero.title"
                   multiline
-                  className="font-sans font-bold uppercase tracking-tight leading-[1.02] text-[clamp(0.6rem,2.8cqw,3.2rem)] block"
+                  className="type-display text-[clamp(0.6rem,2.8cqw,3.2rem)] block"
                 >
                   Photo-Video Studio and Creative Workspace.
                 </Editable>
@@ -114,7 +114,7 @@ export function Index() {
                 <Editable
                   as="p"
                   id="hero.cta"
-                  className="mt-[0.6cqw] font-sans font-bold uppercase tracking-tight leading-tight text-[clamp(0.48rem,1.55cqw,1.5rem)] block"
+                  className="type-display mt-[0.6cqw] text-[clamp(0.48rem,1.55cqw,1.5rem)] block"
                 >
                   Let's create toghether unforgetable images!
                 </Editable>
@@ -124,18 +124,18 @@ export function Index() {
 
               <div className="flex gap-[3cqw] text-white">
                 <div>
-                  <Editable as="div" id="hero.stat1.value" className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">
+                  <Editable as="div" id="hero.stat1.value" className="type-display leading-none normal-case text-[clamp(0.9rem,2.6cqw,2.5rem)]">
                     10+
                   </Editable>
-                  <Editable as="div" id="hero.stat1.label" multiline className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] whitespace-pre-line">
+                  <Editable as="div" id="hero.stat1.label" multiline className="type-eyebrow text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] whitespace-pre-line">
                     {"Years of\nexpertise"}
                   </Editable>
                 </div>
                 <div>
-                  <Editable as="div" id="hero.stat2.value" className="font-sans font-bold leading-none text-[clamp(0.9rem,2.6cqw,2.5rem)]">
+                  <Editable as="div" id="hero.stat2.value" className="type-display leading-none normal-case text-[clamp(0.9rem,2.6cqw,2.5rem)]">
                     50+
                   </Editable>
-                  <Editable as="div" id="hero.stat2.label" multiline className="uppercase tracking-widest text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] whitespace-pre-line">
+                  <Editable as="div" id="hero.stat2.label" multiline className="type-eyebrow text-white/70 mt-[0.5cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] whitespace-pre-line">
                     {"International\nclients"}
                   </Editable>
                 </div>
@@ -159,7 +159,7 @@ export function Index() {
                           <Star key={i} className="w-[clamp(0.4rem,1cqw,0.9rem)] h-[clamp(0.4rem,1cqw,0.9rem)] fill-yellow-400 stroke-yellow-400" />
                         ))}
                       </div>
-                      <div className="uppercase tracking-widest text-white/70 mt-[0.35cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] group-hover:text-white transition-colors">
+                      <div className="type-eyebrow text-white/70 mt-[0.35cqw] text-[clamp(0.45rem,0.85cqw,0.75rem)] group-hover:text-white transition-colors">
                         Google<br />{t("Reviews")}
                       </div>
                     </div>
@@ -184,14 +184,14 @@ export function Index() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
             <div className="md:col-span-5">
-              <Editable as="div" id="studio.eyebrow" className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 block">
+              <Editable as="div" id="studio.eyebrow" className="type-eyebrow text-muted-foreground mb-3 block">
                 01 — Point Studio
               </Editable>
-              <Editable as="h2" id="studio.title" className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground block">
+              <Editable as="h2" id="studio.title" className="type-h2 text-foreground block">
                 The Studio
               </Editable>
             </div>
-            <div className="md:col-span-7 text-[15px] md:text-base leading-relaxed text-foreground/80">
+            <div className="md:col-span-7 type-body-lg text-foreground/80">
               <Editable as="p" id="studio.intro" multiline>
                 Managed by Andrei C. Radu, a graduate in Photo-Video class of the National Arts University, Point Studio is a professional photography studio & creative work space located in Bucharest, being part of Atelierele Scanteia — a creative hub of artist workspaces and galleries in the former communist "Casa Scanteii", in the present House of Free Press.
               </Editable>
@@ -210,7 +210,7 @@ export function Index() {
         </div>
 
         <div className="mx-auto max-w-7xl px-6">
-          <div className="mt-14 grid md:grid-cols-2 gap-10 text-[15px] md:text-base leading-relaxed text-foreground/80">
+          <div className="mt-14 grid md:grid-cols-2 gap-10 type-body-lg text-foreground/80">
             <Editable as="p" id="studio.body1" multiline>
               Point Studio is a 200 square meters professional photo-video studio and creative work space created as part of Atelierele Scanteia. The space provides professional photo setups, equipment and specialists to accommodate all photography briefs. It has accessible parking, Wi-fi access and comfortable working space, which allows our clients to be present for the entire photo session, without missing out on their day at work.
             </Editable>
@@ -232,14 +232,14 @@ export function Index() {
         <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
           <div className="grid md:grid-cols-12 gap-10 items-end mb-14">
             <div className="md:col-span-5">
-              <Editable as="div" id="services.eyebrow" className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 block">
+              <Editable as="div" id="services.eyebrow" className="type-eyebrow text-muted-foreground mb-3 block">
                 02 — Services
               </Editable>
-              <Editable as="h2" id="services.title" className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground block">
+              <Editable as="h2" id="services.title" className="type-h2 text-foreground block">
                 What We Do
               </Editable>
             </div>
-            <div className="md:col-span-7 text-[15px] md:text-base leading-relaxed text-foreground/80">
+            <div className="md:col-span-7 type-body-lg text-foreground/80">
               <Editable as="p" id="services.intro" multiline>
                 We at Point Studio know how to capture the essence of every moment — starting with mouthwatering food photography that brings flavors to life, and extending to all kinds of photography to meet your unique needs. From plates to portraits, architecture, corporate events, industrial sites documentation or landscape, our lens tells your story beautifully.
               </Editable>
@@ -268,7 +268,7 @@ export function Index() {
                 />
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
                 <div className="absolute inset-0 flex items-end p-4">
-                  <div className="text-white font-sans font-medium uppercase tracking-[0.15em] text-xs md:text-sm">
+                  <div className="text-white type-cta text-xs md:text-sm">
                     {t(img.title ?? "")}
                   </div>
                 </div>
@@ -284,10 +284,10 @@ export function Index() {
           <div className="mx-auto max-w-7xl px-6 pb-16 md:pb-20">
             <div className="grid md:grid-cols-12 gap-10 items-end mb-10">
               <div className="md:col-span-5">
-                <Editable as="div" id="testimonials.eyebrow" className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-3 block">
+                <Editable as="div" id="testimonials.eyebrow" className="type-eyebrow text-muted-foreground mb-3 block">
                   03 — Kind words
                 </Editable>
-                <Editable as="h2" id="testimonials.title" className="font-serif italic text-5xl md:text-6xl lg:text-7xl leading-[1] text-foreground block">
+                <Editable as="h2" id="testimonials.title" className="type-h2 text-foreground block">
                   Testimonials
                 </Editable>
 
