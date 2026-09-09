@@ -57,6 +57,10 @@ export const RO_CONTENT: Record<string, string> = {
     "Despre fotografie comercial\u0103, Point Studio, rela\u021bia cu agen\u021biile \u0219i felul \u00een care s-a schimbat meseria de fotograf.",
   "press.cta": "CITE\u0218TE INTERVIUL \u2197",
 
+  // Studio rental CTA
+  "studioRental.question": "Ai nevoie de un spa\u021biu \u00een care s\u0103-\u021bi dezvol\u021bi ideile?",
+  "studioRental.cta": "VEZI STUDIOUL & DISPONIBILITATEA \u2197",
+
   "contact.eyebrow": "Ia legătura cu noi",
   "contact.title": "Hai să creăm împreună.",
   "contact.email": "andrei@pointstudio.ro",
