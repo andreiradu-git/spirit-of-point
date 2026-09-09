@@ -179,6 +179,8 @@ export function SiteLayout({
           onToggleFotografieCulinara={() => update({ showFotografieCulinara: !settings.showFotografieCulinara })}
           showPress={settings.showPress}
           onTogglePress={() => update({ showPress: !settings.showPress })}
+          showStudioRental={settings.showStudioRental}
+          onToggleStudioRental={() => update({ showStudioRental: !settings.showStudioRental })}
         />
       )}
     </div>
@@ -253,6 +255,8 @@ function SettingsPanel({
   onToggleFotografieCulinara,
   showPress,
   onTogglePress,
+  showStudioRental,
+  onToggleStudioRental,
 }: {
   showVideo: boolean;
   onToggleVideo: () => void;
@@ -264,6 +268,8 @@ function SettingsPanel({
   onToggleFotografieCulinara: () => void;
   showPress: boolean;
   onTogglePress: () => void;
+  showStudioRental: boolean;
+  onToggleStudioRental: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -316,6 +322,15 @@ function SettingsPanel({
               type="checkbox"
               checked={showPress}
               onChange={onTogglePress}
+              className="h-4 w-4 accent-foreground"
+            />
+          </label>
+          <label className="flex items-center justify-between text-sm cursor-pointer">
+            <span>Show studio-rental CTA</span>
+            <input
+              type="checkbox"
+              checked={showStudioRental}
+              onChange={onToggleStudioRental}
               className="h-4 w-4 accent-foreground"
             />
           </label>
