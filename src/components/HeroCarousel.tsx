@@ -36,6 +36,8 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   const interval = settings?.interval ?? 4;
 
   const [index, setIndex] = useState(0);
+  // Mirrors `index` for callbacks that must read it without re-creating.
+  const indexRef = useRef(0);
   const [videoBusy, setVideoBusy] = useState(false);
   const touchX = useRef<number | null>(null);
   // Only the slides that can be visible are mounted. Previously all hero
@@ -50,20 +52,23 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   }, [items.length, index]);
 
 
+  /**
+   * Advance by `delta`. The target slide is mounted (invisible) one frame
+   * before it becomes active, so backwards navigation crossfades exactly like
+   * forwards navigation instead of snapping in on a blank frame.
+   */
+  /** Jump to a slide, mounting it one frame early so it always fades in. */
+  const select = useCallback((i: number) => {
+    setExtra(i);
+    requestAnimationFrame(() => requestAnimationFrame(() => setIndex(i)));
+  }, []);
+
   const go = useCallback(
     (delta: number) => {
-      setIndex((i) => (i + delta + items.length) % items.length);
+      const target = (indexRef.current + delta + items.length) % items.length;
+      if (target !== indexRef.current) select(target);
     },
-    [items.length],
-  );
-
-  /** Jump to a slide from the dots, mounting it first so it still fades in. */
-  const select = useCallback(
-    (i: number) => {
-      setExtra(i);
-      requestAnimationFrame(() => requestAnimationFrame(() => setIndex(i)));
-    },
-    [],
+    [items.length, select],
   );
 
 
@@ -73,6 +78,7 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   // Track the outgoing slide so the 700ms crossfade still has something to
   // fade out from, without keeping every slide mounted.
   const shownRef = useRef(index);
+  indexRef.current = index;
   if (shownRef.current !== index) {
     prevIndex.current = shownRef.current;
     shownRef.current = index;
@@ -163,9 +169,10 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
         {items.map((item, i) => {
           const isActive = i === index;
           const isNext = i === (index + 1) % items.length;
+          const isPrev = i === (index - 1 + items.length) % items.length;
           // Mounted slides: the visible one, the one fading out, the upcoming
           // one (after page load) and any slide selected from the dots.
-          if (!(isActive || i === prevIndex.current || (warm && isNext) || i === extra)) {
+          if (!(isActive || i === prevIndex.current || (warm && (isNext || isPrev)) || i === extra)) {
             return null;
           }
           const embed = item.kind === "video" ? embedUrl(item.src) : null;
