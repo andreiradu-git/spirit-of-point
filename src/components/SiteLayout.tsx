@@ -177,6 +177,8 @@ export function SiteLayout({
           onToggleTestimonials={() => update({ showTestimonials: !settings.showTestimonials })}
           showFotografieCulinara={settings.showFotografieCulinara}
           onToggleFotografieCulinara={() => update({ showFotografieCulinara: !settings.showFotografieCulinara })}
+          showPress={settings.showPress}
+          onTogglePress={() => update({ showPress: !settings.showPress })}
         />
       )}
     </div>
@@ -249,6 +251,8 @@ function SettingsPanel({
   onToggleTestimonials,
   showFotografieCulinara,
   onToggleFotografieCulinara,
+  showPress,
+  onTogglePress,
 }: {
   showVideo: boolean;
   onToggleVideo: () => void;
@@ -258,6 +262,8 @@ function SettingsPanel({
   onToggleTestimonials: () => void;
   showFotografieCulinara: boolean;
   onToggleFotografieCulinara: () => void;
+  showPress: boolean;
+  onTogglePress: () => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -301,6 +307,15 @@ function SettingsPanel({
               type="checkbox"
               checked={showFotografieCulinara}
               onChange={onToggleFotografieCulinara}
+              className="h-4 w-4 accent-foreground"
+            />
+          </label>
+          <label className="flex items-center justify-between text-sm cursor-pointer">
+            <span>Show Press mention</span>
+            <input
+              type="checkbox"
+              checked={showPress}
+              onChange={onTogglePress}
               className="h-4 w-4 accent-foreground"
             />
           </label>

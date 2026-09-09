@@ -11,6 +11,7 @@ import { useImage } from "@/hooks/use-site-images";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { useGalleryCovers } from "@/hooks/use-gallery-covers";
 import { useLang, useTr } from "@/i18n";
+import { PressBlock } from "@/components/PressBlock";
 
 
 
@@ -219,6 +220,9 @@ export function Index() {
         </div>
 
       </section>
+
+      {/* Press mention */}
+      {settingsReady && settings.showPress && <PressBlock />}
 
       {/* What We Do */}
       <section className="bg-[#e5e5e5]">
