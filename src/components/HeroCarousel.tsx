@@ -55,29 +55,18 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
    * before it becomes active, so backwards navigation crossfades exactly like
    * forwards navigation instead of snapping in on a blank frame.
    */
+  /** Jump to a slide, mounting it one frame early so it always fades in. */
+  const select = useCallback((i: number) => {
+    setExtra(i);
+    requestAnimationFrame(() => requestAnimationFrame(() => setIndex(i)));
+  }, []);
+
   const go = useCallback(
     (delta: number) => {
-      setIndex((i) => {
-        const target = (i + delta + items.length) % items.length;
-        if (target !== i) {
-          setExtra(target);
-          requestAnimationFrame(() =>
-            requestAnimationFrame(() => setIndex((cur) => (cur === i ? target : cur))),
-          );
-        }
-        return i;
-      });
+      const target = (indexRef.current + delta + items.length) % items.length;
+      if (target !== indexRef.current) select(target);
     },
-    [items.length],
-  );
-
-  /** Jump to a slide from the dots, mounting it first so it still fades in. */
-  const select = useCallback(
-    (i: number) => {
-      setExtra(i);
-      requestAnimationFrame(() => requestAnimationFrame(() => setIndex(i)));
-    },
-    [],
+    [items.length, select],
   );
 
 
