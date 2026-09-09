@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/cms-client";
+import { recordHistory } from "@/hooks/use-edit-history";
 
 const LIST_PREFIX = "list.";
 
@@ -36,15 +37,36 @@ export function useList<T = unknown>(id: string, fallback: T[]): T[] {
   return stored as T[];
 }
 
-export function useSaveList() {
-  const qc = useQueryClient();
-  return async <T,>(id: string, items: T[]) => {
-    const key = `${LIST_PREFIX}${id}`;
+async function writeList(
+  qc: ReturnType<typeof useQueryClient>,
+  id: string,
+  items: unknown[] | null,
+) {
+  const key = `${LIST_PREFIX}${id}`;
+  if (items === null) {
+    const { error } = await db.from("site_settings").delete().eq("key", key);
+    if (error) throw error;
+  } else {
     const value = { items } as unknown as Record<string, unknown>;
     const { error } = await db
       .from("site_settings")
       .upsert({ key, value: value as never }, { onConflict: "key" });
     if (error) throw error;
-    qc.invalidateQueries({ queryKey: ["site-lists"] });
+  }
+  await qc.invalidateQueries({ queryKey: ["site-lists"] });
+}
+
+export function useSaveList() {
+  const qc = useQueryClient();
+  return async <T,>(id: string, items: T[]) => {
+    const before = (qc.getQueryData(["site-lists"]) as Record<string, unknown[]> | undefined)?.[id];
+    const previous = Array.isArray(before) ? [...before] : null;
+    await writeList(qc, id, items);
+    recordHistory({
+      label: `List “${id}”`,
+      undo: () => writeList(qc, id, previous),
+      redo: () => writeList(qc, id, items),
+    });
   };
 }
+

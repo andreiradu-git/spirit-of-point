@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 import { db } from "@/lib/cms-client";
+import { recordHistory } from "@/hooks/use-edit-history";
 import {
   SITE_FLAGS_KEY,
   SITE_FLAG_DEFAULTS,
@@ -36,8 +37,7 @@ export function useSiteSettings() {
   const settings = query.data ?? SITE_FLAG_DEFAULTS;
   const ready = query.isSuccess || !!initial;
 
-  const update = async (patch: Partial<SiteSettings>) => {
-    const next = { ...settings, ...patch };
+  const write = async (next: SiteSettings) => {
     qc.setQueryData(["site-flags"], next);
     const { error } = await db
       .from("site_settings")
@@ -49,5 +49,17 @@ export function useSiteSettings() {
     await qc.invalidateQueries({ queryKey: ["site-flags"] });
   };
 
+  const update = async (patch: Partial<SiteSettings>) => {
+    const before = settings;
+    const next = { ...settings, ...patch };
+    await write(next);
+    recordHistory({
+      label: `Setting ${Object.keys(patch).join(", ")}`,
+      undo: () => write(before),
+      redo: () => write(next),
+    });
+  };
+
   return { settings, update, ready };
 }
+

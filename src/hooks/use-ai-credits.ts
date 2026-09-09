@@ -1,7 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/cms-client";
 
-export const AI_DAILY_LIMIT = 5;
+/**
+ * AI usage counter.
+ *
+ * This is a plain counter kept for visibility only — there is no application
+ * limit on AI generations. (Any provider-side rate limit still applies and is
+ * surfaced as a normal error from the AI call.)
+ */
 const KEY = "ai.credits";
 
 type CreditState = { date: string; used: number };
@@ -24,28 +30,23 @@ async function fetchCredits(): Promise<CreditState> {
   return { date: v.date, used: v.used };
 }
 
-/** Shared daily AI generation budget (5 per day). */
+/** Daily AI usage counter. Never blocks a generation. */
 export function useAiCredits() {
   const qc = useQueryClient();
   const query = useQuery({ queryKey: ["ai-credits"], queryFn: fetchCredits, staleTime: 10_000 });
   const used = query.data?.used ?? 0;
-  const remaining = Math.max(0, AI_DAILY_LIMIT - used);
 
   const consume = async () => {
-    const current = await fetchCredits();
-    if (current.used >= AI_DAILY_LIMIT) {
-      qc.setQueryData(["ai-credits"], current);
-      throw new Error(
-        `Daily AI limit reached (${AI_DAILY_LIMIT} generations per day). Try again tomorrow.`,
-      );
+    try {
+      const current = await fetchCredits();
+      const next: CreditState = { date: current.date, used: current.used + 1 };
+      await db.from("site_settings").upsert({ key: KEY, value: next }, { onConflict: "key" });
+      qc.setQueryData(["ai-credits"], next);
+    } catch (e) {
+      // Counting is best-effort: it must never prevent an AI action.
+      console.warn("AI usage counter unavailable", e);
     }
-    const next: CreditState = { date: current.date, used: current.used + 1 };
-    const { error } = await db
-      .from("site_settings")
-      .upsert({ key: KEY, value: next }, { onConflict: "key" });
-    if (error) throw error;
-    qc.setQueryData(["ai-credits"], next);
   };
 
-  return { used, remaining, limit: AI_DAILY_LIMIT, loading: query.isLoading, consume };
+  return { used, loading: query.isLoading, consume };
 }

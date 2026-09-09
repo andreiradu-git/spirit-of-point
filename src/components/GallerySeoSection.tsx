@@ -76,7 +76,7 @@ export function GallerySeoSection({
   const legacy = useText(lang === "ro" ? `gallery-seo.${slug}#ro` : `gallery-seo.${slug}`, "");
   const { data: galleries } = useGalleries();
   const runAi = useServerFn(generateGallerySeo);
-  const { remaining, limit, consume } = useAiCredits();
+  const { used, consume } = useAiCredits();
 
   const stored: GallerySeoData = useMemo(() => {
     const s = allSeo?.[seoKey];
@@ -214,19 +214,16 @@ export function GallerySeoSection({
   };
 
   const generate = async () => {
-    if (remaining <= 0) {
-      alert(`Daily AI limit reached (${limit} generations per day).`);
-      return;
-    }
     if (
       draft.manuallyEdited &&
       !confirm(
-        "This gallery has manual edits. Overwrite them with a fresh AI version? This uses 1 AI credit.",
+        "This gallery has manual edits. Overwrite them with a fresh AI version?",
       )
     )
       return;
-    if (!draft.manuallyEdited && draft.html && !confirm("Regenerate the SEO content? Uses 1 AI credit."))
+    if (!draft.manuallyEdited && draft.html && !confirm("Regenerate the SEO content?"))
       return;
+
     setBusy(true);
     try {
       await consume();
@@ -303,7 +300,7 @@ export function GallerySeoSection({
               <button
                 type="button"
                 onClick={generate}
-                disabled={busy || remaining <= 0}
+                disabled={busy}
                 className="inline-flex items-center gap-1 rounded bg-foreground px-2 py-1 text-background disabled:opacity-50"
               >
                 {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : draft.html ? <RefreshCw className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
@@ -319,7 +316,7 @@ export function GallerySeoSection({
                 {saving ? "Saving…" : "Save"}
               </button>
               <span className="ml-auto text-muted-foreground">
-                {remaining}/{limit} AI credits left today · {lang.toUpperCase()}
+                {used} AI generations today · {lang.toUpperCase()}
                 {draft.manuallyEdited ? " · manual edits protected" : ""}
               </span>
             </div>

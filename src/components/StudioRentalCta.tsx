@@ -35,7 +35,7 @@ export function StudioRentalCta() {
         as="p"
         id="studioRental.question"
         multiline
-        className="text-[15px] md:text-base leading-relaxed text-foreground/80 block"
+        className="type-body-lg text-foreground/80 block"
       >
         Need a space to bring your ideas to life?
       </Editable>
@@ -45,7 +45,7 @@ export function StudioRentalCta() {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block text-xs uppercase tracking-[0.25em] text-foreground border-b border-foreground/30 pb-1 transition-colors hover:border-foreground"
+          className="type-cta inline-block text-foreground border-b border-foreground/30 pb-1 transition-colors hover:border-foreground"
         >
           <Editable as="span" id="studioRental.cta">
             VIEW THE STUDIO &amp; AVAILABILITY ↗

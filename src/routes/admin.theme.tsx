@@ -1,7 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEffect, useState } from "react";
-import { DEFAULT_THEME, useTheme, useSaveTheme, type ThemeConfig } from "@/hooks/use-theme";
+import {
+  DEFAULT_THEME,
+  useTheme,
+  useSaveTheme,
+  usePreviousTheme,
+  setThemePreview,
+  type ThemeConfig,
+} from "@/hooks/use-theme";
 
 export const Route = createFileRoute("/admin/theme")({
   head: () => ({ meta: [{ title: "Theme — Admin" }, { name: "robots", content: "noindex" }] }),
@@ -20,11 +27,20 @@ function ThemePage() {
   const navigate = useNavigate();
   const current = useTheme();
   const save = useSaveTheme();
+  const previous = usePreviousTheme();
   const [t, setT] = useState<ThemeConfig>(current);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewPath, setPreviewPath] = useState("/");
 
   useEffect(() => setT(current), [current]);
+  // Keep the live preview in step with the draft while it is open, and always
+  // clear it when leaving the page so nothing leaks into normal browsing.
+  useEffect(() => {
+    if (previewing) setThemePreview(t);
+  }, [previewing, t]);
+  useEffect(() => () => setThemePreview(null), []);
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) navigate({ to: "/auth" });
   }, [loading, user, isAdmin, navigate]);
@@ -41,10 +57,28 @@ function ThemePage() {
     setSaving(true);
     try {
       await save(t);
+      setThemePreview(null);
+      setPreviewing(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
       alert("Save failed: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const doRevert = async () => {
+    if (!previous) return;
+    if (!confirm("Restore the previous typography and colours?")) return;
+    setSaving(true);
+    try {
+      await save(previous);
+      setThemePreview(null);
+      setPreviewing(false);
+      setT(previous);
+    } catch (e) {
+      alert("Revert failed: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setSaving(false);
     }
@@ -66,11 +100,26 @@ function ThemePage() {
               Reset to defaults
             </button>
             <button
+              onClick={() => setPreviewing((p) => { const next = !p; setThemePreview(next ? t : null); return next; })}
+              className={"text-xs px-3 py-1.5 border rounded " + (previewing ? "bg-black text-white" : "hover:bg-white")}
+            >
+              {previewing ? "Previewing — stop" : "Preview on site"}
+            </button>
+            {previous && (
+              <button
+                onClick={doRevert}
+                disabled={saving}
+                className="text-xs px-3 py-1.5 border rounded hover:bg-white disabled:opacity-50"
+              >
+                Undo / revert to previous
+              </button>
+            )}
+            <button
               onClick={doSave}
               disabled={saving}
               className="text-xs px-3 py-1.5 bg-black text-white rounded disabled:opacity-50"
             >
-              {saving ? "Saving…" : saved ? "Saved ✓" : "Save & apply"}
+              {saving ? "Saving…" : saved ? "Saved ✓" : "Apply"}
             </button>
           </div>
         </div>
@@ -94,7 +143,45 @@ function ThemePage() {
           <ColorField label="Footer text" value={t.colors.footerText} onChange={(v) => setColor("footerText", v)} />
         </Section>
 
-        <Section title="Preview">
+        {previewing && (
+          <div className="bg-white border rounded-lg p-5 mb-4">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <div className="text-sm font-medium">Live preview — real pages, real content</div>
+              <div className="flex gap-1">
+                {[
+                  ["/", "Home EN"],
+                  ["/ro", "Home RO"],
+                  ["/people", "People"],
+                  ["/food", "Food"],
+                  ["/contact", "Contact"],
+                ].map(([path, label]) => (
+                  <button
+                    key={path}
+                    onClick={() => setPreviewPath(path!)}
+                    className={
+                      "text-[11px] px-2 py-1 border rounded " +
+                      (previewPath === path ? "bg-black text-white" : "hover:bg-neutral-50")
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <iframe
+              key={previewPath}
+              src={previewPath}
+              title="Typography preview"
+              className="w-full h-[70vh] border rounded"
+            />
+            <p className="text-[11px] text-neutral-500 mt-2">
+              Nothing is saved while previewing. Use Apply to make it permanent, or stop the
+              preview to go back.
+            </p>
+          </div>
+        )}
+
+        <Section title="Quick sample">
           <div
             className="border rounded-lg overflow-hidden"
             style={{ background: t.colors.bg, color: t.colors.text, borderColor: t.colors.border }}

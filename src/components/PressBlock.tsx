@@ -29,12 +29,12 @@ export function PressBlock() {
             <Editable
               as="div"
               id="press.label"
-              className="text-xs uppercase tracking-[0.3em] text-muted-foreground mb-4 block"
+              className="type-eyebrow text-muted-foreground mb-4 block"
             >
               FEATURED / IQADS
             </Editable>
 
-            <h2 className="font-serif italic text-2xl md:text-3xl lg:text-4xl leading-[1.2] text-foreground break-words">
+            <h2 className="type-editorial text-2xl md:text-3xl lg:text-4xl text-foreground break-words">
               <a
                 href={url}
                 target="_blank"
@@ -51,7 +51,7 @@ export function PressBlock() {
               as="p"
               id="press.description"
               multiline
-              className="mt-4 text-[15px] md:text-base leading-relaxed text-foreground/80 block"
+              className="mt-4 type-body-lg text-foreground/80 block"
             >
               A conversation about commercial photography, Point Studio, working with agencies and how the photographer’s profession has changed.
             </Editable>
@@ -61,7 +61,7 @@ export function PressBlock() {
                 href={url}
                 target="_blank"
                 rel="noopener"
-                className="text-xs uppercase tracking-[0.25em] text-foreground border-b border-foreground/30 pb-1 transition-colors hover:border-foreground"
+                className="type-cta text-foreground border-b border-foreground/30 pb-1 transition-colors hover:border-foreground"
               >
                 <Editable as="span" id="press.cta">
                   READ THE INTERVIEW ↗

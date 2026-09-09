@@ -3,12 +3,15 @@ import { useAdmin } from "@/hooks/use-admin";
 import { db } from "@/lib/cms-client";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useAiLanguage } from "@/hooks/use-ai-language";
+import { useEditHistory, useEditHistoryShortcuts } from "@/hooks/use-edit-history";
 
 export function AdminBar() {
   const { user, isAdmin, loading } = useAdmin();
   const { editMode, setEditMode } = useEditMode();
   const { lang: aiLang, setLang: setAiLang } = useAiLanguage();
   const navigate = useNavigate();
+  const { canUndo, canRedo, undoLabel, redoLabel, busy, undo, redo } = useEditHistory();
+  useEditHistoryShortcuts(isAdmin && editMode);
 
   if (loading || !user || !isAdmin) return null;
 
@@ -40,6 +43,26 @@ export function AdminBar() {
         <Link to="/admin/socials" className="text-xs hover:underline">Socials</Link>
         
         <Link to="/admin/theme" className="text-xs hover:underline">Theme</Link>
+        <span className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={undo}
+            disabled={!canUndo || busy}
+            title={canUndo ? `Undo: ${undoLabel} (⌘/Ctrl+Z)` : "Nothing to undo"}
+            className="text-xs px-2 py-0.5 border border-white/30 rounded hover:bg-white/10 disabled:opacity-40"
+          >
+            ↶ Undo
+          </button>
+          <button
+            type="button"
+            onClick={redo}
+            disabled={!canRedo || busy}
+            title={canRedo ? `Redo: ${redoLabel} (⌘/Ctrl+Shift+Z)` : "Nothing to redo"}
+            className="text-xs px-2 py-0.5 border border-white/30 rounded hover:bg-white/10 disabled:opacity-40"
+          >
+            ↷ Redo
+          </button>
+        </span>
         <label className="flex items-center gap-1 select-none">
           <span className="text-xs">AI</span>
           <select

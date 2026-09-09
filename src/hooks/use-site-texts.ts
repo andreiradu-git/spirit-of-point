@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/cms-client";
+import { recordHistory } from "@/hooks/use-edit-history";
 
 const TEXT_PREFIX = "text.";
 
@@ -37,14 +38,33 @@ export function useText(id: string, fallback: string): string {
   return data?.[id] ?? fallback;
 }
 
-export function useSaveText() {
-  const qc = useQueryClient();
-  return async (id: string, text: string) => {
-    const key = `${TEXT_PREFIX}${id}`;
+async function writeText(qc: ReturnType<typeof useQueryClient>, id: string, text: string | null) {
+  const key = `${TEXT_PREFIX}${id}`;
+  if (text === null) {
+    // No stored value before this change — remove the row so the code default
+    // takes over again.
+    const { error } = await db.from("site_settings").delete().eq("key", key);
+    if (error) throw error;
+  } else {
     const { error } = await db
       .from("site_settings")
       .upsert({ key, value: { text } }, { onConflict: "key" });
     if (error) throw error;
-    qc.invalidateQueries({ queryKey: ["site-texts"] });
+  }
+  await qc.invalidateQueries({ queryKey: ["site-texts"] });
+}
+
+export function useSaveText() {
+  const qc = useQueryClient();
+  return async (id: string, text: string) => {
+    const before = (qc.getQueryData(["site-texts"]) as Record<string, string> | undefined)?.[id];
+    const previous = typeof before === "string" ? before : null;
+    await writeText(qc, id, text);
+    recordHistory({
+      label: `Text “${id}”`,
+      undo: () => writeText(qc, id, previous),
+      redo: () => writeText(qc, id, text),
+    });
   };
 }
+

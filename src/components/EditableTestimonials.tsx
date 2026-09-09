@@ -308,7 +308,7 @@ function TestimonialCard({
               className="font-serif italic text-base md:text-lg leading-snug text-foreground/85 bg-transparent border border-dashed border-blue-400/60 rounded p-2 focus:outline-blue-500"
             />
           ) : (
-            <blockquote className="font-serif italic text-base md:text-lg leading-snug text-foreground/85">
+            <blockquote className="type-editorial text-base md:text-lg text-foreground/85">
               {t.quote}
             </blockquote>
           )}
@@ -341,8 +341,8 @@ function TestimonialCard({
           </>
         ) : (
           <>
-            <div className="text-sm font-medium text-foreground">{t.name}</div>
-            <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{t.role}</div>
+            <div className="type-caption type-highlight text-foreground">{t.name}</div>
+            <div className="type-eyebrow text-muted-foreground">{t.role}</div>
           </>
         )}
       </figcaption>
