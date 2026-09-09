@@ -49,6 +49,14 @@ export const RO_CONTENT: Record<string, string> = {
   "footer.address": "Piața Presei Libere 1, București",
 
   // Contact page
+  // Press
+  "press.label": "FEATURED / IQADS",
+  "press.title":
+    "Andrei Radu: \u201cNu se poate face nimic repede, ieftin \u0219i bun. Po\u021bi compromite doar una.\u201d",
+  "press.description":
+    "Despre fotografie comercial\u0103, Point Studio, rela\u021bia cu agen\u021biile \u0219i felul \u00een care s-a schimbat meseria de fotograf.",
+  "press.cta": "CITE\u0218TE INTERVIUL \u2197",
+
   "contact.eyebrow": "Ia legătura cu noi",
   "contact.title": "Hai să creăm împreună.",
   "contact.email": "andrei@pointstudio.ro",
