@@ -50,9 +50,23 @@ export function HeroCarousel({ fallbackSrc, fallbackAlt = "", children }: Props)
   }, [items.length, index]);
 
 
+  /**
+   * Advance by `delta`. The target slide is mounted (invisible) one frame
+   * before it becomes active, so backwards navigation crossfades exactly like
+   * forwards navigation instead of snapping in on a blank frame.
+   */
   const go = useCallback(
     (delta: number) => {
-      setIndex((i) => (i + delta + items.length) % items.length);
+      setIndex((i) => {
+        const target = (i + delta + items.length) % items.length;
+        if (target !== i) {
+          setExtra(target);
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => setIndex((cur) => (cur === i ? target : cur))),
+          );
+        }
+        return i;
+      });
     },
     [items.length],
   );
