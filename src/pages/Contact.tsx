@@ -46,7 +46,7 @@ export function ContactPage() {
           <Editable
             as="h1"
             id="contact.title"
-            className="type-h2 not-italic mb-10 block"
+            className="type-h1 text-5xl md:text-6xl mb-10 block"
           >
             Let's create together.
           </Editable>
