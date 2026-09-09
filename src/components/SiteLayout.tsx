@@ -134,10 +134,10 @@ export function SiteLayout({
       <main className="flex-1">{children}</main>
 
       <footer className="bg-[#e5e5e5]">
-        <div className="mx-auto max-w-7xl px-6 pt-4 pb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6 text-sm text-muted-foreground">
+        <div className="mx-auto max-w-7xl px-6 pt-4 pb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6 type-caption text-muted-foreground">
           <div>
             <Editable as="div" id="footer.brand" className="type-h3 text-foreground block">Point Studio</Editable>
-            <Editable as="p" id="footer.tagline" multiline className="mt-2 max-w-sm italic block">
+            <Editable as="p" id="footer.tagline" multiline className="type-editorial mt-2 max-w-sm block">
               First and foremost, we love what we do.
             </Editable>
           </div>
