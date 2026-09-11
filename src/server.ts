@@ -212,12 +212,20 @@ function canonicalRedirect(request: Request): Response | undefined {
       changed = true;
     }
 
-    for (const p of LEGACY_PARAMS) {
-      if (url.searchParams.has(p)) {
-        url.searchParams.delete(p);
-        changed = true;
+    // Never rewrite app-internal URLs (admin, auth, API) — only public pages.
+    const isAppPath =
+      url.pathname.startsWith("/admin") ||
+      url.pathname.startsWith("/api") ||
+      url.pathname.startsWith("/auth");
+    if (!isAppPath) {
+      for (const p of [...url.searchParams.keys()]) {
+        if (isStrippableParam(p)) {
+          url.searchParams.delete(p);
+          changed = true;
+        }
       }
     }
+
   }
 
   if (!changed) return undefined;
