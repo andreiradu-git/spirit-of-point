@@ -3,12 +3,22 @@ import { cdn } from "@/components/SiteLayout";
 import fallbackVideos from "@/data/videos.json";
 import { VideoPage } from "@/pages/Video";
 import { altLinks } from "@/i18n";
+import { getPublicVideos } from "@/lib/video-seo.functions";
+import { videoObjectJsonLd, type PublicVideo } from "@/lib/video-seo.server";
 
 const alt = altLinks("/video", "ro");
+const PAGE_URL = "https://www.pointstudio.ro/ro/video";
 
 export const Route = createFileRoute("/ro/video")({
   component: VideoPage,
-  head: () => ({
+  loader: async (): Promise<PublicVideo[]> => {
+    try {
+      return await getPublicVideos({ data: { pageUrl: PAGE_URL } });
+    } catch {
+      return [];
+    }
+  },
+  head: ({ loaderData }) => ({
     meta: [
       { title: "Producție video și motion — Point Studio București" },
       {
@@ -23,5 +33,9 @@ export const Route = createFileRoute("/ro/video")({
       ...alt.meta,
     ],
     links: alt.links,
+    scripts: (loaderData ?? []).map((v) => ({
+      type: "application/ld+json",
+      children: JSON.stringify(videoObjectJsonLd(v)),
+    })),
   }),
 });
