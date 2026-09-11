@@ -135,7 +135,7 @@ export function videoObjectJsonLd(v: PublicVideo) {
     ...(v.duration ? { duration: v.duration } : {}),
     ...(v.embedUrl ? { embedUrl: v.embedUrl } : {}),
     ...(v.contentUrl ? { contentUrl: v.contentUrl } : {}),
-    ...(v.thumbnailUrl ? {} : {}),
+    
     isPartOf: { "@type": "WebPage", "@id": v.pageUrl },
   };
 }

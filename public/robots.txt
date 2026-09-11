@@ -8,3 +8,4 @@ Disallow: /auth
 Disallow: /api/
 
 Sitemap: https://www.pointstudio.ro/sitemap.xml
+Sitemap: https://www.pointstudio.ro/video-sitemap.xml
