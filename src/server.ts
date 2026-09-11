@@ -176,9 +176,6 @@ const RETIRED_PATHS: Record<string, string> = {
 // Squarespace pages that were intentionally removed and have no equivalent.
 // They answer 410 so crawlers drop them instead of re-queueing a soft 404.
 const GONE_PATHS = new Set([
-  "/new-page",
-  "/new-page/",
-  "/ro/new-page",
   "/architecture",
   "/architecture/",
   "/ro/architecture",
