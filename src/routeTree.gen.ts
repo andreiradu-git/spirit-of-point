@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WandersRouteImport } from './routes/wanders'
+import { Route as VideoSitemapDotxmlRouteImport } from './routes/video-sitemap[.]xml'
 import { Route as VideoRouteImport } from './routes/video'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PeopleRouteImport } from './routes/people'
@@ -50,6 +51,11 @@ import { Route as ApiDebugAiRouteImport } from './routes/api/debug/ai'
 const WandersRoute = WandersRouteImport.update({
   id: '/wanders',
   path: '/wanders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VideoSitemapDotxmlRoute = VideoSitemapDotxmlRouteImport.update({
+  id: '/video-sitemap.xml',
+  path: '/video-sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VideoRoute = VideoRouteImport.update({
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/people': typeof PeopleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
+  '/video-sitemap.xml': typeof VideoSitemapDotxmlRoute
   '/wanders': typeof WandersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
@@ -286,6 +293,7 @@ export interface FileRoutesByTo {
   '/people': typeof PeopleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
+  '/video-sitemap.xml': typeof VideoSitemapDotxmlRoute
   '/wanders': typeof WandersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
@@ -326,6 +334,7 @@ export interface FileRoutesById {
   '/people': typeof PeopleRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/video': typeof VideoRoute
+  '/video-sitemap.xml': typeof VideoSitemapDotxmlRoute
   '/wanders': typeof WandersRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/assets': typeof AdminAssetsRoute
@@ -367,6 +376,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/sitemap.xml'
     | '/video'
+    | '/video-sitemap.xml'
     | '/wanders'
     | '/admin/analytics'
     | '/admin/assets'
@@ -406,6 +416,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/sitemap.xml'
     | '/video'
+    | '/video-sitemap.xml'
     | '/wanders'
     | '/admin/analytics'
     | '/admin/assets'
@@ -445,6 +456,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/sitemap.xml'
     | '/video'
+    | '/video-sitemap.xml'
     | '/wanders'
     | '/admin/analytics'
     | '/admin/assets'
@@ -485,6 +497,7 @@ export interface RootRouteChildren {
   PeopleRoute: typeof PeopleRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VideoRoute: typeof VideoRoute
+  VideoSitemapDotxmlRoute: typeof VideoSitemapDotxmlRoute
   WandersRoute: typeof WandersRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminAssetsRoute: typeof AdminAssetsRoute
@@ -520,6 +533,13 @@ declare module '@tanstack/react-router' {
       path: '/wanders'
       fullPath: '/wanders'
       preLoaderRoute: typeof WandersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/video-sitemap.xml': {
+      id: '/video-sitemap.xml'
+      path: '/video-sitemap.xml'
+      fullPath: '/video-sitemap.xml'
+      preLoaderRoute: typeof VideoSitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/video': {
@@ -789,6 +809,7 @@ const rootRouteChildren: RootRouteChildren = {
   PeopleRoute: PeopleRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VideoRoute: VideoRoute,
+  VideoSitemapDotxmlRoute: VideoSitemapDotxmlRoute,
   WandersRoute: WandersRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminAssetsRoute: AdminAssetsRoute,
