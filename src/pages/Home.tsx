@@ -49,6 +49,19 @@ export function Index() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
+  /** Link props that always target a category's canonical URL. */
+  const serviceLinkProps = (slug: string, l: "en" | "ro") => {
+    const topLevel = new Set(["food", "people", "editorial", "video", "wanders"]);
+    if (topLevel.has(slug)) {
+      return { to: (l === "ro" ? `/ro/${slug}` : `/${slug}`) as "/food" };
+    }
+    return {
+      to: (l === "ro" ? "/ro/work/$slug" : "/work/$slug") as "/work/$slug",
+      params: { slug },
+    };
+  };
+
+
   const testimonialFallback: Testimonial[] = [
     {
       id: "t1",
