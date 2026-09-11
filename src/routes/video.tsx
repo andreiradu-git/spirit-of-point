@@ -4,7 +4,7 @@ import fallbackVideos from "@/data/videos.json";
 import { VideoPage } from "@/pages/Video";
 import { altLinks } from "@/i18n";
 import { getPublicVideos } from "@/lib/video-seo.functions";
-import { videoObjectJsonLd, type PublicVideo } from "@/lib/video-seo.server";
+import { videoObjectJsonLd, type PublicVideo } from "@/lib/video-seo";
 
 const alt = altLinks("/video", "en");
 const PAGE_URL = "https://www.pointstudio.ro/video";

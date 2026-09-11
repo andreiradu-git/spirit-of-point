@@ -2,7 +2,8 @@
 // /video routes to emit VideoObject structured data during SSR.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { loadPublicVideos, type PublicVideo } from "@/lib/video-seo.server";
+import { loadPublicVideos } from "@/lib/video-seo.server";
+import type { PublicVideo } from "@/lib/video-seo";
 
 const schema = z.object({ pageUrl: z.string().url() });
 
