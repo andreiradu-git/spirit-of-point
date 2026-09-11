@@ -90,11 +90,12 @@ function normalise(raw: RawVideo, pageUrl: string): PublicVideo | null {
 
   const base: PublicVideo = {
     pageUrl,
-    name,
+    name: verified?.name ?? name,
     provider: yt ? "youtube" : vm ? "vimeo" : "file",
   };
 
-  if (raw.description?.trim()) base.description = raw.description.trim();
+  const description = raw.description?.trim() || verified?.description;
+  if (description) base.description = description;
 
   if (yt) {
     base.embedUrl = `https://www.youtube.com/embed/${yt}`;
