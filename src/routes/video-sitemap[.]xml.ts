@@ -26,10 +26,10 @@ export const Route = createFileRoute("/video-sitemap.xml")({
           (v) => v.thumbnailUrl && (v.embedUrl || v.contentUrl),
         );
 
-        const entries = videos.map((v) =>
+        // All videos live on one page, so the sitemap holds one <url> with a
+        // <video:video> child per video, as the spec requires.
+        const videoBlocks = videos.map((v) =>
           [
-            "  <url>",
-            `    <loc>${esc(v.pageUrl)}</loc>`,
             "    <video:video>",
             `      <video:thumbnail_loc>${esc(v.thumbnailUrl!)}</video:thumbnail_loc>`,
             `      <video:title>${esc(v.name)}</video:title>`,
@@ -44,11 +44,14 @@ export const Route = createFileRoute("/video-sitemap.xml")({
               : null,
             "      <video:family_friendly>yes</video:family_friendly>",
             "    </video:video>",
-            "  </url>",
           ]
             .filter(Boolean)
             .join("\n"),
         );
+
+        const entries = videoBlocks.length
+          ? [["  <url>", `    <loc>${esc(pageUrl)}</loc>`, ...videoBlocks, "  </url>"].join("\n")]
+          : [];
 
         const xml = [
           '<?xml version="1.0" encoding="UTF-8"?>',
