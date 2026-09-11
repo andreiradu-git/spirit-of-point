@@ -111,10 +111,43 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
-// Canonical host + legacy Squarespace query params.
+// Canonical host + legacy Squarespace / tracking query params.
 // Collapses apex -> www, http -> https, retires the duplicate /patterns page and
-// strips indexable duplicate URLs like /?itemId=abc.
-const LEGACY_PARAMS = ["itemId", "itemid", "format", "category", "tag", "author", "month", "view"];
+// strips indexable duplicate URLs like /?itemId=abc or /?utm_source=newsletter.
+const LEGACY_PARAMS = [
+  "itemId",
+  "itemid",
+  "format",
+  "category",
+  "tag",
+  "author",
+  "month",
+  "view",
+  "page",
+  "offset",
+  "reversePaginate",
+  // Tracking parameters: they must never create a second indexable document.
+  "fbclid",
+  "gclid",
+  "msclkid",
+  "twclid",
+  "igshid",
+  "mc_cid",
+  "mc_eid",
+  "_ga",
+  "ref",
+  "source",
+];
+
+/** utm_* and any other tracking prefix is stripped generically. */
+function isStrippableParam(name: string): boolean {
+  const lower = name.toLowerCase();
+  return (
+    lower.startsWith("utm_") ||
+    LEGACY_PARAMS.some((p) => p.toLowerCase() === lower)
+  );
+}
+
 
 // /patterns rendered exactly the same images as /wanders after the rename, so the
 // old path is a pure duplicate with one clear modern equivalent. The bare
@@ -179,12 +212,20 @@ function canonicalRedirect(request: Request): Response | undefined {
       changed = true;
     }
 
-    for (const p of LEGACY_PARAMS) {
-      if (url.searchParams.has(p)) {
-        url.searchParams.delete(p);
-        changed = true;
+    // Never rewrite app-internal URLs (admin, auth, API) — only public pages.
+    const isAppPath =
+      url.pathname.startsWith("/admin") ||
+      url.pathname.startsWith("/api") ||
+      url.pathname.startsWith("/auth");
+    if (!isAppPath) {
+      for (const p of [...url.searchParams.keys()]) {
+        if (isStrippableParam(p)) {
+          url.searchParams.delete(p);
+          changed = true;
+        }
       }
     }
+
   }
 
   if (!changed) return undefined;

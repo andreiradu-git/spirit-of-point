@@ -49,6 +49,19 @@ export function Index() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
+  /** Link props that always target a category's canonical URL. */
+  const serviceLinkProps = (slug: string, l: "en" | "ro") => {
+    const topLevel = new Set(["food", "people", "editorial", "video", "wanders"]);
+    if (topLevel.has(slug)) {
+      return { to: (l === "ro" ? `/ro/${slug}` : `/${slug}`) as "/food" };
+    }
+    return {
+      to: (l === "ro" ? "/ro/work/$slug" : "/work/$slug") as "/work/$slug",
+      params: { slug },
+    };
+  };
+
+
   const testimonialFallback: Testimonial[] = [
     {
       id: "t1",
@@ -253,10 +266,12 @@ export function Index() {
             aspect="portrait"
             renderItem={(img, { editable }) => (
               <Link
-                to={(lang === "ro" ? "/ro/work/$slug" : "/work/$slug") as "/work/$slug"}
-                params={{ slug: serviceSlug(img.title || "") }}
+                // food / people / editorial also live at a top-level URL which is
+                // their canonical; link straight there instead of the /work twin.
+                {...serviceLinkProps(serviceSlug(img.title || ""), lang)}
                 className="relative aspect-[3/4] overflow-hidden group block bg-muted"
               >
+
                 <img
                   src={cdn(galleryCovers?.[serviceSlug(img.title || "")] ?? img.src, 800)}
                   srcSet={cdnSrcSet(galleryCovers?.[serviceSlug(img.title || "")] ?? img.src, [400, 800, 1200])}

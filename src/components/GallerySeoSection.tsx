@@ -98,7 +98,24 @@ export function GallerySeoSection({
     }
   }, [draft.html, editable]);
 
-  const canonical = draft.canonical || `${SITE}${pathname}`;
+  // A CMS canonical is only honoured when it is a clean, parameter-free URL on
+  // the canonical host. Otherwise the route's own server-rendered canonical
+  // stays untouched — some routes (e.g. /work/food) intentionally point at
+  // their top-level twin, and this block must never overwrite that.
+  const cmsCanonical = useMemo(() => {
+    const raw = draft.canonical?.trim();
+    if (!raw) return null;
+    try {
+      const u = new URL(raw, SITE);
+      if (u.origin !== SITE) return null;
+      if (u.search || u.hash) return null;
+      return u.toString().replace(/\/$/, "") || SITE;
+    } catch {
+      return null;
+    }
+  }, [draft.canonical]);
+
+  const canonical = cmsCanonical || `${SITE}${pathname}`;
 
   // Apply the CMS meta fields to <head> for this route.
   useEffect(() => {
@@ -113,15 +130,17 @@ export function GallerySeoSection({
       "og:description",
       draft.ogDescription || draft.metaDescription,
     );
-    upsertMeta('meta[property="og:url"]', "property", "og:url", canonical);
+    if (!cmsCanonical) return;
+    upsertMeta('meta[property="og:url"]', "property", "og:url", cmsCanonical);
     let link = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!link) {
       link = document.createElement("link");
       link.rel = "canonical";
       document.head.appendChild(link);
     }
-    link.href = canonical;
-  }, [draft.seoTitle, draft.metaDescription, draft.keywords, draft.ogTitle, draft.ogDescription, canonical]);
+    link.href = cmsCanonical;
+  }, [draft.seoTitle, draft.metaDescription, draft.keywords, draft.ogTitle, draft.ogDescription, cmsCanonical]);
+
 
   // Related galleries: shared category first, then shared tags, then any other.
   const related = useMemo(() => {

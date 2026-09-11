@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
+
+# Private / technical areas. Obsolete public URLs are deliberately NOT blocked,
+# so Google can still see their 301 / 404 / 410 status.
 Disallow: /admin
 Disallow: /auth
+Disallow: /api/
 
 Sitemap: https://www.pointstudio.ro/sitemap.xml
