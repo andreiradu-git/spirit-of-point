@@ -27,10 +27,43 @@ type RawVideo = {
  * Metadata read from the provider itself (YouTube watch payload) for the
  * videos currently on the site. Keyed by provider video id.
  */
-const VERIFIED_METADATA: Record<string, { uploadDate: string; duration: string; seconds: number }> = {
-  sc7yDUHAXHE: { uploadDate: "2023-12-25T02:08:59-08:00", duration: "PT1M15S", seconds: 75 },
-  "rbbUN-lRhWw": { uploadDate: "2022-12-05T00:21:09-08:00", duration: "PT27S", seconds: 27 },
-  "3wceiy8q-S0": { uploadDate: "2024-06-06T08:47:41-07:00", duration: "PT3M", seconds: 180 },
+// `name` / `description` here are the editorially approved metadata texts. They
+// are used for structured data and the video sitemap only — the visible page
+// keeps rendering the CMS titles, so the design is untouched. A description
+// stored in the CMS entry always wins over the value recorded here.
+type VerifiedMeta = {
+  uploadDate: string;
+  duration: string;
+  seconds: number;
+  name?: string;
+  description?: string;
+};
+
+const VERIFIED_METADATA: Record<string, VerifiedMeta> = {
+  sc7yDUHAXHE: {
+    uploadDate: "2023-12-25T02:08:59-08:00",
+    duration: "PT1M15S",
+    seconds: 75,
+    name: "French toast cu somon afumat și prosciutto",
+    description:
+      "Chef Florin Dumitrescu pregătește French toast cu somon afumat și prosciutto, într-un video culinar realizat de Point Studio.",
+  },
+  "rbbUN-lRhWw": {
+    uploadDate: "2022-12-05T00:21:09-08:00",
+    duration: "PT27S",
+    seconds: 27,
+    name: "TRANSAVIA – Tagliatelle gratinate",
+    description:
+      "Rețetă video TRANSAVIA cu tagliatelle gratinate, pui și mozzarella, filmată și produsă de Point Studio.",
+  },
+  "3wceiy8q-S0": {
+    uploadDate: "2024-06-06T08:47:41-07:00",
+    duration: "PT3M",
+    seconds: 180,
+    name: "TRANSAVIA",
+    description:
+      "Producție video realizată pentru TRANSAVIA, cu fotografie și filmare culinară realizate de Point Studio.",
+  },
 };
 
 function youtubeId(url: string): string | null {
@@ -57,11 +90,12 @@ function normalise(raw: RawVideo, pageUrl: string): PublicVideo | null {
 
   const base: PublicVideo = {
     pageUrl,
-    name,
+    name: verified?.name ?? name,
     provider: yt ? "youtube" : vm ? "vimeo" : "file",
   };
 
-  if (raw.description?.trim()) base.description = raw.description.trim();
+  const description = raw.description?.trim() || verified?.description;
+  if (description) base.description = description;
 
   if (yt) {
     base.embedUrl = `https://www.youtube.com/embed/${yt}`;
