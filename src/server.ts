@@ -153,6 +153,11 @@ function isStrippableParam(name: string): boolean {
 // old path is a pure duplicate with one clear modern equivalent. The bare
 // Squarespace category paths map onto their current /work/... equivalents.
 const RETIRED_PATHS: Record<string, string> = {
+  // Obsolete Squarespace stub page: single 301 straight to the homepage.
+  "/new-page": "/",
+  "/new-page/": "/",
+  "/ro/new-page": "/ro",
+  "/ro/new-page/": "/ro",
   "/patterns": "/wanders",
   "/patterns/": "/wanders",
   "/ro/patterns": "/ro/wanders",
@@ -171,9 +176,6 @@ const RETIRED_PATHS: Record<string, string> = {
 // Squarespace pages that were intentionally removed and have no equivalent.
 // They answer 410 so crawlers drop them instead of re-queueing a soft 404.
 const GONE_PATHS = new Set([
-  "/new-page",
-  "/new-page/",
-  "/ro/new-page",
   "/architecture",
   "/architecture/",
   "/ro/architecture",
