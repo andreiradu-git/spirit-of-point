@@ -154,6 +154,8 @@ function isStrippableParam(name: string): boolean {
 // Squarespace category paths map onto their current /work/... equivalents.
 const RETIRED_PATHS: Record<string, string> = {
   // Obsolete Squarespace stub page: single 301 straight to the homepage.
+  "/home": "/",
+  "/home/": "/",
   "/new-page": "/",
   "/new-page/": "/",
   "/ro/new-page": "/ro",
