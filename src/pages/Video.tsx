@@ -222,7 +222,7 @@ export function VideoPage() {
     <SiteLayout>
       <div className="mx-auto max-w-5xl px-6 pt-16 pb-24">
         <header className="mb-14 max-w-3xl md:mb-20">
-          <h1 className="type-h3 text-foreground whitespace-nowrap">{pageContent.h1}</h1>
+          <h1 className="type-h3 text-foreground md:whitespace-nowrap">{pageContent.h1}</h1>
           <p className="type-body-lg mt-6 text-muted-foreground">{pageContent.intro}</p>
         </header>
         {editable && (
