@@ -13,7 +13,7 @@ import { uploadImageWithProtection } from "@/lib/image-upload";
 import { derivePoster, derivePosterSync } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/LazyMediaLibraryPicker";
 import { Link } from "@tanstack/react-router";
-import { localizePath, useLang } from "@/i18n";
+import { useLang } from "@/i18n";
 import { VIDEO_PAGE_CONTENT } from "@/data/video-page-content";
 import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
@@ -282,7 +282,7 @@ export function VideoPage() {
                 Descoperă portofoliile noastre de{" "}
                 <Link to="/ro/food" className="underline underline-offset-4 hover:text-foreground">food</Link>
                 {" "}și{" "}
-                <Link to="/ro/work/corporate" className="underline underline-offset-4 hover:text-foreground">proiecte comerciale</Link>
+                <Link to="/ro/work/$slug" params={{ slug: "corporate" }} className="underline underline-offset-4 hover:text-foreground">proiecte comerciale</Link>
                 , sau <Link to="/ro/contact" className="underline underline-offset-4 hover:text-foreground">contactează-ne</Link> pentru o producție video.
               </>
             ) : (
@@ -290,7 +290,7 @@ export function VideoPage() {
                 Explore our{" "}
                 <Link to="/food" className="underline underline-offset-4 hover:text-foreground">food</Link>
                 {" "}and{" "}
-                <Link to="/work/corporate" className="underline underline-offset-4 hover:text-foreground">commercial work</Link>
+                <Link to="/work/$slug" params={{ slug: "corporate" }} className="underline underline-offset-4 hover:text-foreground">commercial work</Link>
                 , or <Link to="/contact" className="underline underline-offset-4 hover:text-foreground">contact us</Link> about a video production.
               </>
             )}
