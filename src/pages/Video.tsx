@@ -12,6 +12,9 @@ import { uploadToR2 } from "@/lib/r2.functions";
 import { uploadImageWithProtection } from "@/lib/image-upload";
 import { derivePoster, derivePosterSync } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/LazyMediaLibraryPicker";
+import { Link } from "@tanstack/react-router";
+import { localizePath, useLang } from "@/i18n";
+import { VIDEO_PAGE_CONTENT } from "@/data/video-page-content";
 import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
   DndContext,
@@ -74,6 +77,8 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 export function VideoPage() {
+  const lang = useLang();
+  const pageContent = VIDEO_PAGE_CONTENT[lang];
   const [active, setActive] = useState<number | null>(null);
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
@@ -216,6 +221,10 @@ export function VideoPage() {
   return (
     <SiteLayout>
       <div className="mx-auto max-w-5xl px-6 pt-16 pb-24">
+        <header className="mb-14 max-w-3xl md:mb-20">
+          <h1 className="type-h1 text-foreground">{pageContent.h1}</h1>
+          <p className="type-body-lg mt-6 text-muted-foreground">{pageContent.intro}</p>
+        </header>
         {editable && (
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
             <span className="inline-flex items-center gap-1 text-neutral-500 uppercase tracking-widest">
@@ -261,6 +270,49 @@ export function VideoPage() {
             </div>
           </SortableContext>
         </DndContext>
+
+        <section className="mt-20 max-w-3xl md:mt-28" aria-labelledby="video-services-heading">
+          <h2 id="video-services-heading" className="type-h3 text-foreground">
+            {pageContent.h2}
+          </h2>
+          <p className="type-body-lg mt-5 text-muted-foreground">{pageContent.body}</p>
+          <p className="type-caption mt-6 text-muted-foreground">
+            {lang === "ro" ? (
+              <>
+                Descoperă portofoliile noastre de{" "}
+                <Link to="/ro/food" className="underline underline-offset-4 hover:text-foreground">food</Link>
+                {" "}și{" "}
+                <Link to="/ro/work/corporate" className="underline underline-offset-4 hover:text-foreground">proiecte comerciale</Link>
+                , sau <Link to="/ro/contact" className="underline underline-offset-4 hover:text-foreground">contactează-ne</Link> pentru o producție video.
+              </>
+            ) : (
+              <>
+                Explore our{" "}
+                <Link to="/food" className="underline underline-offset-4 hover:text-foreground">food</Link>
+                {" "}and{" "}
+                <Link to="/work/corporate" className="underline underline-offset-4 hover:text-foreground">commercial work</Link>
+                , or <Link to="/contact" className="underline underline-offset-4 hover:text-foreground">contact us</Link> about a video production.
+              </>
+            )}
+          </p>
+        </section>
+
+        <section className="mt-20 max-w-3xl md:mt-28" aria-labelledby="video-faq-heading">
+          <h2 id="video-faq-heading" className="type-h3 text-foreground">
+            {pageContent.faqHeading}
+          </h2>
+          <div className="mt-7 border-t border-border">
+            {pageContent.faq.map((item) => (
+              <details key={item.question} name="video-faq" className="group border-b border-border py-5">
+                <summary className="type-body flex cursor-pointer list-none items-center justify-between gap-6 font-medium text-foreground marker:content-none">
+                  <span>{item.question}</span>
+                  <span aria-hidden="true" className="shrink-0 text-lg font-normal transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="type-body mt-3 max-w-2xl pr-10 text-muted-foreground">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
       </div>
 
       {active !== null && videos[active]?.src && (
