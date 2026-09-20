@@ -114,7 +114,6 @@ export function Editable({
     >
       <span
         ref={ref as never}
-        className="contents"
         contentEditable
         suppressContentEditableWarning
         onBlur={commit}

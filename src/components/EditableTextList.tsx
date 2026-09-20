@@ -171,7 +171,7 @@ export function EditableTextList({
             (itemClassName ?? "")
           }
         >
-          <span className="whitespace-pre-wrap">{text}</span>
+          <span>{text}</span>
           <span className="absolute -top-3 right-2 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <button type="button" onClick={() => move(i, -1)} title="Sus" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">↑</button>
             <button type="button" onClick={() => move(i, 1)} title="Jos" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">↓</button>
