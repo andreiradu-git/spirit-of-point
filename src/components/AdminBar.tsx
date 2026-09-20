@@ -3,12 +3,17 @@ import { useAdmin } from "@/hooks/use-admin";
 import { db } from "@/lib/cms-client";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useAiLanguage } from "@/hooks/use-ai-language";
+import { useEditLangState } from "@/hooks/use-content-lang";
+import { useLang } from "@/i18n";
 import { useEditHistory, useEditHistoryShortcuts } from "@/hooks/use-edit-history";
 
 export function AdminBar() {
   const { user, isAdmin, loading } = useAdmin();
   const { editMode, setEditMode } = useEditMode();
-  const { lang: aiLang, setLang: setAiLang } = useAiLanguage();
+  const { setLang: setAiLang } = useAiLanguage();
+  const routeLang = useLang();
+  const { editLang, setEditLang } = useEditLangState();
+  const activeEditLang = editLang ?? routeLang;
   const navigate = useNavigate();
   const { canUndo, canRedo, undoLabel, redoLabel, busy, undo, redo } = useEditHistory();
   useEditHistoryShortcuts(isAdmin && editMode);
@@ -63,18 +68,27 @@ export function AdminBar() {
             ↷ Redo
           </button>
         </span>
-        <label className="flex items-center gap-1 select-none">
-          <span className="text-xs">AI</span>
-          <select
-            value={aiLang}
-            onChange={(e) => setAiLang(e.target.value === "ro" ? "ro" : "en")}
-            title="Language used by all AI text features"
-            className="text-xs bg-black border border-white/30 rounded px-1 py-0.5"
-          >
-            <option value="en">EN</option>
-            <option value="ro">RO</option>
-          </select>
-        </label>
+        <span className="flex items-center gap-1 select-none" title="Language you are editing. Saving only affects this language.">
+          <span className="text-xs">Editing</span>
+          {(["en", "ro"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                setEditLang(value);
+                setAiLang(value);
+              }}
+              className={
+                "text-xs px-2 py-0.5 border rounded " +
+                (activeEditLang === value
+                  ? "bg-white text-black border-white"
+                  : "border-white/30 hover:bg-white/10")
+              }
+            >
+              {value.toUpperCase()}
+            </button>
+          ))}
+        </span>
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <span className="text-xs">Edit mode</span>
           <input

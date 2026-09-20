@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import fallbackVideos from "@/data/videos.json";
+import { useContentLang } from "@/hooks/use-content-lang";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useAssetMeta, useInvalidateAssetMeta } from "@/hooks/use-asset-meta";
@@ -13,7 +14,6 @@ import { uploadImageWithProtection } from "@/lib/image-upload";
 import { derivePoster, derivePosterSync } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/LazyMediaLibraryPicker";
 import { Link } from "@tanstack/react-router";
-import { useLang } from "@/i18n";
 import { VIDEO_PAGE_CONTENT } from "@/data/video-page-content";
 import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
@@ -77,7 +77,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 export function VideoPage() {
-  const lang = useLang();
+  const lang = useContentLang();
   const pageContent = VIDEO_PAGE_CONTENT[lang];
   const [active, setActive] = useState<number | null>(null);
   const { isAdmin } = useAdmin();
