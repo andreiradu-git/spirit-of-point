@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type AiLang = "en" | "ro";
 
@@ -25,11 +25,11 @@ export function useAiLanguage() {
     };
   }, []);
 
-  const setLang = (next: AiLang) => {
+  const setLang = useCallback((next: AiLang) => {
     window.localStorage.setItem(KEY, next);
     window.dispatchEvent(new Event(EVT));
     setLangState(next);
-  };
+  }, []);
 
   return { lang, setLang };
 }
