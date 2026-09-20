@@ -6,9 +6,18 @@ export type Lang = "en" | "ro";
 
 export const SITE_URL = "https://www.pointstudio.ro";
 
+/** Pages whose EN/RO URLs differ (not just a /ro prefix). */
+const PATH_PAIRS: Record<string, string> = {
+  "/food-photography-bucharest": "/fotografie-culinara-bucuresti",
+};
+
+const REVERSE_PATH_PAIRS = Object.fromEntries(
+  Object.entries(PATH_PAIRS).map(([en, ro]) => [ro, en]),
+) as Record<string, string>;
+
 /** Language implied by a pathname. English is the default and keeps bare URLs. */
 export function langFromPath(pathname: string): Lang {
-  return pathname === "/ro" || pathname.startsWith("/ro/") ? "ro" : "en";
+  return pathname === "/ro" || pathname.startsWith("/ro/") || pathname in REVERSE_PATH_PAIRS ? "ro" : "en";
 }
 
 /** Path without the /ro prefix (always starts with "/"). */
@@ -18,19 +27,14 @@ export function basePath(pathname: string): string {
   return pathname || "/";
 }
 
-/** Pages whose EN/RO URLs differ (not just a /ro prefix). */
-const PATH_PAIRS: Record<string, string> = {
-  "/food-photography-bucharest": "/fotografie-culinara-bucuresti",
-  "/fotografie-culinara-bucuresti": "/food-photography-bucharest",
-};
-
 /** Same page, in the requested language. */
 export function localizePath(path: string, lang: Lang): string {
-  const pair = PATH_PAIRS[basePath(path)];
-  if (pair) return pair;
   const base = basePath(path);
-  if (lang === "en") return base;
-  return base === "/" ? "/ro" : `/ro${base}`;
+  const enBase = REVERSE_PATH_PAIRS[base] ?? base;
+  if (lang === "en") return enBase;
+  const specialRoPath = PATH_PAIRS[enBase];
+  if (specialRoPath) return specialRoPath;
+  return enBase === "/" ? "/ro" : `/ro${enBase}`;
 }
 
 export function useLang(): Lang {
