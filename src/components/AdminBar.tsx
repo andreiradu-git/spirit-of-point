@@ -3,6 +3,8 @@ import { useAdmin } from "@/hooks/use-admin";
 import { db } from "@/lib/cms-client";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useAiLanguage } from "@/hooks/use-ai-language";
+import { useEditLangState } from "@/hooks/use-content-lang";
+import { useLang } from "@/i18n";
 import { useEditHistory, useEditHistoryShortcuts } from "@/hooks/use-edit-history";
 
 export function AdminBar() {
