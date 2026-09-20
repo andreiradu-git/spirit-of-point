@@ -149,25 +149,21 @@ export function EditableFaqList({ id, fallback, lang = "ro" }: Props) {
   };
 
   return (
-    <div>
+    <div className="relative">
       <dl className="space-y-4">
         {items.map((f, i) => (
-          <div key={i} className="group relative rounded-sm outline outline-1 outline-dashed outline-blue-400/40 hover:outline-blue-500 p-3">
+          <div key={i} className="group relative outline outline-1 outline-dashed outline-blue-400/40 hover:outline-blue-500">
             <dt className="font-semibold text-foreground">
               Q: <span className="whitespace-pre-wrap">{f.q}</span>
-              <span className="ml-2 inline-flex gap-1 align-middle">
-                <button type="button" onClick={() => editField(i, "q")} className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">✏️</button>
-                <button type="button" onClick={() => aiField(i, "q")} disabled={busy === `${i}-q`} className="text-[10px] bg-black text-white rounded px-1.5 py-0.5">{busy === `${i}-q` ? "…" : "✨AI"}</button>
-              </span>
             </dt>
             <dd className="mt-1 text-foreground/80 whitespace-pre-wrap">
               A: {f.a}
-              <span className="ml-2 inline-flex gap-1 align-middle">
-                <button type="button" onClick={() => editField(i, "a")} className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">✏️</button>
-                <button type="button" onClick={() => aiField(i, "a")} disabled={busy === `${i}-a`} className="text-[10px] bg-black text-white rounded px-1.5 py-0.5">{busy === `${i}-a` ? "…" : "✨AI"}</button>
-              </span>
             </dd>
             <div className="absolute -top-3 right-2 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+              <button type="button" onClick={() => editField(i, "q")} title="Editează întrebarea" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">Q✏️</button>
+              <button type="button" onClick={() => aiField(i, "q")} disabled={busy === `${i}-q`} title="Rescrie întrebarea cu AI" className="text-[10px] bg-black text-white rounded px-1.5 py-0.5">{busy === `${i}-q` ? "…" : "Q✨"}</button>
+              <button type="button" onClick={() => editField(i, "a")} title="Editează răspunsul" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">A✏️</button>
+              <button type="button" onClick={() => aiField(i, "a")} disabled={busy === `${i}-a`} title="Rescrie răspunsul cu AI" className="text-[10px] bg-black text-white rounded px-1.5 py-0.5">{busy === `${i}-a` ? "…" : "A✨"}</button>
               <button type="button" onClick={() => move(i, -1)} className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">↑</button>
               <button type="button" onClick={() => move(i, 1)} className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">↓</button>
               <button type="button" onClick={() => remove(i)} className="text-[10px] bg-red-600 text-white rounded px-1.5 py-0.5">✕</button>
@@ -175,7 +171,7 @@ export function EditableFaqList({ id, fallback, lang = "ro" }: Props) {
           </div>
         ))}
       </dl>
-      <div className="mt-3 flex gap-2">
+      <div className="absolute top-full left-0 flex gap-2 translate-y-3 m-0">
         <button type="button" onClick={addManual} className="text-xs bg-white border border-dashed border-blue-400 text-blue-600 rounded px-2 py-1 hover:bg-blue-50">+ Adaugă întrebare</button>
         <button type="button" onClick={addAi} disabled={busy === "add"} className="text-xs bg-black text-white rounded px-2 py-1">{busy === "add" ? "…" : "✨ Adaugă cu AI"}</button>
       </div>

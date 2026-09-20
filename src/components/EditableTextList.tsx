@@ -162,17 +162,17 @@ export function EditableTextList({
   const Item = editableTag;
 
   return (
-    <Tag className={className}>
+    <Tag className={className} style={{ position: "relative" }}>
       {items.map((text, i) => (
-        <div
+        <Item
           key={i}
           className={
-            "group relative rounded-sm outline outline-1 outline-dashed outline-blue-400/40 hover:outline-blue-500 p-2 my-2 " +
+            "group relative outline outline-1 outline-dashed outline-blue-400/40 hover:outline-blue-500 " +
             (itemClassName ?? "")
           }
         >
-          <Item className="whitespace-pre-wrap">{text}</Item>
-          <div className="absolute -top-3 right-2 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <span>{text}</span>
+          <span className="absolute -top-3 right-2 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <button type="button" onClick={() => move(i, -1)} title="Sus" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">↑</button>
             <button type="button" onClick={() => move(i, 1)} title="Jos" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">↓</button>
             <button type="button" onClick={() => editItem(i)} title="Editează" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">✏️</button>
@@ -186,10 +186,10 @@ export function EditableTextList({
               {busy === i ? "…" : "✨AI"}
             </button>
             <button type="button" onClick={() => removeItem(i)} title="Șterge" className="text-[10px] bg-red-600 text-white rounded px-1.5 py-0.5">✕</button>
-          </div>
-        </div>
+          </span>
+        </Item>
       ))}
-      <div className="mt-3 flex gap-2">
+      <div className="absolute top-full left-0 flex gap-2 translate-y-3 m-0">
         <button
           type="button"
           onClick={addItem}
