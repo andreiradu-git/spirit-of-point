@@ -189,7 +189,7 @@ export function EditableTextList({
           </span>
         </Item>
       ))}
-      <div className="absolute mt-3 flex gap-2">
+      <div className="absolute flex gap-2 translate-y-3">
         <button
           type="button"
           onClick={addItem}
