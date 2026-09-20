@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { useAdmin } from "@/hooks/use-admin";
-import { useEditMode } from "@/hooks/use-edit-mode";
 import { useLang, type Lang } from "@/i18n";
 
 const KEY = "point-studio-edit-language";
@@ -13,9 +11,8 @@ function read(): Lang | null {
 }
 
 /**
- * The language an admin has explicitly chosen to edit, independent of the
- * public URL, the browser language or any locale detection. `null` means the
- * admin has not chosen yet, in which case the current page's language is used.
+ * The language reflected by the Admin editing selector. The AdminBar keeps
+ * this value synchronized with the current public route.
  */
 export function useEditLangState() {
   const [editLang, setState] = useState<Lang | null>(null);
@@ -44,17 +41,9 @@ export function useEditLangState() {
 /**
  * Language whose stored content should be loaded, shown and saved.
  *
- * For visitors (and for admins with Edit mode off) this is always the language
- * of the current public URL, so public rendering, SEO and routing are
- * unchanged. Only an admin in Edit mode can override it with the RO/EN
- * selector in the admin bar; the override never touches the other language's
- * stored values, because every text/list is keyed per language.
+ * The route is the single source of truth. This guarantees that the visible
+ * website language and every editable text/list key can never disagree.
  */
 export function useContentLang(): Lang {
-  const routeLang = useLang();
-  const { isAdmin } = useAdmin();
-  const { editMode } = useEditMode();
-  const { editLang } = useEditLangState();
-  if (isAdmin && editMode && editLang) return editLang;
-  return routeLang;
+  return useLang();
 }

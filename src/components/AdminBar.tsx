@@ -1,10 +1,11 @@
-import { useNavigate, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useNavigate, Link, useRouterState } from "@tanstack/react-router";
 import { useAdmin } from "@/hooks/use-admin";
 import { db } from "@/lib/cms-client";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useAiLanguage } from "@/hooks/use-ai-language";
 import { useEditLangState } from "@/hooks/use-content-lang";
-import { useLang } from "@/i18n";
+import { localizePath, useLang } from "@/i18n";
 import { useEditHistory, useEditHistoryShortcuts } from "@/hooks/use-edit-history";
 
 export function AdminBar() {
@@ -12,11 +13,17 @@ export function AdminBar() {
   const { editMode, setEditMode } = useEditMode();
   const { setLang: setAiLang } = useAiLanguage();
   const routeLang = useLang();
-  const { editLang, setEditLang } = useEditLangState();
-  const activeEditLang = editLang ?? routeLang;
+  const path = useRouterState({ select: (state) => state.location.pathname });
+  const { setEditLang } = useEditLangState();
   const navigate = useNavigate();
   const { canUndo, canRedo, undoLabel, redoLabel, busy, undo, redo } = useEditHistory();
   useEditHistoryShortcuts(isAdmin && editMode);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    setEditLang(routeLang);
+    setAiLang(routeLang);
+  }, [isAdmin, routeLang, setAiLang, setEditLang]);
 
   if (loading || !user || !isAdmin) return null;
 
@@ -24,6 +31,20 @@ export function AdminBar() {
     await db.auth.signOut();
     setEditMode(false);
     navigate({ to: "/" });
+  };
+
+  const switchEditingLanguage = async (next: "en" | "ro") => {
+    if (next === routeLang) return;
+
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active.isContentEditable) {
+      active.blur();
+      await new Promise((resolve) => window.setTimeout(resolve, 200));
+    }
+
+    setEditLang(next);
+    setAiLang(next);
+    await navigate({ to: localizePath(path, next) });
   };
 
   return (
@@ -74,13 +95,10 @@ export function AdminBar() {
             <button
               key={value}
               type="button"
-              onClick={() => {
-                setEditLang(value);
-                setAiLang(value);
-              }}
+              onClick={() => void switchEditingLanguage(value)}
               className={
                 "text-xs px-2 py-0.5 border rounded " +
-                (activeEditLang === value
+                (routeLang === value
                   ? "bg-white text-black border-white"
                   : "border-white/30 hover:bg-white/10")
               }
