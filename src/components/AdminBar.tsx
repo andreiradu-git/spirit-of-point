@@ -10,7 +10,10 @@ import { useEditHistory, useEditHistoryShortcuts } from "@/hooks/use-edit-histor
 export function AdminBar() {
   const { user, isAdmin, loading } = useAdmin();
   const { editMode, setEditMode } = useEditMode();
-  const { lang: aiLang, setLang: setAiLang } = useAiLanguage();
+  const { setLang: setAiLang } = useAiLanguage();
+  const routeLang = useLang();
+  const { editLang, setEditLang } = useEditLangState();
+  const activeEditLang = editLang ?? routeLang;
   const navigate = useNavigate();
   const { canUndo, canRedo, undoLabel, redoLabel, busy, undo, redo } = useEditHistory();
   useEditHistoryShortcuts(isAdmin && editMode);
