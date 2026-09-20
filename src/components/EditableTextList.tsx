@@ -172,7 +172,7 @@ export function EditableTextList({
           }
         >
           <span className="whitespace-pre-wrap">{text}</span>
-          <div className="absolute -top-3 right-2 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+          <span className="absolute -top-3 right-2 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             <button type="button" onClick={() => move(i, -1)} title="Sus" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">↑</button>
             <button type="button" onClick={() => move(i, 1)} title="Jos" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">↓</button>
             <button type="button" onClick={() => editItem(i)} title="Editează" className="text-[10px] bg-white border border-border rounded px-1.5 py-0.5">✏️</button>
@@ -186,7 +186,7 @@ export function EditableTextList({
               {busy === i ? "…" : "✨AI"}
             </button>
             <button type="button" onClick={() => removeItem(i)} title="Șterge" className="text-[10px] bg-red-600 text-white rounded px-1.5 py-0.5">✕</button>
-          </div>
+          </span>
         </Item>
       ))}
       <div className="mt-3 flex gap-2">
