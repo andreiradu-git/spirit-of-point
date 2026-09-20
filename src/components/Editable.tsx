@@ -104,14 +104,17 @@ export function Editable({
   }
 
   return (
-    <span className="relative inline-block group">
-      <Tag
+    <Tag
+      className={
+        (className ? className + " " : "") +
+        "group relative outline outline-1 outline-dashed outline-blue-400/60 focus-within:outline-blue-500 focus-within:outline-2 " +
+        (saving || aiBusy ? "opacity-60" : "")
+      }
+      data-placeholder={placeholder ?? id}
+    >
+      <span
         ref={ref as never}
-        className={
-          (className ? className + " " : "") +
-          "outline outline-1 outline-dashed outline-blue-400/60 focus:outline-blue-500 focus:outline-2 rounded-sm px-0.5 -mx-0.5 " +
-          (saving || aiBusy ? "opacity-60" : "")
-        }
+        className="contents"
         contentEditable
         suppressContentEditableWarning
         onBlur={commit}
@@ -121,12 +124,12 @@ export function Editable({
             (e.target as HTMLElement).blur();
           }
         }}
-        data-placeholder={placeholder ?? id}
       >
         {value}
-      </Tag>
+      </span>
       <button
         type="button"
+        contentEditable={false}
         onMouseDown={(e) => e.preventDefault()}
         onClick={aiRewrite}
         disabled={aiBusy}
@@ -135,6 +138,6 @@ export function Editable({
       >
         {aiBusy ? "…" : "✨AI"}
       </button>
-    </span>
+    </Tag>
   );
 }
