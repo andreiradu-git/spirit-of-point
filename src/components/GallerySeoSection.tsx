@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useText } from "@/hooks/use-site-texts";
-import { useLang } from "@/i18n";
 import { useContentLang } from "@/hooks/use-content-lang";
 import { useAiCredits } from "@/hooks/use-ai-credits";
 import { useGalleries } from "@/hooks/use-galleries";

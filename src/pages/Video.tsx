@@ -14,7 +14,6 @@ import { uploadImageWithProtection } from "@/lib/image-upload";
 import { derivePoster, derivePosterSync } from "@/lib/generate-video-poster";
 import { MediaLibraryPicker } from "@/components/LazyMediaLibraryPicker";
 import { Link } from "@tanstack/react-router";
-import { useLang } from "@/i18n";
 import { VIDEO_PAGE_CONTENT } from "@/data/video-page-content";
 import { Sparkles, Loader2, Plus, Trash2, Images, Upload, GripVertical, ArrowUpDown } from "lucide-react";
 import {
