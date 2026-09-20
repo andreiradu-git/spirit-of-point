@@ -37,9 +37,15 @@ export function AdminBar() {
     if (next === routeLang) return;
 
     const active = document.activeElement;
-    if (active instanceof HTMLElement && active.isContentEditable) {
+    if (
+      active instanceof HTMLElement &&
+      (active.isContentEditable ||
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        active instanceof HTMLSelectElement)
+    ) {
       active.blur();
-      await new Promise((resolve) => window.setTimeout(resolve, 200));
+      await new Promise((resolve) => window.setTimeout(resolve, 300));
     }
 
     setEditLang(next);
@@ -95,6 +101,7 @@ export function AdminBar() {
             <button
               key={value}
               type="button"
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => void switchEditingLanguage(value)}
               className={
                 "text-xs px-2 py-0.5 border rounded " +
