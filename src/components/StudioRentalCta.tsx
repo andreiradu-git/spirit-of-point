@@ -3,7 +3,8 @@ import { Editable } from "@/components/Editable";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useText, useSaveText } from "@/hooks/use-site-texts";
-import { useLang, textKey } from "@/i18n";
+import { textKey } from "@/i18n";
+import { useContentLang } from "@/hooks/use-content-lang";
 
 /**
  * Discreet studio-rental call to action shown at the end of "The Studio".
@@ -22,7 +23,7 @@ const DEFAULT_URL: Record<"en" | "ro", string> = {
 export function StudioRentalCta() {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
-  const lang = useLang();
+  const lang = useContentLang();
   const urlKey = textKey(URL_ID, lang);
   const url = useText(urlKey, DEFAULT_URL[lang]);
   const saveText = useSaveText();

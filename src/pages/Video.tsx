@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { SiteLayout, cdn } from "@/components/SiteLayout";
 import fallbackVideos from "@/data/videos.json";
+import { useContentLang } from "@/hooks/use-content-lang";
 import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useAssetMeta, useInvalidateAssetMeta } from "@/hooks/use-asset-meta";
@@ -77,7 +78,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 export function VideoPage() {
-  const lang = useLang();
+  const lang = useContentLang();
   const pageContent = VIDEO_PAGE_CONTENT[lang];
   const [active, setActive] = useState<number | null>(null);
   const { isAdmin } = useAdmin();

@@ -4,7 +4,8 @@ import { useEditMode } from "@/hooks/use-edit-mode";
 import { useList, useSaveList } from "@/hooks/use-site-lists";
 import { useServerFn } from "@tanstack/react-start";
 import { generateSiteText } from "@/lib/text-ai.functions";
-import { useLang, textKey } from "@/i18n";
+import { textKey } from "@/i18n";
+import { useContentLang } from "@/hooks/use-content-lang";
 
 type Props = {
   id: string;
@@ -43,7 +44,7 @@ export function EditableTextList({
   const { editMode } = useEditMode();
   const editable = isAdmin && editMode;
 
-  const listKey = textKey(id, useLang());
+  const listKey = textKey(id, useContentLang());
   const items = useList<string>(listKey, fallback);
   const saveList = useSaveList();
   const save = (_id: string, next: unknown) => saveList(listKey, next as never);

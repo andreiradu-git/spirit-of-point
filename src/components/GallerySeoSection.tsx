@@ -5,6 +5,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useEditMode } from "@/hooks/use-edit-mode";
 import { useText } from "@/hooks/use-site-texts";
 import { useLang } from "@/i18n";
+import { useContentLang } from "@/hooks/use-content-lang";
 import { useAiCredits } from "@/hooks/use-ai-credits";
 import { useGalleries } from "@/hooks/use-galleries";
 import {
@@ -64,7 +65,7 @@ export function GallerySeoSection({
   const { editMode } = useEditMode();
   const editable = isAdmin && editMode;
 
-  const routeLang = useLang();
+  const routeLang = useContentLang();
   const lang = langProp ?? routeLang;
   // Romanian SEO content is stored under a separate key so both languages coexist.
   const seoKey = lang === "ro" ? `${slug}#ro` : slug;
