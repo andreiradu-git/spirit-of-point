@@ -162,7 +162,7 @@ export function EditableTextList({
   const Item = editableTag;
 
   return (
-    <Tag className={className}>
+    <Tag className={className} style={{ position: "relative" }}>
       {items.map((text, i) => (
         <Item
           key={i}
@@ -189,7 +189,7 @@ export function EditableTextList({
           </span>
         </Item>
       ))}
-      <div className="absolute flex gap-2 translate-y-3 m-0">
+      <div className="absolute top-full left-0 flex gap-2 translate-y-3 m-0">
         <button
           type="button"
           onClick={addItem}

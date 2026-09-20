@@ -149,7 +149,7 @@ export function EditableFaqList({ id, fallback, lang = "ro" }: Props) {
   };
 
   return (
-    <div>
+    <div className="relative">
       <dl className="space-y-4">
         {items.map((f, i) => (
           <div key={i} className="group relative outline outline-1 outline-dashed outline-blue-400/40 hover:outline-blue-500">
@@ -171,7 +171,7 @@ export function EditableFaqList({ id, fallback, lang = "ro" }: Props) {
           </div>
         ))}
       </dl>
-      <div className="absolute flex gap-2 translate-y-3 m-0">
+      <div className="absolute top-full left-0 flex gap-2 translate-y-3 m-0">
         <button type="button" onClick={addManual} className="text-xs bg-white border border-dashed border-blue-400 text-blue-600 rounded px-2 py-1 hover:bg-blue-50">+ Adaugă întrebare</button>
         <button type="button" onClick={addAi} disabled={busy === "add"} className="text-xs bg-black text-white rounded px-2 py-1">{busy === "add" ? "…" : "✨ Adaugă cu AI"}</button>
       </div>
