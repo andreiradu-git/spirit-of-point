@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLang, type Lang } from "@/i18n";
 
 const KEY = "point-studio-edit-language";
@@ -28,12 +28,12 @@ export function useEditLangState() {
     };
   }, []);
 
-  const setEditLang = (next: Lang) => {
+  const setEditLang = useCallback((next: Lang) => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(KEY, next);
     window.dispatchEvent(new Event(EVT));
     setState(next);
-  };
+  }, []);
 
   return { editLang, setEditLang };
 }
