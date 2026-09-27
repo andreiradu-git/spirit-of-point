@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Required SSR editorial content uses a targeted public D1 read with bounded retry; broad CMS prefetch failures must never silently produce empty indexable pages.

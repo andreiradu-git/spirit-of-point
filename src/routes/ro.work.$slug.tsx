@@ -21,7 +21,10 @@ export const Route = createFileRoute("/ro/work/$slug")({
   loader: async ({ params, context }) => {
     const w = resolveWork(params.slug);
     if (!w) throw notFound();
-    await prefetchGallerySeo(context.queryClient);
+    await prefetchGallerySeo(
+      context.queryClient,
+      params.slug === "corporate" ? "corporate#ro" : undefined,
+    );
     return w;
   },
   notFoundComponent: () => (
