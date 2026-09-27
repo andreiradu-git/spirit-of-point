@@ -14,16 +14,20 @@ export function AdminBar() {
   const { setLang: setAiLang } = useAiLanguage();
   const routeLang = useLang();
   const path = useRouterState({ select: (state) => state.location.pathname });
-  const { setEditLang } = useEditLangState();
+  const { editLang, setEditLang } = useEditLangState();
   const navigate = useNavigate();
   const { canUndo, canRedo, undoLabel, redoLabel, busy, undo, redo } = useEditHistory();
   useEditHistoryShortcuts(isAdmin && editMode);
+  // Admin routes are language-neutral: never derive languages from their URL.
+  const isAdminRoute = path === "/admin" || path.startsWith("/admin/");
+  const activeLang = isAdminRoute ? (editLang ?? "en") : routeLang;
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || isAdminRoute) return;
+    // Public pages: the visible route is the content language being edited.
+    // The AI generation language stays whatever the admin explicitly chose.
     setEditLang(routeLang);
-    setAiLang(routeLang);
-  }, [isAdmin, routeLang, setAiLang, setEditLang]);
+  }, [isAdmin, isAdminRoute, routeLang, setEditLang]);
 
   if (loading || !user || !isAdmin) return null;
 
@@ -34,7 +38,7 @@ export function AdminBar() {
   };
 
   const switchEditingLanguage = async (next: "en" | "ro") => {
-    if (next === routeLang) return;
+    if (next === activeLang) return;
 
     const active = document.activeElement;
     if (
@@ -50,7 +54,7 @@ export function AdminBar() {
 
     setEditLang(next);
     setAiLang(next);
-    await navigate({ to: localizePath(path, next) });
+    if (!isAdminRoute) await navigate({ to: localizePath(path, next) });
   };
 
   return (
