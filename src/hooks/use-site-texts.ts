@@ -6,7 +6,7 @@ const TEXT_PREFIX = "text.";
 
 type SettingRow = { key: string; value: unknown };
 
-async function fetchTexts(): Promise<Record<string, string>> {
+export async function fetchTexts(): Promise<Record<string, string>> {
   const { data, error } = await db
     .from("site_settings")
     .select("key, value")

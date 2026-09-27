@@ -1,4 +1,5 @@
 import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
+import { prefetchGallerySeo } from "@/lib/prefetch-gallery-seo";
 import { SiteLayout } from "@/components/SiteLayout";
 import { WorkPage, resolveWork, WORK } from "@/pages/Work";
 import { altLinks, tr } from "@/i18n";

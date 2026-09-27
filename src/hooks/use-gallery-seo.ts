@@ -76,7 +76,7 @@ function coerce(value: unknown): GallerySeoData {
 }
 
 /** All gallery SEO records, keyed by slug — used for related-gallery linking too. */
-async function fetchAll(): Promise<Record<string, GallerySeoData>> {
+export async function fetchAllGallerySeo(): Promise<Record<string, GallerySeoData>> {
   const { data, error } = await db
     .from("site_settings")
     .select("key, value")
@@ -90,7 +90,7 @@ async function fetchAll(): Promise<Record<string, GallerySeoData>> {
 }
 
 export function useAllGallerySeo() {
-  return useQuery({ queryKey: ["gallery-seo", "all"], queryFn: fetchAll, staleTime: 60_000 });
+  return useQuery({ queryKey: ["gallery-seo", "all"], queryFn: fetchAllGallerySeo, staleTime: 60_000 });
 }
 
 export function useGallerySeo(slug: string): GallerySeoData | undefined {

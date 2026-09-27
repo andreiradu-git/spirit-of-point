@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { prefetchGallerySeo } from "@/lib/prefetch-gallery-seo";
 import { cdn } from "@/components/SiteLayout";
 import data from "@/data/editorial.json";
 import { EditorialPage } from "@/pages/Editorial";
@@ -8,6 +9,7 @@ const alt = altLinks("/editorial", "en");
 
 export const Route = createFileRoute("/editorial")({
   component: EditorialPage,
+  loader: ({ context }) => prefetchGallerySeo(context.queryClient),
   head: () => ({
     meta: [
       { title: "Editorial & Advertising Photography — Point Studio Bucharest" },
