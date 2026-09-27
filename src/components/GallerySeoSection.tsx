@@ -47,18 +47,28 @@ function upsertMeta(sel: string, attr: string, name: string, content: string) {
  * CMS-driven SEO content block rendered under every gallery: editorial article,
  * FAQs, related galleries, editable meta fields and JSON-LD structured data.
  */
+export type GalleryCrossLink = {
+  heading: string;
+  body: string;
+  cta: string;
+  href: string;
+};
+
 export function GallerySeoSection({
   slug,
   title,
   location,
   images = [],
   lang: langProp,
+  crossLink,
 }: {
   slug: string;
   title: string;
   location?: string;
   images?: Array<{ src: string; alt?: string }>;
   lang?: "en" | "ro";
+  /** Static contextual cross-link rendered after the editorial article, before the FAQs. */
+  crossLink?: GalleryCrossLink;
 }) {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
