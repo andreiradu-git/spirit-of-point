@@ -454,6 +454,25 @@ export function GallerySeoSection({
           )
         )}
 
+        {crossLink && !editable && (
+          <section className="mt-12">
+            <h2 className="mb-4 font-serif text-3xl italic">{crossLink.heading}</h2>
+            <p className="mb-5 text-[15px] leading-relaxed text-foreground/80">
+              {crossLink.body}
+            </p>
+            <p>
+              <a
+                href={crossLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="type-cta inline-block border-b border-foreground/30 pb-1 transition-colors hover:border-foreground"
+              >
+                {crossLink.cta}
+              </a>
+            </p>
+          </section>
+        )}
+
         {!editable && draft.faqs.length > 0 && (
           <div className="mt-10">
             <h3 className="mb-4 text-xs font-medium uppercase tracking-widest">
