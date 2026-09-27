@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { prefetchGallerySeo } from "@/lib/prefetch-gallery-seo";
 import { cdn } from "@/components/SiteLayout";
 import data from "@/data/food.json";
 import { FoodPage } from "@/pages/Food";
@@ -8,6 +9,7 @@ const alt = altLinks("/food", "en");
 
 export const Route = createFileRoute("/food")({
   component: FoodPage,
+  loader: ({ context }) => prefetchGallerySeo(context.queryClient),
   head: () => ({
     meta: [
       { title: "Best Food Photography & Food Photographer — Point Studio Bucharest" },

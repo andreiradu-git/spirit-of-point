@@ -1,4 +1,5 @@
 import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
+import { prefetchGallerySeo } from "@/lib/prefetch-gallery-seo";
 import { SiteLayout } from "@/components/SiteLayout";
 import { WorkPage, resolveWork, WORK } from "@/pages/Work";
 import { altLinks, tr } from "@/i18n";
@@ -16,9 +17,10 @@ const descShort = (title: string) => `${title} photography by Point Studio.`;
 
 export const Route = createFileRoute("/work/$slug")({
   component: WorkRoute,
-  loader: ({ params }) => {
+  loader: async ({ params, context }) => {
     const w = resolveWork(params.slug);
     if (!w) throw notFound();
+    await prefetchGallerySeo(context.queryClient);
     return w;
   },
   notFoundComponent: () => (

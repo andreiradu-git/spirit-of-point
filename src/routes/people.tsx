@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { prefetchGallerySeo } from "@/lib/prefetch-gallery-seo";
 import { cdn } from "@/components/SiteLayout";
 import data from "@/data/people.json";
 import { PeoplePage } from "@/pages/People";
@@ -8,6 +9,7 @@ const alt = altLinks("/people", "en");
 
 export const Route = createFileRoute("/people")({
   component: PeoplePage,
+  loader: ({ context }) => prefetchGallerySeo(context.queryClient),
   head: () => ({
     meta: [
       { title: "Portrait & Corporate Photography — Point Studio Bucharest" },
