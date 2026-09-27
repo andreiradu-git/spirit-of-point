@@ -177,6 +177,7 @@ export function PortfolioPage({
         lang={lang}
         title={gallery?.title || t(tagline)}
         images={images}
+        crossLink={crossLink}
       />
     </SiteLayout>
   );
