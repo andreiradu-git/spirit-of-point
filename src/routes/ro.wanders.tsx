@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { cdn } from "@/components/SiteLayout";
 import data from "@/data/wanders.json";
+import { prefetchGallerySeo } from "@/lib/prefetch-gallery-seo";
 import { WandersPage } from "@/pages/Wanders";
 import { altLinks } from "@/i18n";
 
@@ -8,6 +9,7 @@ const alt = altLinks("/wanders", "ro");
 
 export const Route = createFileRoute("/ro/wanders")({
   component: WandersPage,
+  loader: ({ context }) => prefetchGallerySeo(context.queryClient, "wanders#ro"),
   head: () => ({
     meta: [
       { title: "Reflecții — Fotografie artistică personală — Point Studio" },
