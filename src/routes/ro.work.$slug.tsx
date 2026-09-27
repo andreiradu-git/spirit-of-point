@@ -18,9 +18,10 @@ const descShort = (title: string) => `Fotografie ${title} realizată de Point St
 
 export const Route = createFileRoute("/ro/work/$slug")({
   component: WorkRoute,
-  loader: ({ params }) => {
+  loader: async ({ params, context }) => {
     const w = resolveWork(params.slug);
     if (!w) throw notFound();
+    await prefetchGallerySeo(context.queryClient);
     return w;
   },
   notFoundComponent: () => (
