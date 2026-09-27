@@ -61,13 +61,13 @@ export const RO_CONTENT: Record<string, string> = {
   "studioRental.question": "Ai nevoie de un spa\u021biu \u00een care s\u0103-\u021bi dezvol\u021bi ideile?",
   "studioRental.cta": "VEZI STUDIOUL & DISPONIBILITATEA \u2197",
 
-  // Corporate — brands section
-  "corporate.brands.title": "De la branduri locale la nume internaționale",
-  "corporate.brands.p1":
+  // Editorial — brands section
+  "editorial.brands.title": "De la branduri locale la nume internaționale",
+  "editorial.brands.p1":
     "De-a lungul anilor, Point Studio a realizat proiecte de fotografie comercială, corporate, publicitară și de produs pentru branduri și companii din industrii foarte diferite. Am lucrat pentru Lidl, Kaufland, Carrefour, McDonald’s, Costa Coffee, MOL, Hard Rock Cafe, Président, Dr. Oetker, Angst, Regina Maria, IOM, Praktiker, Transavia, Adevărul, Băneasa, Brico Dépôt, Mega Image / Delhaize și multe alte branduri și companii.",
-  "corporate.brands.p2":
+  "editorial.brands.p2":
     "Fotografiile realizate în studio sau în locațiile clienților au fost folosite în campanii de publicitate, comunicare corporate, materiale de brand, cataloage, publicații, social media, website-uri și materiale printate. De la portrete și echipe până la spații de lucru, produse, procese de producție și imagini pentru campanii, fiecare proiect este construit în jurul identității vizuale și al modului în care brandul are nevoie să comunice.",
-  "corporate.brands.p3":
+  "editorial.brands.p3":
     "Lucrăm atât în București, cât și în locații din România, pentru proiecte care au nevoie de fotografie profesională gândită pentru utilizare comercială, editorială și corporate, în online și print.",
 
   "contact.eyebrow": "Ia legătura cu noi",

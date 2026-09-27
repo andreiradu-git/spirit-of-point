@@ -8,7 +8,7 @@ import { GallerySeoSection } from "./GallerySeoSection";
 import { useGalleryCover } from "@/hooks/use-gallery-covers";
 import { useLang, useTr } from "@/i18n";
 import { withoutBrandingAssets } from "@/lib/branding-assets";
-import { CorporateBrandsSection } from "./CorporateBrandsSection";
+import { EditorialBrandsSection } from "./EditorialBrandsSection";
 
 type Img = { src: string; alt?: string; title?: string };
 
@@ -137,6 +137,7 @@ export function PortfolioPage({
       )}
 
       {showLogos && <EditableLogoBand />}
+      {showLogos && slug === "editorial" && <EditorialBrandsSection />}
 
       {/* Full gallery */}
       {galleryLayout === "stacked" ? (
@@ -172,8 +173,6 @@ export function PortfolioPage({
       )}
 
       {belowGallery}
-
-      {slug === "corporate" && <CorporateBrandsSection />}
 
       <GallerySeoSection
         slug={slug}
