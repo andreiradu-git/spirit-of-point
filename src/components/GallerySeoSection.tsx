@@ -47,18 +47,28 @@ function upsertMeta(sel: string, attr: string, name: string, content: string) {
  * CMS-driven SEO content block rendered under every gallery: editorial article,
  * FAQs, related galleries, editable meta fields and JSON-LD structured data.
  */
+export type GalleryCrossLink = {
+  heading: string;
+  body: string;
+  cta: string;
+  href: string;
+};
+
 export function GallerySeoSection({
   slug,
   title,
   location,
   images = [],
   lang: langProp,
+  crossLink,
 }: {
   slug: string;
   title: string;
   location?: string;
   images?: Array<{ src: string; alt?: string }>;
   lang?: "en" | "ro";
+  /** Static contextual cross-link rendered after the editorial article, before the FAQs. */
+  crossLink?: GalleryCrossLink;
 }) {
   const { isAdmin } = useAdmin();
   const { editMode } = useEditMode();
@@ -442,6 +452,25 @@ export function GallerySeoSection({
               dangerouslySetInnerHTML={{ __html: sanitize(draft.html) }}
             />
           )
+        )}
+
+        {crossLink && !editable && (
+          <section className="mt-12">
+            <h2 className="mb-4 font-serif text-3xl italic">{crossLink.heading}</h2>
+            <p className="mb-5 text-[15px] leading-relaxed text-foreground/80">
+              {crossLink.body}
+            </p>
+            <p>
+              <a
+                href={crossLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="type-cta inline-block border-b border-foreground/30 pb-1 transition-colors hover:border-foreground"
+              >
+                {crossLink.cta}
+              </a>
+            </p>
+          </section>
         )}
 
         {!editable && draft.faqs.length > 0 && (

@@ -38,6 +38,25 @@ export function PortfolioPage({
   const t = useTr();
   const { data: gallery } = useGallery(slug);
   const cover = useGalleryCover(slug);
+
+  // Contextual cross-link, only for the Corporate gallery, rendered between the
+  // editorial article and the FAQs inside GallerySeoSection.
+  const crossLink =
+    slug === "corporate"
+      ? lang === "ro"
+        ? {
+            heading: "Cauți fotograf pentru un eveniment corporate?",
+            body: "Fotografie și video pentru conferințe, gale, lansări, petreceri și activări de brand pe eventcontent.ro.",
+            cta: "VEZI EVENT CONTENT →",
+            href: "https://eventcontent.ro",
+          }
+        : {
+            heading: "Looking for corporate event photography?",
+            body: "Photography and video for conferences, galas, launches, parties and brand events at eventcontent.ro.",
+            cta: "EXPLORE EVENT CONTENT →",
+            href: "https://eventcontent.ro",
+          }
+      : undefined;
   const rawImages: Img[] = withoutBrandingAssets(
     gallery?.images.map((img) => ({ src: img.src, alt: img.alt ?? undefined, title: img.title ?? undefined })) ??
       fallbackImages,
@@ -158,6 +177,7 @@ export function PortfolioPage({
         lang={lang}
         title={gallery?.title || t(tagline)}
         images={images}
+        crossLink={crossLink}
       />
     </SiteLayout>
   );
