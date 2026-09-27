@@ -109,7 +109,7 @@ export function AdminBar() {
               onClick={() => void switchEditingLanguage(value)}
               className={
                 "text-xs px-2 py-0.5 border rounded " +
-                (routeLang === value
+                (activeLang === value
                   ? "bg-white text-black border-white"
                   : "border-white/30 hover:bg-white/10")
               }

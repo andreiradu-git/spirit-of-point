@@ -171,7 +171,7 @@ export function EditableFaqList({ id, fallback, lang = "ro" }: Props) {
           </div>
         ))}
       </dl>
-      <div className="absolute top-full left-0 flex gap-2 translate-y-3 m-0">
+      <div className="flex flex-wrap gap-2 mt-3 mb-1">
         <button type="button" onClick={addManual} className="text-xs bg-white border border-dashed border-blue-400 text-blue-600 rounded px-2 py-1 hover:bg-blue-50">+ Adaugă întrebare</button>
         <button type="button" onClick={addAi} disabled={busy === "add"} className="text-xs bg-black text-white rounded px-2 py-1">{busy === "add" ? "…" : "✨ Adaugă cu AI"}</button>
       </div>
