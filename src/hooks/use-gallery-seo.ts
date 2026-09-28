@@ -41,7 +41,7 @@ export const EMPTY_GALLERY_SEO: GallerySeoData = {
   description: "",
 };
 
-function coerce(value: unknown): GallerySeoData {
+export function coerceGallerySeo(value: unknown): GallerySeoData {
   if (!value || typeof value !== "object") return { ...EMPTY_GALLERY_SEO };
   const v = value as Record<string, unknown>;
   const str = (k: string) => (typeof v[k] === "string" ? (v[k] as string) : "");
@@ -84,7 +84,7 @@ export async function fetchAllGallerySeo(): Promise<Record<string, GallerySeoDat
   if (error) throw error;
   const map: Record<string, GallerySeoData> = {};
   for (const row of (data ?? []) as Array<{ key: string; value: unknown }>) {
-    map[row.key.slice(PREFIX.length)] = coerce(row.value);
+    map[row.key.slice(PREFIX.length)] = coerceGallerySeo(row.value);
   }
   return map;
 }
