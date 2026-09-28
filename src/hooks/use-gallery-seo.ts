@@ -84,7 +84,7 @@ export async function fetchAllGallerySeo(): Promise<Record<string, GallerySeoDat
   if (error) throw error;
   const map: Record<string, GallerySeoData> = {};
   for (const row of (data ?? []) as Array<{ key: string; value: unknown }>) {
-    map[row.key.slice(PREFIX.length)] = coerce(row.value);
+    map[row.key.slice(PREFIX.length)] = coerceGallerySeo(row.value);
   }
   return map;
 }
