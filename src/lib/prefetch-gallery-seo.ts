@@ -1,12 +1,13 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { fetchAllGallerySeo } from "@/hooks/use-gallery-seo";
+import { coerceGallerySeo, fetchAllGallerySeo } from "@/hooks/use-gallery-seo";
 import { fetchTexts } from "@/hooks/use-site-texts";
 import { getPublicGallerySeo } from "@/lib/gallery-seo-public.functions";
 
 /**
  * Loads the CMS gallery text into the shared query cache during SSR so the
  * editorial/SEO text below galleries is in the initial HTML. Same queries as
- * the client hooks, so CMS edits show on the next request. Never blocks render.
+ * the client hooks, so CMS edits show on the next request. Never blocks render:
+ * if a required record still fails after retries, the page renders without it.
  */
 export async function prefetchGallerySeo(queryClient: QueryClient, requiredKey?: string): Promise<void> {
   await Promise.allSettled([
@@ -16,7 +17,7 @@ export async function prefetchGallerySeo(queryClient: QueryClient, requiredKey?:
 
   if (!requiredKey) return;
 
-  let required: Awaited<ReturnType<typeof getPublicGallerySeo>> | undefined;
+  let required: unknown;
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
@@ -27,10 +28,14 @@ export async function prefetchGallerySeo(queryClient: QueryClient, requiredKey?:
       if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 75 * (attempt + 1)));
     }
   }
-  if (!required) throw lastError instanceof Error ? lastError : new Error("Required gallery SEO failed to load");
+  if (!required) {
+    console.error(`[gallery-seo] required record "${requiredKey}" unavailable; rendering without it`, lastError);
+    return;
+  }
 
+  const clean = coerceGallerySeo(required);
   queryClient.setQueryData(["gallery-seo", "all"], (current: Record<string, unknown> | undefined) => ({
     ...(current ?? {}),
-    [requiredKey]: required,
+    [requiredKey]: clean,
   }));
 }
